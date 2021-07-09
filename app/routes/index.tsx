@@ -48,8 +48,7 @@ export const action: ActionFunction = async ({request}) => {
         break;
       case "PUT":
         task = await repository.get(id)
-        task = task.set({content})
-        await repository.update(task)
+        await repository.update(task.set({content}))
         break
       case "DELETE":
         await repository.delete(id)

@@ -54,15 +54,14 @@ export const action: ActionFunction = async ({request, params}) => {
     switch (request.method) {
       case "POST":
         task = new Task({id, content, branch})
-        repository.put(task)
+        await repository.put(task)
         break;
       case "PUT":
         task = await repository.get(id)
-        task = task.set({content})
-        repository.put(task)
+        await repository.update(task.set({content}))
         break
       case "DELETE":
-        repository.delete(id)
+        await repository.delete(id)
         break
     }
   } catch(err) {

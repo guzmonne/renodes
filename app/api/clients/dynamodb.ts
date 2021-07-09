@@ -61,9 +61,8 @@ export class TaskDynamoDBClient implements TaskDBClient {
    */
   async get(id: string, userId?: string): Promise<DBClientResponse<Task>> {
     try {
-      const pk = this.createPK(id, userId)
+      const pk   = this.createPK(id, userId)
       const item = await this.client.get(pk)
-      (pk, item)
       return {data: new Task(item)}
     } catch(err) {
       return {error: err.message}
