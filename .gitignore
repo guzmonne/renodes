@@ -1,0 +1,10 @@
+node_modules
+
+/.cache
+/server/build
+/public/build
+
+# Custom
+api.rest
+/db
+okteto.yml

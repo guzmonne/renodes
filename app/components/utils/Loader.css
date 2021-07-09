@@ -1,0 +1,38 @@
+.loader {
+  --scale: 0.5;
+  --delay: 0.5;
+  display: inline-block;
+  position: relative;
+  width: calc(80px * var(--scale));
+  height: calc(80px * var(--scale));
+}
+.loader div {
+  display: inline-block;
+  position: absolute;
+  left: calc(var(--scale) * 8px);
+  width: calc(var(--scale) * 16px);
+  background: linear-gradient(180deg, #696EFF 0%, #BFEEE8 100%);;
+  animation: loader 1.2s cubic-bezier(0, 0.5, 0.5, 1) infinite;
+}
+.loader div:nth-child(1) {
+  left: calc(var(--scale) * 8px);
+  animation-delay: -0.12s;
+}
+.loader div:nth-child(2) {
+  left: calc(var(--scale) * 32px);
+  animation-delay: -0.06s;
+}
+.loader div:nth-child(3) {
+  left: calc(var(--scale) * 56px);
+  animation-delay: 0;
+}
+@keyframes loader {
+  0% {
+    top: calc(var(--scale) * 8px);
+    height: calc(var(--scale) * 64px);
+  }
+  50%, 100% {
+    top: calc(var(--scale) * 24px);
+    height: calc(var(--scale) * 32px);
+  }
+}

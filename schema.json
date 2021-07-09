@@ -1,0 +1,42 @@
+{
+  "TableName": "retask",
+  "KeySchema": [
+    {"AttributeName": "pk", "KeyType": "HASH"}
+  ],
+  "AttributeDefinitions": [
+    {"AttributeName": "pk", "AttributeType": "S"},
+    {"AttributeName": "_b", "AttributeType": "S"},
+    {"AttributeName": "_n", "AttributeType": "S"}
+  ],
+  "ProvisionedThroughput": {
+    "ReadCapacityUnits": 5,
+    "WriteCapacityUnits": 5
+  },
+  "GlobalSecondaryIndexes": [{
+    "IndexName": "byNext",
+    "KeySchema": [
+      {"AttributeName": "_b", "KeyType": "HASH"},
+      {"AttributeName": "_n", "KeyType": "RANGE"}
+    ],
+    "Projection": {
+      "ProjectionType": "ALL"
+    },
+    "ProvisionedThroughput": {
+      "ReadCapacityUnits": 5,
+      "WriteCapacityUnits": 5
+    }
+  }, {
+    "IndexName": "byBranch",
+    "KeySchema": [
+      {"AttributeName": "_b", "KeyType": "HASH"},
+      {"AttributeName": "pk", "KeyType": "RANGE"}
+    ],
+    "Projection": {
+      "ProjectionType": "ALL"
+    },
+    "ProvisionedThroughput": {
+      "ReadCapacityUnits": 5,
+      "WriteCapacityUnits": 5
+    }
+  }]
+}

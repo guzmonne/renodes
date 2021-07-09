@@ -1,0 +1,57 @@
+{
+  "private": true,
+  "name": "remix-app-template",
+  "description": "",
+  "license": "",
+  "scripts": {
+    "build": "remix build",
+    "dev": "remix dev",
+    "start": "NODE_ENV=production node server/index.js",
+    "start:dev": "DB_ENDPOINT=\"http://dynamodb:8000\" TABLE_NAME=retask NODE_ENV=development node server/index.js",
+    "preapi-watch": "rm -Rf ./src",
+    "preapi-build": "rm -Rf ./src",
+    "preapi-test": "clear && npm run api-build",
+    "api-test": "TS_NODE_PROJECT=app/api/tsconfig.json ts-node node_modules/tape/bin/tape \"app/**/*.test.ts\"",
+    "api-watch": "tsc -p ./app/api --outDir ./src -w",
+    "api-build": "tsc -p ./app/api --outDir ./src",
+    "db-admin": "DYNAMO_ENDPOINT=http://dynamodb:8000 dynamodb-admin",
+    "db-up": "aws dynamodb create-table --endpoint=\"http://dynamodb:8000\" --cli-input-json file://schema.json",
+    "db-down": "aws dynamodb delete-table --table-name=retask --endpoint=\"http://dynamodb:8000\"",
+    "db-reset": "npm run db-down && npm run db-up",
+    "db-test": "TABLE_NAME=retask DB_ENDPOINT=\"http://dynamodb:8000\" TS_NODE_PROJECT=app/api/tsconfig.json ts-node node_modules/tape/bin/tape \"app/**/dynamo.test.ts\""
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.20.0",
+    "@aws-sdk/lib-dynamodb": "^3.20.0",
+    "@aws-sdk/util-dynamodb": "^3.20.0",
+    "@remix-run/express": "^0.17.5",
+    "@remix-run/node": "^0.17.5",
+    "@remix-run/react": "^0.17.5",
+    "aws-sdk": "^2.941.0",
+    "compression": "^1.7.4",
+    "dnd-core": "^14.0.0",
+    "express": "^4.17.1",
+    "lodash": "^4.17.21",
+    "morgan": "^1.10.0",
+    "react": "^17.0.1",
+    "react-dnd": "^14.0.2",
+    "react-dnd-html5-backend": "^14.0.0",
+    "react-dom": "^17.0.1",
+    "react-router-dom": "^6.0.0-beta.0",
+    "remix": "^0.17.5",
+    "ulid": "^2.3.0"
+  },
+  "devDependencies": {
+    "@remix-run/dev": "^0.17.5",
+    "@types/react": "^17.0.4",
+    "@types/react-dom": "^17.0.4",
+    "@types/tape": "^4.13.1",
+    "tape": "^5.2.2",
+    "ts-node": "^10.0.0",
+    "typescript": "^4.1.2"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "sideEffects": false
+}

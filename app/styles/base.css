@@ -1,0 +1,266 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lobster&display=swap');
+
+:root {
+  --background: #F9F9F9;
+  --text-body: #1D1D1D;
+  --primary: #114BE0;
+  --purple: #696EFF;
+  --highlight: #FF5930;
+  --font-size: 18px
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  outline: none;
+}
+
+iframe {
+  overflow: hidden;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  outline: none;
+}
+
+html {
+  background-color: var(--background);
+  font-size: var(--font-size);
+  font-family: 'DM Sans', sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  color: var(--text-body);
+}
+
+main {
+  padding: 0 0.5rem;
+  margin: 0 auto;
+  max-width: 960px;
+}
+
+main > * {
+  width: 100%;
+}
+
+h1, h2, h3, h4, h5 {
+  margin: 0.5rem;
+  font-family: 'Lobster', cursive;
+}
+
+/** TEXT **/
+
+p {
+  line-height: calc(var(--font-size) + 0.25rem);
+}
+
+.title {
+  background: linear-gradient(90deg, #696EFF 0%, #F7ABFF 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/** BUTTON **/
+button {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  background: var(--primary);
+  border-radius: 0.3rem;
+  padding: 0.5rem 1.5rem;
+  color: white;
+  font-weight: 500;
+  text-align: center;
+  outline: none;
+  border: 0;
+  cursor: pointer;
+}
+
+button.outline {
+  background: var(--background);
+  border: 0.15rem solid var(--primary);
+  color: var(--primary);
+}
+
+button.link {
+  background: transparent;
+  color: var(--primary);
+}
+
+button.square {
+  min-width: 2rem;
+  padding: 0.4rem;
+}
+
+button.hover {
+  color: var(--text-body);
+  opacity: 0.3;
+}
+
+button.circle {
+  padding: 0.5rem 0.6rem;
+  border-radius: 50%;
+}
+
+/** FORM **/
+
+form,
+form fieldset {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  outline: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+form input[type="text"] {
+  width: 100%;
+  border: 2px solid rgba(25, 49, 60, 0.1);
+  border-radius: 8px;
+  padding: 0.5rem;
+  outline: none
+}
+
+form input[type="text"].animated {
+  animation-name: input;
+  animation-duration: 1s;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+/* The animation code */
+@keyframes input {
+  from {background-color: whitesmoke;}
+  to   {background-color: white}
+}
+
+form input:focus-visible {
+  border: 2px solid var(--primary);
+}
+
+/** LAYOUT **/
+
+.flex {
+  display: flex;
+}
+
+.flex.row {
+  flex-direction: row;
+}
+
+.flex.align-items-center {
+  align-items: center;
+}
+
+.flex.justify-content-center {
+  justify-content: center;
+}
+
+.flex.justify-content-space-between {
+  justify-content: space-between;
+}
+
+/** UTILITIES **/
+.h-color {
+  color: var(--highlight)!important;
+}
+
+.purple-color {
+  color: var(--purple)!important;
+}
+
+.p-color-hover:hover {
+  color: var(--primary)!important;
+  opacity: 1;
+}
+
+.h-color-hover:hover {
+  color: var(--highlight)!important;
+  opacity: 1;
+}
+
+.h-border {
+  border: 0.15rem solid var(--highlight);
+}
+
+.h-background {
+  background-color: var(--highlight);
+}
+
+.padding-left {
+  padding-left: 0.5rem;
+}
+
+.padding-right {
+  padding-right: 0.5rem;
+}
+
+.padding-top {
+  padding-top: 0.5rem;
+}
+
+.padding-bottom {
+  padding-bottom: 0.5rem;
+}
+
+.margin-bottom {
+  margin-bottom: 0.5rem;
+}
+
+/** Input **/
+.Input button {
+  position: absolute;
+  right: 1.25rem;
+}
+
+.Input input[type="text"] {
+  padding: 0.75rem 0.5rem;
+}
+
+/** Backgrounds **/
+.bg-0 {
+  background: linear-gradient(180deg, rgba(105, 110, 255, 0.549) 0%, rgba(247, 171, 255, 0.179) 100%);
+}
+
+.bg-1 {
+  background: linear-gradient(180deg, #F4E3B8 0%, #BFDDEE 100%);
+}
+
+.bg-2 {
+  background: linear-gradient(180deg, #F5C4B7 0%, #F4E3B8 100%);
+}
+
+.bg-3 {
+  background: linear-gradient(90deg, rgba(225, 236, 246, 0.412) 0%, rgba(240, 227, 227, 0.309) 100%);
+}
+
+.bg-4 {
+  background: linear-gradient(180deg, #696eff56 0%, #bfeee887 100%);
+}
+
+.bg-5 {
+  background: linear-gradient(90deg, #E1ECF6 0%, #F0E3E3 100%);
+}
+
+/** Tasks **/
+.Task {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.1rem 0;
+  padding-left: 0.5rem;
+}
+
+.Task > div {
+  margin-bottom: 0.1rem;
+  border-radius: 26.9217px;
+}
