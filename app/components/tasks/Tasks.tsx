@@ -193,9 +193,10 @@ Tasks.Form = ({action, task, onSubmit, readOnly}: TaskFormProps) => {
 
 interface IFrameProps {
   id: string;
+  isVisible: boolean;
 }
 
-Tasks.IFrame = ({id}: IFrameProps) => {
+Tasks.IFrame = ({id, isVisible}: IFrameProps) => {
   const hasMounted = useHasMounted();
   const [height, setHeight] = useState<string>("0px")
   const [isLoaded, setIsLoaded] = useState<boolean>(false)
@@ -207,7 +208,7 @@ Tasks.IFrame = ({id}: IFrameProps) => {
     return () => window.removeEventListener("message", handleMessage)
   }, [])
 
-  if (!hasMounted) return null;
+  if (!isVisible || !hasMounted) return null;
 
   return (
     <Fragment>
@@ -382,7 +383,7 @@ Tasks.Task = ({task, readOnly, index, onDelete, onDrag, onDragEnd}: TaskProps) =
         />
         <Tasks.DeleteButton task={task} action={pathname + search} onDelete={onDelete} />
       </div>
-      {!isDragging && isShowingSubTasks && <Tasks.IFrame id={task.id} />}
+      <Tasks.IFrame id={task.id} isVisible={isShowingSubTasks}/>
     </div>
   )
   /**

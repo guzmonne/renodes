@@ -303,7 +303,7 @@ export class TaskDocumentClient implements ITaskDocumentClient {
    * @param afterKey - New position of the `Tasks` identifie by the key
    *                   of the `Task` currently in that position.
    */
-  async drag(fromPK: string, branch: string, afterPK?: string): Promise<boolean> {
+  async after(fromPK: string, branch: string, afterPK?: string): Promise<boolean> {
     const [from, after, $from] = await Promise.all([
       this.get(fromPK),
       this.get(afterPK || "#" + branch),

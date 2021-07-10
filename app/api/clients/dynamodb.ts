@@ -123,12 +123,12 @@ export class TaskDynamoDBClient implements TaskDBClient {
    *                `Task` must be positioned after.
    * @param userId - User unique identifier.
    */
-  async after(id: string, branch: string, afterId?: string, userId?: string): Promise<DBClientResponse<any>> {
+  async after(id: string, branch?: string, afterId?: string, userId?: string): Promise<DBClientResponse<any>> {
     try {
       const pk = this.createPK(id, userId)
       const _b = this.createPK(branch, userId)
-      const apk = this.createPK(afterId, userId)
-      const ok = await this.client.drag(pk, _b, apk)
+      const apk = !afterId ? undefined : this.createPK(afterId, userId)
+      const ok = await this.client.after(pk, _b, apk)
       if (!ok) throw new Error(`couldn't move task with id = ${id} after task with id ${afterId}`)
       return {}
     } catch (err) {

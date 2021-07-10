@@ -144,8 +144,8 @@ class TaskDynamoDBClient {
             try {
                 const pk = this.createPK(id, userId);
                 const _b = this.createPK(branch, userId);
-                const apk = this.createPK(afterId, userId);
-                const ok = yield this.client.drag(pk, _b, apk);
+                const apk = !afterId ? undefined : this.createPK(afterId, userId);
+                const ok = yield this.client.after(pk, _b, apk);
                 if (!ok)
                     throw new Error(`couldn't move task with id = ${id} after task with id ${afterId}`);
                 return {};

@@ -253,7 +253,7 @@ class TaskDocumentClient {
      * @param afterKey - New position of the `Tasks` identifie by the key
      *                   of the `Task` currently in that position.
      */
-    drag(fromPK, branch, afterPK) {
+    after(fromPK, branch, afterPK) {
         return __awaiter(this, void 0, void 0, function* () {
             const [from, after, $from] = yield Promise.all([
                 this.get(fromPK),

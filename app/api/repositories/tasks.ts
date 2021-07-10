@@ -72,7 +72,7 @@ class TasksRepository {
    *                `Task` must be positioned after.
    * @param userId - User unique identifier.
    */
-  async after(id: string, branch: string, afterId?: string, userId?: string): Promise<any> {
+  async after(id: string, branch?: string, afterId?: string, userId?: string): Promise<any> {
     const response = await this.client.after(id, branch, afterId, userId)
     if (response && response.error) throw response.error
     return undefined

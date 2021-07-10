@@ -128,5 +128,5 @@ export interface BranchDocumentClient<Item, Body, Patch> {
   put(pk: string, branch: string, item: Body): Promise<boolean>;
   update(pk: string, patch: Patch): Promise<boolean>;
   list(branch: string): Promise<Item[]>;
-  drag(fromPK: string, branch: string, afterPK?: string): Promise<boolean>;
+  after(fromPK: string, branch: string, afterPK?: string): Promise<boolean>;
 }
