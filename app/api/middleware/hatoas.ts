@@ -42,26 +42,23 @@ export function collectionLinks(resource: string, rel: string): ResponseLinks {
  * an `item` with its corresponding `links`.
  * @param req - Architect request object.
  */
-export const model = async (req: any): Promise<undefined> => {
+export const model = (req: any) => {
   const {resource, rel} = req
   const {item} = req.json
   req.json = {
     item: {...item, _links: modelLinks(item.id, resource, rel)},
-    _links: collectionLinks(resource, rel),
   }
-  return Promise.resolve(undefined)
 }
 /**
  * collection is a middleware that decorates a `json` object containing
  * an `items` with its corresponding `links`.
  * @param req - Architect request object.
  */
-export const collection = async (req: any): Promise<undefined> => {
+export const collection = (req: any) => {
   const {resource, rel} = req
   const {items} = req.json
   req.json = {
     items: items.map((item: any) => ({...item, _links: modelLinks(item.id, resource, rel)})),
     _links: collectionLinks(resource, rel),
   }
-  return Promise.resolve(undefined)
 }

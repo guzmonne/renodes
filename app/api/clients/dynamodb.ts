@@ -27,10 +27,11 @@ export class TaskDynamoDBClient implements TaskDBClient {
    * @param TaskDynamoDBObject - DynamoDB response to convert.
    */
   toTask(object: TaskDocumentClientItem): Task {
+    const splitedBranch = object._b.split("#")
     return new Task({
       id: object.id,
       content: object.content,
-      branch: object._b.split("#").slice(-1)[0],
+      branch: splitedBranch.length === 1 ? undefined : splitedBranch.slice(-1)[0],
     })
   }
   /**

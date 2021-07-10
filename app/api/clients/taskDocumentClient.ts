@@ -310,6 +310,7 @@ export class TaskDocumentClient implements ITaskDocumentClient {
       this.getPointingTo(fromPK, branch),
     ])
     if (!from || !after || !$from) return false
+    if (after._n === from.pk) return true
     const [updateFromOutput, updateAfterOutput, update$FromOutput] = await Promise.all([
       this.client.send(new UpdateCommand({
         TableName: this.tableName,

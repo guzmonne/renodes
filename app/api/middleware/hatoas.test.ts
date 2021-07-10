@@ -15,7 +15,7 @@ test("model() should correctly decorate the `json` object", async (t: Test) => {
     ..._req,
     json: {item}
   }
-  await hatoas.model(req)
+  hatoas.model(req)
   t.deepEqual(req.json, {
     item: {
       id,
@@ -43,7 +43,7 @@ test("collection() should correctly decorate the `json` object", async (t: Test)
     ..._req,
     json: {items}
   }
-  await hatoas.collection(req)
+  hatoas.collection(req)
   t.deepEqual(req.json, {
     items: items.map((item: any) => ({
       ...item,

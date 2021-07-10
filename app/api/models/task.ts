@@ -48,9 +48,9 @@ export class Task {
   get branch()  { return this.object.branch }
   get userId()  { return this.object.userId }
   /**
-   * toObject returns an object representation of the model.
+   * toJSON returns an object representation of the model.
    */
-  static toObject = (task: Task): TaskObject => {
+  static toJSON = (task: Task): TaskObject => {
     return {...task.object}
   }
   /**

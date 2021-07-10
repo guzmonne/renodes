@@ -26,7 +26,7 @@ export const links: LinksFunction = () => {
 export const loader: LoaderFunction = async () => {
   try {
     const tasks = await repository.query()
-    return tasks.map(Task.toObject)
+    return tasks.map(Task.toJSON)
   } catch (err) {
     console.log(err)
     return []
@@ -34,13 +34,12 @@ export const loader: LoaderFunction = async () => {
 };
 
 export const action: ActionFunction = async ({request}) => {
-  const endpoint = "/"
   try {
     let task: Task
     const data    = new URLSearchParams(await request.text())
     const id      = data.get("id")
     const content = data.get("content")
-    if (id === null) return endpoint
+    if (id === null) return "/"
     switch (request.method) {
       case "POST":
         task = new Task({id, content})
@@ -56,8 +55,9 @@ export const action: ActionFunction = async ({request}) => {
     }
   } catch(err) {
     console.error(err)
+    return "/error"
   }
-  return endpoint
+  return "/"
 }
 
 export default function() {

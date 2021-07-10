@@ -28,10 +28,10 @@ export const links: LinksFunction = () => {
 export const loader: LoaderFunction = async ({request, params}) => {
   try {
     const query = (new URL(request.url)).searchParams
-    const tasksPromise = repository.query({branch: params.id}).then(tasks => tasks.map(Task.toObject))
+    const tasksPromise = repository.query({branch: params.id}).then(tasks => tasks.map(Task.toJSON))
     const promises: Promise<any>[] = [tasksPromise]
     if (query.get("task") !== "none") {
-      const taskPromise = repository.get(params.id).then(Task.toObject)
+      const taskPromise = repository.get(params.id).then(Task.toJSON)
       promises.push(taskPromise)
     }
     const [tasks, task] = await Promise.all(promises)

@@ -36,7 +36,8 @@ export interface TasksProps {
 export function Tasks({collection = [], taskComponent = Tasks.Task}: TasksProps) {
   const TaskComponent = taskComponent
   const [tasks, setTasks] = useState<Task[]>(collection)
-  const handleMoveTask = useCallback(moveTask, [tasks])
+  const handleOnDrag = useCallback(onDrag, [tasks])
+  const handleOnDragEnd = useCallback(onDragEnd, [onDragEnd])
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -48,7 +49,8 @@ export function Tasks({collection = [], taskComponent = Tasks.Task}: TasksProps)
             index={index}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            onDrag={handleMoveTask}
+            onDrag={handleOnDrag}
+            onDragEnd={handleOnDragEnd}
           />
         ))}
       </div>
@@ -76,14 +78,33 @@ export function Tasks({collection = [], taskComponent = Tasks.Task}: TasksProps)
     setTasks([...tasks.slice(0, index), task, ...tasks.slice(index + 1)])
   }
   /**
-   * moveTask handles dragging a task.
+   * onDrag handles dragging a task.
    */
-  function moveTask(dragIndex: number, hoverIndex: number) {
+  function onDrag(dragIndex: number, hoverIndex: number) {
     const task = tasks[dragIndex]
     const _tasks = [...tasks]
     _tasks.splice(dragIndex, 1)
     _tasks.splice(hoverIndex, 0, task)
     setTasks(_tasks)
+  }
+  /**
+   * onDragEnd calls the `Tasks` API to update the `Task` position
+   * @param index - New index of the `Task`.
+   */
+  function onDragEnd(index: number) {
+    const task  = tasks[index]
+    const after = index === 0 ? undefined : tasks[index - 1]
+    const query: string[] = []
+    if (after)       query.push(`after=${after.id}`)
+    if (task.branch) query.push(`branch=${task.branch}`)
+    fetch(`/api/tasks/${task.id}?${query.join("&")}`, {method: "POST"})
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Drag not saved!")
+        }
+        console.log("Drag saved")
+      })
+      .catch((err) => console.error(err))
   }
 }
 
@@ -293,12 +314,16 @@ interface TaskDrag {
    */
   onDrag?: (dragIndex: number, hoverIndex: number) => void;
   /**
+   * onDragEnd will be called whene the dragin motion is stopped.
+   */
+  onDragEnd?: (index: number) => void;
+  /**
    * autoFocus is a flag that configures the autoFocus feature on
    * the subTask input.
    */
   autoFocus?: boolean;
 }
-Tasks.Task = ({task, readOnly, index, onDelete, onDrag}: TaskProps) => {
+Tasks.Task = ({task, readOnly, index, onDelete, onDrag, onDragEnd}: TaskProps) => {
   const {pathname, search} = useLocation()
   const [isShowingSubTasks, setIsShowingSubTasks] = useLocalStorage<boolean>(`${task.id}#isShowingSubTasks`, false)
   const level = useLevel()
@@ -339,8 +364,8 @@ Tasks.Task = ({task, readOnly, index, onDelete, onDrag}: TaskProps) => {
     type: "TASK",
     item: () => ({id: task.id, index}),
     collect: (monitor: any) => ({isDragging: monitor.isDragging()}),
-    end: (item: any, monitor: any) => {
-      handleDrag(item.index)
+    end: (item: any, _: any) => {
+      onDragEnd(item.index)
     },
   })
 
@@ -365,18 +390,5 @@ Tasks.Task = ({task, readOnly, index, onDelete, onDrag}: TaskProps) => {
    */
   function handleToggleSubTasks() {
     setIsShowingSubTasks(!isShowingSubTasks)
-  }
-  /**
-   * handleDrag saves the new position of the task.
-   */
-  function handleDrag(index: number) {
-    fetch(`/api/tasks/${task.id}/drag/${index}`, {method: "POST"})
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Drag not saved!")
-        }
-        console.log("Drag saved")
-      })
-      .catch((err) => console.error(err))
   }
 }
