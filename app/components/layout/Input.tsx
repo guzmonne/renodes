@@ -3,8 +3,8 @@ import { useLocation } from "react-router-dom"
 import { Form } from "remix"
 import { ulid } from "ulid"
 
-import { Task } from "../../api/models/task"
 import { useInputText } from "../../hooks/useInputText"
+import type { Task } from "../../types"
 
 interface InputProps {
   onAdd?: (task: Task) => void;
@@ -21,7 +21,7 @@ export function Input({onAdd = () => {}, autoFocus}: InputProps) {
     <Form className="Input" autoComplete="off" replace method="post" action={pathname + search} onSubmit={handleSubmit}>
       <input autoFocus={autoFocus} type="text" name="content" ref={ref} value={content} onChange={handleTitlteChange} />
       <input type="text" name="id" style={{display: "none"}} value={id} onChange={handleIdChange} />
-      <button type="submit" className="circle"><i className="fa fa-plus"></i></button>
+      <button type="submit" className="circle"><i aria-hidden="true" className="fa fa-plus"></i></button>
     </Form>
   )
 
@@ -31,7 +31,7 @@ export function Input({onAdd = () => {}, autoFocus}: InputProps) {
       e.preventDefault()
       return
     }
-    onAdd(new Task({id: target.id.value, content: target.content.value}))
+    onAdd({id: target.id.value, content: target.content.value})
     if (ref && ref.current ) {
       ref.current.focus()
     }

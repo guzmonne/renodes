@@ -5,9 +5,9 @@ import base from "../styles/base.css"
 import Loader from "../components/utils/Loader.css"
 import { NavBar } from "../components/layout/NavBar"
 import { Tasks } from "../components/tasks/Tasks"
-import { Task } from "../api/models/task"
-import { repository } from "../api/repositories/tasks"
-import type { TaskObject } from "../api/models/task"
+import { Task } from "../models/task"
+import { repository } from "../repositories/tasks"
+import type { TaskObject } from "../models/task"
 
 export const meta: MetaFunction = () => {
   return {
@@ -39,12 +39,18 @@ export const action: ActionFunction = async ({request}) => {
     const data    = new URLSearchParams(await request.text())
     const id      = data.get("id")
     const content = data.get("content")
-    if (id === null) return "/"
+    const dragId  = data.get("dragId")
+    const afterId = data.get("afterId")
+    if (id === null && dragId === null) return "/"
     switch (request.method) {
       case "POST":
+        if (dragId) {
+          await repository.after(dragId, undefined, afterId)
+          break
+        }
         task = new Task({id, content})
         await repository.put(task)
-        break;
+        break
       case "PUT":
         task = await repository.get(id)
         await repository.update(task.set({content}))
@@ -54,6 +60,7 @@ export const action: ActionFunction = async ({request}) => {
         break
     }
   } catch(err) {
+    console.log("error at /")
     console.error(err)
     return "/error"
   }

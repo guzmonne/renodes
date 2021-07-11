@@ -7,18 +7,19 @@
     "build": "remix build",
     "dev": "remix dev",
     "start": "NODE_ENV=production node server/index.js",
-    "start:dev": "DB_ENDPOINT=\"http://dynamodb:8000\" TABLE_NAME=retask NODE_ENV=development nodemon server/index.js",
-    "preapi-watch": "rm -Rf ./src",
-    "preapi-build": "rm -Rf ./src",
+    "start:dev": "DB_ENDPOINT=\"http://dynamodb:8000\" TABLE_NAME=retask NODE_ENV=development node server/index.js",
+    "start:watch": "DB_ENDPOINT=\"http://dynamodb:8000\" TABLE_NAME=retask NODE_ENV=development nodemon -e js server/index.js",
     "preapi-test": "clear && npm run api-build",
+    "preapi-watch": "rm -Rf server",
+    "preapi-build": "rm -Rf server",
     "api-test": "TS_NODE_PROJECT=app/api/tsconfig.json ts-node node_modules/tape/bin/tape \"app/**/*.test.ts\"",
-    "api-watch": "tsc -p ./app/api --outDir ./server -w",
-    "api-build": "tsc -p ./app/api --outDir ./server",
+    "api-watch": "tsc -p ./api --outDir ./server -w",
+    "api-build": "tsc -p ./api --outDir ./server",
     "db-admin": "DYNAMO_ENDPOINT=http://dynamodb:8000 dynamodb-admin",
     "db-up": "aws dynamodb create-table --endpoint=\"http://dynamodb:8000\" --cli-input-json file://schema.json",
     "db-down": "aws dynamodb delete-table --table-name=retask --endpoint=\"http://dynamodb:8000\"",
     "db-reset": "npm run db-down && npm run db-up",
-    "db-test": "TABLE_NAME=retask DB_ENDPOINT=\"http://dynamodb:8000\" TS_NODE_PROJECT=app/api/tsconfig.json ts-node node_modules/tape/bin/tape \"app/**/dynamo.test.ts\""
+    "db-test": "TABLE_NAME=retask DB_ENDPOINT=\"http://dynamodb:8000\" TS_NODE_PROJECT=api/tsconfig.json ts-node node_modules/tape/bin/tape \"api/**/dynamo.test.ts\""
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.20.0",
@@ -45,7 +46,9 @@
   },
   "devDependencies": {
     "@remix-run/dev": "^0.17.5",
+    "@types/compression": "^1.7.1",
     "@types/express": "^4.17.13",
+    "@types/morgan": "^1.9.3",
     "@types/react": "^17.0.4",
     "@types/react-dom": "^17.0.4",
     "@types/tape": "^4.13.1",
@@ -56,5 +59,8 @@
   "engines": {
     "node": ">=14"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "nodemonConfig": {
+    "ignore": ["server/build/*"]
+  }
 }

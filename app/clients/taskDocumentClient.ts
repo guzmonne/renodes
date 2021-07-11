@@ -304,6 +304,7 @@ export class TaskDocumentClient implements ITaskDocumentClient {
    *                   of the `Task` currently in that position.
    */
   async after(fromPK: string, branch: string, afterPK?: string): Promise<boolean> {
+    if (fromPK === afterPK) return true
     const [from, after, $from] = await Promise.all([
       this.get(fromPK),
       this.get(afterPK || "#" + branch),
@@ -315,23 +316,26 @@ export class TaskDocumentClient implements ITaskDocumentClient {
       this.client.send(new UpdateCommand({
         TableName: this.tableName,
         Key: {pk: from.pk},
+        ConditionExpression: "#_n <> :pk",
         UpdateExpression: "SET #_n = :_n",
         ExpressionAttributeNames: {"#_n": "_n"},
-        ExpressionAttributeValues: {":_n": after._n},
+        ExpressionAttributeValues: {":_n": after._n, ":pk": from.pk},
       })),
       this.client.send(new UpdateCommand({
         TableName: this.tableName,
         Key: {pk: after.pk},
+        ConditionExpression: "#_n <> :pk",
         UpdateExpression: "SET #_n = :_n",
         ExpressionAttributeNames: {"#_n": "_n"},
-        ExpressionAttributeValues: {":_n": from.pk},
+        ExpressionAttributeValues: {":_n": from.pk, ":pk": after.pk},
       })),
       this.client.send(new UpdateCommand({
         TableName: this.tableName,
         Key: {pk: $from.pk},
+        ConditionExpression: "#_n <> :pk",
         UpdateExpression: "SET #_n = :_n",
         ExpressionAttributeNames: {"#_n": "_n"},
-        ExpressionAttributeValues: {":_n": from._n},
+        ExpressionAttributeValues: {":_n": from._n, ":pk": $from.pk},
       }))
     ])
     return (

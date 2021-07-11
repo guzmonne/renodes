@@ -1,21 +1,19 @@
 import { useState, useEffect, useCallback, useRef, Fragment, ChangeEvent } from "react"
 import { useLocation } from "react-router-dom"
-import { Form } from "remix"
+import { Form, useSubmit } from "remix"
 import { ulid } from "ulid"
 import { useDrag, useDrop, DropTargetMonitor } from "react-dnd"
-import { XYCoord } from 'dnd-core'
 import { DndProvider } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 import type { SyntheticEvent } from "react"
 
 import { useLocalStorage } from "../../hooks/useLocalStorage"
 import { Input } from "../layout/Input"
-import { Task } from "../../api/models/task"
 import { Loader } from "../utils/Loader"
 import { useHasMounted } from "../../hooks/useHasMounted"
 import { useLevel } from "../../hooks/useLevel"
 import { useDebounce } from "../../hooks/useDebounce"
-import { Number } from "aws-sdk/clients/iot"
+import { Task } from "../../models/task"
 
 /**
  * TasksProps represent the `props` of the Tasks component.
@@ -24,7 +22,7 @@ export interface TasksProps {
   /**
    * tasks is the Task list.
    */
-   collection?: Task[];
+  collection?: Task[];
   /**
    * taskComponent can be used to override the default Task Component.
    */
@@ -38,20 +36,26 @@ export function Tasks({collection = [], taskComponent = Tasks.Task}: TasksProps)
   const [tasks, setTasks] = useState<Task[]>(collection)
   const handleOnDrag = useCallback(onDrag, [tasks])
   const handleOnDragEnd = useCallback(onDragEnd, [onDragEnd])
+  const [[dragIndex, hoverIndex], setIndexes] = useState<number[]>([])
+  const submit = useSubmit()
+  const {pathname} = useLocation()
 
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="Tasks">
-        {tasks.map((task: Task, index: Number) => (
-          <TaskComponent
-            key={task.id}
-            task={task}
-            index={index}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onDrag={handleOnDrag}
-            onDragEnd={handleOnDragEnd}
-          />
+        {tasks.map((task: Task, index: number) => (
+          <Fragment key={task.id}>
+            <hr style={{borderColor: hoverIndex === index && dragIndex > index ? "var(--primary)" : "var(--background)", borderStyle: "solid", width: "100%", margin: "0", marginBottom: "0.1rem"}}/>
+            <TaskComponent
+              task={task}
+              index={index}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onDrag={handleOnDrag}
+              onDragEnd={handleOnDragEnd}
+            />
+            <hr style={{borderColor: hoverIndex === index && dragIndex < index? "var(--primary)" : "var(--background)", borderStyle: "solid", width: "100%",  margin: "0", marginTop: "0.1rem"}}/>
+          </Fragment>
         ))}
       </div>
       <Input onAdd={handleAdd}/>
@@ -80,31 +84,37 @@ export function Tasks({collection = [], taskComponent = Tasks.Task}: TasksProps)
   /**
    * onDrag handles dragging a task.
    */
-  function onDrag(dragIndex: number, hoverIndex: number) {
-    const task = tasks[dragIndex]
-    const _tasks = [...tasks]
-    _tasks.splice(dragIndex, 1)
-    _tasks.splice(hoverIndex, 0, task)
-    setTasks(_tasks)
+  function onDrag(newDragIndex: number, newHoverIndex: number) {
+    setIndexes([newDragIndex, newHoverIndex])
   }
   /**
    * onDragEnd calls the `Tasks` API to update the `Task` position
    * @param index - New index of the `Task`.
    */
-  function onDragEnd(index: number) {
-    const task  = tasks[index]
-    const after = index === 0 ? undefined : tasks[index - 1]
-    const query: string[] = []
-    if (after)       query.push(`after=${after.id}`)
-    if (task.branch) query.push(`branch=${task.branch}`)
-    fetch(`/api/tasks/${task.id}?${query.join("&")}`, {method: "POST"})
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Drag not saved!")
-        }
-        console.log("Drag saved")
-      })
-      .catch((err) => console.error(err))
+  function onDragEnd(dragIndex: number, hoverIndex: number) {
+    setIndexes([])
+    if (dragIndex === hoverIndex) return
+    const task = tasks[dragIndex]
+    const _tasks = [...tasks]
+    _tasks.splice(dragIndex, 1)
+    _tasks.splice(hoverIndex, 0, task)
+    setTasks(_tasks)
+    const afterId = hoverIndex !== 0
+      ? tasks[dragIndex < hoverIndex ? hoverIndex : hoverIndex - 1].id
+      : undefined
+    const form  = document.createElement("form")
+    form.method = "POST"
+    const dragIdInput = document.createElement("input")
+    dragIdInput.value = task.id
+    dragIdInput.name  = "dragId"
+    form.appendChild(dragIdInput)
+    if (afterId) {
+      const afterInput  = document.createElement("input")
+      afterInput.value = afterId
+      afterInput.name  = "afterId"
+      form.appendChild(afterInput)
+    }
+    submit(form)
   }
 }
 
@@ -248,7 +258,7 @@ Tasks.DeleteButton = ({task, action, onDelete}: DeleteButtonProps) => {
   return (
     <Form style={{maxWidth: "2rem"}} method="delete" action={action} onSubmit={handleSubmit}>
       <input type="string" name="id" defaultValue={task.id} style={{display: "none"}} />
-      <button type="submit" className="h-color-hover link square hover"><i className="fa fa-trash"/></button>
+      <button type="submit" className="h-color-hover link square hover"><i className="fa fa-trash" aria-hidden="true"/></button>
     </Form>
   )
   /**
@@ -268,9 +278,13 @@ Tasks.DeleteButton = ({task, action, onDelete}: DeleteButtonProps) => {
  */
 interface TaskDrag {
   /**
-   * index is the position of the task being dragged.
+   * dragIndex corresponds to the index of the `Tasks` being dragged.
    */
-  index: number
+  dragIndex: number;
+  /**
+   * hoverIndex corresponds to the index of the `Tasks` that is being hovered.
+   */
+  hoverIndex: number;
   /**
    * id is the unique identifier of the task.
    */
@@ -317,7 +331,7 @@ interface TaskDrag {
   /**
    * onDragEnd will be called whene the dragin motion is stopped.
    */
-  onDragEnd?: (index: number) => void;
+  onDragEnd?: (dragIndex: number, hoverIndex: number) => void;
   /**
    * autoFocus is a flag that configures the autoFocus feature on
    * the subTask input.
@@ -334,46 +348,47 @@ Tasks.Task = ({task, readOnly, index, onDelete, onDrag, onDragEnd}: TaskProps) =
     collect: (monitor) => ({handlerId: monitor.getHandlerId()}),
     hover: (item: TaskDrag, monitor: DropTargetMonitor) => {
       if (!onDrag || !ref.current || index === undefined) return
-      const dragIndex = item.index
-      const hoverIndex = index
-      if (dragIndex === hoverIndex) return
-      const hoverBoundingRect = ref.current?.getBoundingClientRect()
+      const {dragIndex, hoverIndex} = item
+      if (hoverIndex === index) return
+      item.hoverIndex = index
+      onDrag(dragIndex, index)
+      //if (dragIndex === hoverIndex) return
+      //const hoverBoundingRect = ref.current?.getBoundingClientRect()
       // Get vertical middle
-      const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2
+      //const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2
       // Determine mouse position
-      const clientOffset = monitor.getClientOffset()
+      //const clientOffset = monitor.getClientOffset()
       // Get pixels to the top
-      const hoverClientY = (clientOffset as XYCoord).y - hoverBoundingRect.top
+      //const hoverClientY = (clientOffset as XYCoord).y - hoverBoundingRect.top
       // Only perform the move when the mouse has crossed half of the items height
       // When dragging downwards, only move when the cursor is below 50%
       // When dragging upwards, only move when the cursor is above 50%
       // Dragging downwards
-      if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) return
+      //if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) return
       // Dragging upwards
-      if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) return
+      //if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) return
       // Call the event handler
-      onDrag(dragIndex, hoverIndex)
       // Note: we're mutating the monitor item here!
       // Generally it's better to avoid mutations,
       // but it's good here for the sake of performance
       // to avoid expensive index searches.
-      item.index = hoverIndex
+      //item.index = hoverIndex
     }
   })
 
-  const [{isDragging}, drag] = useDrag({
+  const [{}, drag] = useDrag({
     type: "TASK",
-    item: () => ({id: task.id, index}),
+    item: () => ({id: task.id, dragIndex: index}),
     collect: (monitor: any) => ({isDragging: monitor.isDragging()}),
     end: (item: any, _: any) => {
-      onDragEnd(item.index)
-    },
+      onDragEnd(item.dragIndex, item.hoverIndex)
+    }
   })
 
   drag(drop(ref))
 
   return (
-    <div className="Task padding-left" style={{opacity: isDragging ? 0 : 1}} data-handler-id={handlerId}>
+    <div className="Task padding-left" data-handler-id={handlerId}>
       <div ref={ref} className={`bg-${level % 6} padding-top padding-bottom padding-right flex row align-items-center justify-content-space-between`}>
         <Tasks.ToggleSubTasksButton isShowingSubTasks={isShowingSubTasks} onClick={handleToggleSubTasks}/>
         <Tasks.Form

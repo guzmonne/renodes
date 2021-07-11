@@ -8,6 +8,7 @@ export interface TaskObject {
   content: string;
   userId?: string;
   branch?: string;
+  conga?: number;
 }
 /**
  * Task is the model representation of a task.
@@ -22,6 +23,7 @@ export class Task {
       content: body.content,
       branch : body.branch,
       userId : body.userId,
+      conga :  1
     }
   }
   /**
@@ -67,3 +69,4 @@ export class Task {
     })
   }
 }
+// something new
