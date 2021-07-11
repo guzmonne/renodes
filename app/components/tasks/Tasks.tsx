@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback, useRef, Fragment, ChangeEvent } from 
 import { useLocation } from "react-router-dom"
 import { Form, useSubmit } from "remix"
 import { ulid } from "ulid"
-import { useDrag, useDrop, DropTargetMonitor } from "react-dnd"
+import { useDrag, useDrop } from "react-dnd"
 import { DndProvider } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
+import TextareaAutosize from "react-textarea-autosize";
 import type { SyntheticEvent } from "react"
 
 import { useLocalStorage } from "../../hooks/useLocalStorage"
@@ -38,7 +39,6 @@ export function Tasks({collection = [], taskComponent = Tasks.Task}: TasksProps)
   const handleOnDragEnd = useCallback(onDragEnd, [onDragEnd])
   const [[dragIndex, hoverIndex], setIndexes] = useState<number[]>([])
   const submit = useSubmit()
-  const {pathname} = useLocation()
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -156,7 +156,6 @@ interface TaskFormProps {
 Tasks.Form = ({action, task, onSubmit, readOnly}: TaskFormProps) => {
   const hasMounted = useHasMounted();
   const buttonRef = useRef<HTMLButtonElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
   const [content, setContent] = useState(task.content)
   const [isAnimated, setIsAnimated] = useState(false)
 
@@ -174,7 +173,7 @@ Tasks.Form = ({action, task, onSubmit, readOnly}: TaskFormProps) => {
         defaultValue={task.id}
         style={{display: "none"}}
       />
-      <input name="content" className={isAnimated ? "animated" : ""} type="text" ref={inputRef}
+      <TextareaAutosize name="content" className={isAnimated ? "animated" : ""}
         readOnly={readOnly}
         value={content}
         onChange={handlecontentChange}
@@ -186,7 +185,7 @@ Tasks.Form = ({action, task, onSubmit, readOnly}: TaskFormProps) => {
    * handlecontentChange updates the value of the content.
    * @param e - React `onChange` event.
    */
-  function handlecontentChange(e: ChangeEvent<HTMLInputElement>): void {
+  function handlecontentChange(e: ChangeEvent<HTMLTextAreaElement>): void {
     setIsAnimated(true)
     setContent(e.currentTarget.value)
   }
@@ -346,33 +345,12 @@ Tasks.Task = ({task, readOnly, index, onDelete, onDrag, onDragEnd}: TaskProps) =
   const [{handlerId}, drop] = useDrop({
     accept: "TASK",
     collect: (monitor) => ({handlerId: monitor.getHandlerId()}),
-    hover: (item: TaskDrag, monitor: DropTargetMonitor) => {
+    hover: (item: TaskDrag) => {
       if (!onDrag || !ref.current || index === undefined) return
       const {dragIndex, hoverIndex} = item
       if (hoverIndex === index) return
       item.hoverIndex = index
       onDrag(dragIndex, index)
-      //if (dragIndex === hoverIndex) return
-      //const hoverBoundingRect = ref.current?.getBoundingClientRect()
-      // Get vertical middle
-      //const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2
-      // Determine mouse position
-      //const clientOffset = monitor.getClientOffset()
-      // Get pixels to the top
-      //const hoverClientY = (clientOffset as XYCoord).y - hoverBoundingRect.top
-      // Only perform the move when the mouse has crossed half of the items height
-      // When dragging downwards, only move when the cursor is below 50%
-      // When dragging upwards, only move when the cursor is above 50%
-      // Dragging downwards
-      //if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) return
-      // Dragging upwards
-      //if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) return
-      // Call the event handler
-      // Note: we're mutating the monitor item here!
-      // Generally it's better to avoid mutations,
-      // but it's good here for the sake of performance
-      // to avoid expensive index searches.
-      //item.index = hoverIndex
     }
   })
 

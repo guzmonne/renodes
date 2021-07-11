@@ -122,7 +122,8 @@ form fieldset {
   background: transparent;
 }
 
-form input[type="text"] {
+form input[type="text"],
+form textarea {
   width: 100%;
   border: 2px solid rgba(25, 49, 60, 0.1);
   border-radius: 8px;
@@ -130,7 +131,13 @@ form input[type="text"] {
   outline: none
 }
 
-form input[type="text"].animated {
+form textarea,
+iframe html {
+  overflow: hidden;
+}
+
+form input[type="text"].animated,
+form textarea.animated {
   animation-name: input;
   animation-duration: 1s;
   animation-iteration-count: infinite;

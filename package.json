@@ -32,6 +32,7 @@
     "react-dnd-html5-backend": "^14.0.0",
     "react-dom": "^17.0.1",
     "react-router-dom": "^6.0.0-beta.0",
+    "react-textarea-autosize": "^8.3.3",
     "remix": "^0.17.5",
     "ulid": "^2.3.0"
   },
@@ -52,6 +53,8 @@
   },
   "sideEffects": false,
   "nodemonConfig": {
-    "ignore": ["server/build/*"]
+    "ignore": [
+      "server/build/*"
+    ]
   }
 }

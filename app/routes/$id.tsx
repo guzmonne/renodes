@@ -18,7 +18,7 @@ export const meta: MetaFunction = ({params}) => {
   };
 };
 
-export const links: LinksFunction = () => {
+export const links: LinksFunction = (...args) => {
   return [
     { rel: "stylesheet", href: base },
     { rel: "stylesheet", href: Loader },
@@ -85,6 +85,7 @@ export default function() {
   useEffect(() => {
     const resizeObserver = new ResizeObserver(sendDimensions)
     resizeObserver.observe(document.body)
+    if (query.get("level") !== null) document.body.style.overflow = "hidden"
     return () => resizeObserver.disconnect()
   }, [])
 
