@@ -255,10 +255,13 @@ interface DeleteButtonProps {
 
 Tasks.DeleteButton = ({task, action, onDelete}: DeleteButtonProps) => {
   return (
-    <Form style={{maxWidth: "2rem"}} method="delete" action={action} onSubmit={handleSubmit}>
-      <input type="string" name="id" defaultValue={task.id} style={{display: "none"}} />
-      <button type="submit" className="h-color-hover link square hover"><i className="fa fa-trash" aria-hidden="true"/></button>
-    </Form>
+    <button
+      type="button"
+      onClick={handleSubmit}
+      style={{maxWidth: "2rem"}}
+      className="h-color-hover link square hover">
+        <i className="fa fa-trash" aria-hidden="true"/>
+    </button>
   )
   /**
    * handleSubmit shows an alert to the user before to confirm the
@@ -269,6 +272,7 @@ Tasks.DeleteButton = ({task, action, onDelete}: DeleteButtonProps) => {
       e.preventDefault()
       return
     }
+    fetch(action, {method: "DELETE"})
     if (onDelete) onDelete(task)
   }
 }
@@ -374,7 +378,7 @@ Tasks.Task = ({task, readOnly, index, onDelete, onDrag, onDragEnd}: TaskProps) =
           task={task}
           readOnly={readOnly}
         />
-        <Tasks.DeleteButton task={task} action={pathname + search} onDelete={onDelete} />
+        <Tasks.DeleteButton task={task} action={`/${task.id}` + search} onDelete={onDelete} />
       </div>
       <Tasks.IFrame id={task.id} isVisible={isShowingSubTasks}/>
     </div>

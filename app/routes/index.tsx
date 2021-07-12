@@ -55,9 +55,6 @@ export const action: ActionFunction = async ({request}) => {
         task = await repository.get(id)
         await repository.update(task.set({content}))
         break
-      case "DELETE":
-        await repository.delete(id)
-        break
     }
   } catch(err) {
     console.log("error at /")

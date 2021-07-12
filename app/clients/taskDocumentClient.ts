@@ -228,7 +228,7 @@ export class TaskDocumentClient implements ITaskDocumentClient {
     if (task === undefined) return
     const pointingToTask = await this.getPointingTo(task.pk, task._b)
     // 1. Update `pointingToTask` to point to the `Task` currently
-    //    being pointer by the `Task` to be deleted.
+    //    being pointed by the `Task` to be deleted.
     const updatePromise: Promise<UpdateCommandOutput> = this.client.send(new UpdateCommand({
       TableName: this.tableName,
       Key: {pk: pointingToTask.pk},

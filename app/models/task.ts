@@ -23,7 +23,6 @@ export class Task {
       content: body.content,
       branch : body.branch,
       userId : body.userId,
-      conga :  1
     }
   }
   /**
