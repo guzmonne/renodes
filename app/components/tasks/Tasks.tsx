@@ -313,7 +313,7 @@ Tasks.Task = ({task, readOnly, index, onDrag, onDragEnd, hoverBottom, hoverTop}:
     }
   })
 
-  const [{}, drag] = useDrag({
+  const [{}, drag, preview] = useDrag({
     type: "TASK",
     item: () => ({id: task.id, dragIndex: index}),
     collect: (monitor: any) => ({isDragging: monitor.isDragging()}),
@@ -324,7 +324,7 @@ Tasks.Task = ({task, readOnly, index, onDrag, onDragEnd, hoverBottom, hoverTop}:
 
   if (!hasMounted) return null;
 
-  drag(drop(ref))
+  drop(preview(ref))
 
   return (
     <div className="Task padding-left" ref={ref}>
