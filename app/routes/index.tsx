@@ -1,5 +1,6 @@
 import { useRouteData } from "remix"
 import type { MetaFunction, LoaderFunction, ActionFunction, LinksFunction } from "remix";
+import * as ScrollArea from '@radix-ui/react-scroll-area';
 
 import base from "../styles/base.css"
 import Loader from "../components/utils/Loader.css"
@@ -68,9 +69,16 @@ export default function() {
   const data = useRouteData<TaskObject[]>()
 
   return (
-    <main>
-      <NavBar />
-      <Tasks collection={Task.collection(data)}/>
-    </main>
+    <ScrollArea.Root className="ScrollArea__Root">
+      <ScrollArea.Viewport className="ScrollArea__Viewport">
+        <main>
+          <NavBar />
+          <Tasks collection={Task.collection(data)}/>
+        </main>
+      </ScrollArea.Viewport>
+      <ScrollArea.Scrollbar className="ScrollArea__Scrollbar" orientation="vertical">
+        <ScrollArea.Thumb className="ScrollArea__Thumb" />
+      </ScrollArea.Scrollbar>
+    </ScrollArea.Root>
   )
 }
