@@ -3,8 +3,8 @@ import { useLocation } from "react-router-dom"
 import { useSubmit } from "remix"
 import { ulid } from "ulid"
 import { useDrag, useDrop } from "react-dnd"
-import { DndProvider } from "react-dnd"
-import { HTML5Backend } from "react-dnd-html5-backend"
+import { DndProvider } from 'react-dnd-multi-backend';
+import HTML5toTouch from 'react-dnd-multi-backend/dist/cjs/HTML5toTouch';
 import TextareaAutosize from "react-textarea-autosize";
 import cn from "classnames"
 import type { SyntheticEvent } from "react"
@@ -41,7 +41,7 @@ export function Tasks({collection = [], taskComponent = Tasks.Task}: TasksProps)
   const submit = useSubmit()
 
   return (
-    <DndProvider backend={HTML5Backend}>
+    <DndProvider options={HTML5toTouch}>
       <div className="Tasks">
         {tasks.map((task: Task, index: number) => (
           <TaskComponent

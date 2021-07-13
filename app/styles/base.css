@@ -8,7 +8,9 @@
   --primary: #114BE0;
   --purple: #696EFF;
   --highlight: #FF5930;
-  --font-size: 18px
+  --purple: #696EFF;
+  --pink: #F7ABFF;
+  --font-size: 16px
 }
 
 * {
@@ -59,7 +61,7 @@ p {
 }
 
 .title {
-  background: linear-gradient(90deg, #696EFF 0%, #F7ABFF 100%);
+  background: linear-gradient(90deg, var(--purple) 0%, var(--pink) 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -135,7 +137,7 @@ form textarea {
 form textarea,
 iframe html {
   overflow: hidden;
-  font-size: calc(var(--font-size) * 0.8);
+  font-size: var(--font-size);
   font-family: 'DM Sans', sans-serif;
   font-style: normal;
   font-weight: normal;
@@ -153,8 +155,8 @@ form textarea.hoverBottom {
 
 form input[type="text"].animated,
 form textarea.animated {
-  background: #ececec;
-  border: 2px solid #ececec;
+  background: var(--handle);
+  border: 2px solid var(--handle);
   transition: background 0.5s, border 0.5s;
 }
 
