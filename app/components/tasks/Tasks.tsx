@@ -56,6 +56,7 @@ export function Tasks({collection = [], taskComponent = Tasks.Task}: TasksProps)
             hoverBottom={hoverIndex === index && dragIndex < index}
           />
         ))}
+        <Tasks.Empty onAdd={handleAdd} />
       </div>
     </DndProvider>
   )
@@ -128,43 +129,47 @@ Tasks.ToggleIsInEditMode = ({onClick, isInEditMode}: ToggleIsInEditModeProps) =>
 )
 
 interface TaskFormProps {
+  method: string;
   action: string;
-  task: Task;
+  id?: string;
+  defaultContent: string;
   readOnly?: boolean;
+  inFocus?: boolean;
   hoverTop?: boolean;
   hoverBottom?: boolean;
 }
 
-Tasks.Form = ({action, task, readOnly, hoverBottom, hoverTop}: TaskFormProps) => {
+Tasks.Form = ({method, action, id, defaultContent, readOnly, hoverBottom, hoverTop}: TaskFormProps) => {
   const hasMounted = useHasMounted();
   const ref = useRef<HTMLFormElement>(null)
-  const [content, setContent] = useState(task.content)
+  const [content, setContent] = useState(defaultContent)
   const [isAnimated, setIsAnimated] = useState(false)
   const submit = useSubmit()
 
   useDebounce(() => {
+    setIsAnimated(false)
     if (ref.current) {
       const elements = ref.current.elements as typeof ref.current.elements & {content: { value: string };};
-      if (elements.content.value.replace(/[\u0000-\u001F\u007F-\u009F]/g, "") === task.content.replace(/[\u0000-\u001F\u007F-\u009F]/g, "")) return
+      if (elements.content.value.replace(/[\u0000-\u001F\u007F-\u009F]/g, "") === defaultContent.replace(/[\u0000-\u001F\u007F-\u009F]/g, "")) return
       submit(ref.current, {method: "put"})
     }
-    setIsAnimated(false)
   }, 3000, [content])
 
   if (!hasMounted) return null;
 
   return (
-    <form ref={ref} autoComplete="off" method="put" action={action}>
+    <form ref={ref} autoComplete="off" method={method} action={action}>
       <input name="id" type="text"
         readOnly
-        defaultValue={task.id}
-        style={{display: "none"}}
+        defaultValue={id || ulid()}
+        className="hidden"
       />
       <TextareaAutosize name="content"
         className={cn({animated: isAnimated, hoverBottom, hoverTop})}
         readOnly={readOnly}
         value={content}
         onChange={handlecontentChange}
+        autoFocus={true}
       />
     </form>
   )
@@ -286,16 +291,16 @@ interface TaskDrag {
    */
   onDragEnd?: (dragIndex: number, hoverIndex: number) => void;
   /**
-   * autoFocus is a flag that configures the autoFocus feature on
+   * inFocus is a flag that configures the inFocus feature on
    * the subTask input.
    */
-  autoFocus?: boolean;
+  inFocus?: boolean;
 
   hoverTop?: boolean;
 
   hoverBottom?: boolean;
 }
-Tasks.Task = ({task, readOnly, index, onDrag, onDragEnd, hoverBottom, hoverTop}: TaskProps) => {
+Tasks.Task = ({task, readOnly, index, onDrag, onDragEnd, inFocus, hoverBottom, hoverTop}: TaskProps) => {
   const {pathname, search} = useLocation()
   const [isShowingSubTasks, setIsShowingSubTasks] = useLocalStorage<boolean>(`${task.id}#isShowingSubTasks`, false)
   const ref = useRef<HTMLDivElement>(null)
@@ -328,7 +333,7 @@ Tasks.Task = ({task, readOnly, index, onDrag, onDragEnd, hoverBottom, hoverTop}:
 
   return (
     <div className="Task padding-left" ref={ref}>
-      <div className={`flex row justify-content-space-between`}>
+      <div className={"flex row justify-content-space-between"}>
         <div onClick={handleToggleSubTasks} className="control">
           {isShowingSubTasks
             ? <i className="fa fa-chevron-down" aria-hidden="true" />
@@ -338,11 +343,14 @@ Tasks.Task = ({task, readOnly, index, onDrag, onDragEnd, hoverBottom, hoverTop}:
           <i className="fa fa-grip-vertical" aria-hidden="true"/>
         </div>
         <Tasks.Form
+          method="put"
           action={pathname + search}
-          task={task}
+          id={task.id}
+          defaultContent={task.content}
           readOnly={readOnly}
           hoverBottom={hoverBottom}
           hoverTop={hoverTop}
+          inFocus={inFocus}
         />
       </div>
       <Tasks.IFrame id={task.id} isVisible={isShowingSubTasks}/>
@@ -353,5 +361,46 @@ Tasks.Task = ({task, readOnly, index, onDrag, onDragEnd, hoverBottom, hoverTop}:
    */
   function handleToggleSubTasks() {
     setIsShowingSubTasks(!isShowingSubTasks)
+  }
+}
+
+interface EmptyTaskProps {
+  onAdd: (task: Task) => void;
+}
+
+Tasks.Empty = ({onAdd}: EmptyTaskProps) => {
+  const submit = useSubmit()
+  const {pathname, search} = useLocation()
+  const ref = useRef<HTMLFormElement>(null)
+  const [id, setId] = useState<string>(ulid())
+
+  return (
+    <div className="Task padding-left">
+      <div className="flex row justify-content-space-between">
+        <div className="control transparent">
+          <i className="fa fa-chevron-right" aria-hidden="true" />
+        </div>
+        <div className="control" onClick={handleAdd}>
+          <i className="fa fa-plus" aria-hidden="true"/>
+        </div>
+        <form ref={ref} autoComplete="off" method="post" action={pathname + search}>
+          <input name="id" type="text"
+            readOnly
+            defaultValue={id}
+            className="hidden"
+          />
+          <TextareaAutosize name="content"
+            defaultValue=""
+            onFocusCapture={handleAdd}
+          />
+        </form>
+      </div>
+    </div>
+  )
+
+  function handleAdd() {
+    if (ref.current) submit(ref.current)
+    onAdd(new Task({id, content: ""}))
+    setId(ulid())
   }
 }

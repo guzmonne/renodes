@@ -17,10 +17,9 @@ export interface TaskObject {
 export class Task {
   constructor(body: any) {
     if (typeof body !== "object") throw new Error("'body' is invalid")
-    if (!body.content) throw new Error("'content' is undefined")
     this.object = {
       id     : body.id || ulid(),
-      content: body.content,
+      content: body.content || "",
       branch : body.branch,
       userId : body.userId,
     }

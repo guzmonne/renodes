@@ -186,6 +186,18 @@ form input:focus-visible {
 }
 
 /** UTILITIES **/
+.hidden {
+  display: none;
+}
+
+.transparent {
+  opacity: 0;
+}
+
+.muted {
+  opacity: 0.3;
+}
+
 .h-color {
   color: var(--highlight)!important;
 }
