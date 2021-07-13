@@ -134,15 +134,19 @@ form textarea {
   outline: none
 }
 
-form textarea,
-iframe html {
-  overflow: hidden;
+form textarea {
   font-size: var(--font-size);
   font-family: 'DM Sans', sans-serif;
   font-style: normal;
   font-weight: normal;
   color: var(--text-body);
-  transition: background 0.5s, border 0.5s;
+  resize: none;
+  transition: background 0.5s, border 0.5s, height 0.25s;
+}
+
+form textarea,
+iframe html {
+  overflow: hidden;
 }
 
 form textarea.hoverTop {
