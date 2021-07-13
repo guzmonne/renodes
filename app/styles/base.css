@@ -3,6 +3,7 @@
 
 :root {
   --background: #F9F9F9;
+  --handle: #d1d1d1;
   --text-body: #1D1D1D;
   --primary: #114BE0;
   --purple: #696EFF;
@@ -125,8 +126,8 @@ form fieldset {
 form input[type="text"],
 form textarea {
   width: 100%;
-  border: 2px solid rgba(25, 49, 60, 0.1);
-  border-radius: 8px;
+  border: 2px solid var(--background);
+  border-radius: 0;
   padding: 0.5rem;
   outline: none
 }
@@ -134,20 +135,27 @@ form textarea {
 form textarea,
 iframe html {
   overflow: hidden;
+  font-size: calc(var(--font-size) * 0.8);
+  font-family: 'DM Sans', sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  color: var(--text-body);
+  transition: background 0.5s, border 0.5s;
+}
+
+form textarea.hoverTop {
+  border-top: 2px solid var(--primary);
+}
+
+form textarea.hoverBottom {
+  border-bottom: 2px solid var(--primary);
 }
 
 form input[type="text"].animated,
 form textarea.animated {
-  animation-name: input;
-  animation-duration: 1s;
-  animation-iteration-count: infinite;
-  animation-direction: alternate;
-}
-
-/* The animation code */
-@keyframes input {
-  from {background-color: whitesmoke;}
-  to   {background-color: white}
+  background: #ececec;
+  border: 2px solid #ececec;
+  transition: background 0.5s, border 0.5s;
 }
 
 form input:focus-visible {
@@ -258,14 +266,46 @@ form input:focus-visible {
   background: linear-gradient(90deg, #E1ECF6 0%, #F0E3E3 100%);
 }
 
-/** Tasks **/
+/** Tassks **/
+.Tasks hr {
+  border: 1px solid var(--primary);
+  width: calc(100% - 2.7rem);
+  margin: 0 0 0 2.2rem;
+  transition: border-color 0.5s;
+  margin-top: -1px;
+  margin-bottom: -1px;
+}
+
+/** Task **/
+
 .Task {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding-left: 0.5rem;
+  margin-left: -0.5rem;
+}
+
+.Task iframe {
+  padding-left: 0.5rem;
 }
 
 .Task > div {
   border-radius: 26.9217px;
+}
+
+.Task .control {
+  color: var(--handle);
+  margin-right: 0.125rem;
+  width: 1.2rem;
+  padding-top: 0.6rem;
+}
+
+.Task .fa-grip-vertical {
+  cursor: grab;
+}
+
+.Task .fa-chevron-up,
+.Task .fa-chevron-down {
+  cursor: pointer;
 }

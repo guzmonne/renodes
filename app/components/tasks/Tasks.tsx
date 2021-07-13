@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback, useRef, Fragment, ChangeEvent } from "react"
 import { useLocation } from "react-router-dom"
-import { Form, useSubmit } from "remix"
+import { useSubmit } from "remix"
 import { ulid } from "ulid"
 import { useDrag, useDrop } from "react-dnd"
 import { DndProvider } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 import TextareaAutosize from "react-textarea-autosize";
+import cn from "classnames"
 import type { SyntheticEvent } from "react"
 
 import { useLocalStorage } from "../../hooks/useLocalStorage"
-import { Input } from "../layout/Input"
 import { Loader } from "../utils/Loader"
 import { useHasMounted } from "../../hooks/useHasMounted"
 import { useLevel } from "../../hooks/useLevel"
@@ -44,21 +44,19 @@ export function Tasks({collection = [], taskComponent = Tasks.Task}: TasksProps)
     <DndProvider backend={HTML5Backend}>
       <div className="Tasks">
         {tasks.map((task: Task, index: number) => (
-          <Fragment key={task.id}>
-            <hr style={{borderColor: hoverIndex === index && dragIndex > index ? "var(--primary)" : "var(--background)", borderStyle: "solid", width: "100%", margin: "0", marginBottom: "0.1rem"}}/>
-            <TaskComponent
-              task={task}
-              index={index}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onDrag={handleOnDrag}
-              onDragEnd={handleOnDragEnd}
-            />
-            <hr style={{borderColor: hoverIndex === index && dragIndex < index? "var(--primary)" : "var(--background)", borderStyle: "solid", width: "100%",  margin: "0", marginTop: "0.1rem"}}/>
-          </Fragment>
+          <TaskComponent
+            key={task.id}
+            task={task}
+            index={index}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onDrag={handleOnDrag}
+            onDragEnd={handleOnDragEnd}
+            hoverTop={hoverIndex === index && dragIndex > index}
+            hoverBottom={hoverIndex === index && dragIndex < index}
+          />
         ))}
       </div>
-      <Input onAdd={handleAdd}/>
     </DndProvider>
   )
   /**
@@ -118,23 +116,6 @@ export function Tasks({collection = [], taskComponent = Tasks.Task}: TasksProps)
   }
 }
 
-interface ToggleSubTasksButtonProps {
-  onClick: (e: SyntheticEvent) => void,
-  isShowingSubTasks: boolean;
-}
-
-Tasks.ToggleSubTasksButton = ({onClick, isShowingSubTasks}: ToggleSubTasksButtonProps) => {
-  const hasMounted = useHasMounted();
-
-  if (!hasMounted) return null;
-
-  return (
-    <button className="link square" onClick={onClick} type="button">
-      {isShowingSubTasks ? <i className="fa fa-chevron-down" /> : <i className="fa fa-chevron-right" />}
-    </button>
-  )
-}
-
 interface ToggleIsInEditModeProps {
   onClick: (e: SyntheticEvent) => void;
   isInEditMode: boolean;
@@ -149,37 +130,43 @@ Tasks.ToggleIsInEditMode = ({onClick, isInEditMode}: ToggleIsInEditModeProps) =>
 interface TaskFormProps {
   action: string;
   task: Task;
-  onSubmit?: (e: SyntheticEvent) => void;
   readOnly?: boolean;
+  hoverTop?: boolean;
+  hoverBottom?: boolean;
 }
 
-Tasks.Form = ({action, task, onSubmit, readOnly}: TaskFormProps) => {
+Tasks.Form = ({action, task, readOnly, hoverBottom, hoverTop}: TaskFormProps) => {
   const hasMounted = useHasMounted();
-  const buttonRef = useRef<HTMLButtonElement>(null)
+  const ref = useRef<HTMLFormElement>(null)
   const [content, setContent] = useState(task.content)
   const [isAnimated, setIsAnimated] = useState(false)
+  const submit = useSubmit()
 
   useDebounce(() => {
-    if (buttonRef.current) buttonRef.current.click()
+    if (ref.current) {
+      const elements = ref.current.elements as typeof ref.current.elements & {content: { value: string };};
+      if (elements.content.value.replace(/[\u0000-\u001F\u007F-\u009F]/g, "") === task.content.replace(/[\u0000-\u001F\u007F-\u009F]/g, "")) return
+      submit(ref.current, {method: "put"})
+    }
     setIsAnimated(false)
-  }, 2000, [content])
+  }, 3000, [content])
 
   if (!hasMounted) return null;
 
   return (
-    <Form autoComplete="off" method="put" action={action} onSubmit={handleSubmit}>
+    <form ref={ref} autoComplete="off" method="put" action={action}>
       <input name="id" type="text"
         readOnly
         defaultValue={task.id}
         style={{display: "none"}}
       />
-      <TextareaAutosize name="content" className={isAnimated ? "animated" : ""}
+      <TextareaAutosize name="content"
+        className={cn({animated: isAnimated, hoverBottom, hoverTop})}
         readOnly={readOnly}
         value={content}
         onChange={handlecontentChange}
       />
-      <button type="submit" ref={buttonRef} style={{display: "none"}}></button>
-    </Form>
+    </form>
   )
   /**
    * handlecontentChange updates the value of the content.
@@ -188,15 +175,6 @@ Tasks.Form = ({action, task, onSubmit, readOnly}: TaskFormProps) => {
   function handlecontentChange(e: ChangeEvent<HTMLTextAreaElement>): void {
     setIsAnimated(true)
     setContent(e.currentTarget.value)
-  }
-  /**
-   * handleSubmit handles the behavior of the form.
-   * @param e - React `onChange` event.
-   */
-  function handleSubmit(e: SyntheticEvent) {
-    const target = e.target as typeof e.target & {content: { value: string };};
-    if (target.content.value === task.content) e.preventDefault()
-    if (onSubmit) onSubmit(e)
   }
 }
 
@@ -217,14 +195,16 @@ Tasks.IFrame = ({id, isVisible}: IFrameProps) => {
     return () => window.removeEventListener("message", handleMessage)
   }, [])
 
-  if (!isVisible || !hasMounted) return null;
+  if (!hasMounted) return null;
+
+  if (!isVisible && !isLoaded) return null;
 
   return (
     <Fragment>
       {!isLoaded && <div className="flex align-items-center justify-content-center"><Loader /></div>}
       <iframe
         onLoad={handleLoad}
-        style={{width: "100%", height: isLoaded ? height : "0px"}}
+        style={{width: "100%", height: isLoaded ? height : "0px", display: isVisible ? "block" : "none"}}
         src={`/${id}?id=${refId.current}&task=none&navbar=none&level=${level + 1}`}
       />
     </Fragment>
@@ -244,36 +224,6 @@ Tasks.IFrame = ({id, isVisible}: IFrameProps) => {
     const {type, payload} = e.data
     if (type !== "RESIZE" || payload.id !== refId.current) return
     setHeight(payload.height + "px")
-  }
-}
-
-interface DeleteButtonProps {
-  action: string;
-  task: Task;
-  onDelete?: (task: Task) => void;
-}
-
-Tasks.DeleteButton = ({task, action, onDelete}: DeleteButtonProps) => {
-  return (
-    <button
-      type="button"
-      onClick={handleSubmit}
-      style={{maxWidth: "2rem"}}
-      className="h-color-hover link square hover">
-        <i className="fa fa-trash" aria-hidden="true"/>
-    </button>
-  )
-  /**
-   * handleSubmit shows an alert to the user before to confirm the
-   * deletion of the Task.
-   */
-  function handleSubmit(e: SyntheticEvent) {
-    if (!confirm("Are you sure you want to delete this Task and all its Sub-Tasks?")) {
-      e.preventDefault()
-      return
-    }
-    fetch(action, {method: "DELETE"})
-    if (onDelete) onDelete(task)
   }
 }
 /**
@@ -340,12 +290,17 @@ interface TaskDrag {
    * the subTask input.
    */
   autoFocus?: boolean;
+
+  hoverTop?: boolean;
+
+  hoverBottom?: boolean;
 }
-Tasks.Task = ({task, readOnly, index, onDelete, onDrag, onDragEnd}: TaskProps) => {
+Tasks.Task = ({task, readOnly, index, onDrag, onDragEnd, hoverBottom, hoverTop}: TaskProps) => {
   const {pathname, search} = useLocation()
   const [isShowingSubTasks, setIsShowingSubTasks] = useLocalStorage<boolean>(`${task.id}#isShowingSubTasks`, false)
-  const level = useLevel()
   const ref = useRef<HTMLDivElement>(null)
+  const hasMounted = useHasMounted();
+
   const [{handlerId}, drop] = useDrop({
     accept: "TASK",
     collect: (monitor) => ({handlerId: monitor.getHandlerId()}),
@@ -367,18 +322,28 @@ Tasks.Task = ({task, readOnly, index, onDelete, onDrag, onDragEnd}: TaskProps) =
     }
   })
 
+  if (!hasMounted) return null;
+
   drag(drop(ref))
 
   return (
-    <div className="Task padding-left" data-handler-id={handlerId}>
-      <div ref={ref} className={`bg-${level % 6} padding-top padding-bottom padding-right flex row align-items-center justify-content-space-between`}>
-        <Tasks.ToggleSubTasksButton isShowingSubTasks={isShowingSubTasks} onClick={handleToggleSubTasks}/>
+    <div className="Task padding-left" ref={ref}>
+      <div className={`flex row justify-content-space-between`}>
+        <div onClick={handleToggleSubTasks} className="control">
+          {isShowingSubTasks
+            ? <i className="fa fa-chevron-down" aria-hidden="true" />
+            : <i className="fa fa-chevron-right" aria-hidden="true" />}
+        </div>
+        <div className="control" ref={drag} data-handler-id={handlerId}>
+          <i className="fa fa-grip-vertical" aria-hidden="true"/>
+        </div>
         <Tasks.Form
           action={pathname + search}
           task={task}
           readOnly={readOnly}
+          hoverBottom={hoverBottom}
+          hoverTop={hoverTop}
         />
-        <Tasks.DeleteButton task={task} action={`/${task.id}` + search} onDelete={onDelete} />
       </div>
       <Tasks.IFrame id={task.id} isVisible={isShowingSubTasks}/>
     </div>
