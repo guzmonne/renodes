@@ -11,10 +11,10 @@ const app = express();
 const remixHandler = MODE === "production"
   ? createRequestHandler({ build: require("./build") })
   : (req, res, next) => {
-      purgeRequireCache();
-      let build = require("./build");
-      return createRequestHandler({ build, mode: MODE })(req, res, next);
-    }
+    purgeRequireCache();
+    let build = require("./build");
+    return createRequestHandler({ build, mode: MODE })(req, res, next);
+  }
 
 app.use(compression());
 app.use(morgan("tiny"));
@@ -25,14 +25,12 @@ app.use(express.static("public", { maxAge: "1h" }));
 // Remix fingerprints its assets so we can cache forever
 app.use(express.static("public/build", { immutable: true, maxAge: "1y" }));
 
-app.get   ("/api/tasks", remixRoute("index", "/api/tasks"))
-app.post  ("/api/tasks", remixRoute("index", "/api/tasks"))
-app.put   ("/api/tasks", remixRoute("index", "/api/tasks"))
-
-app.get   ("/api/tasks/:branchId", remixRoute("$id", "/api/tasks"))
-app.post  ("/api/tasks/:branchId", remixRoute("$id", "/api/tasks"))
-app.put   ("/api/tasks/:branchId", remixRoute("$id", "/api/tasks"))
+app.get("/api/tasks/:branchId", remixRoute("$id", "/api/tasks"))
+app.post("/api/tasks/:branchId", remixRoute("$id", "/api/tasks"))
+app.put("/api/tasks/:branchId", remixRoute("$id", "/api/tasks"))
 app.delete("/api/tasks/:branchId", remixRoute("$id", "/api/tasks"))
+
+app.get("/api/tasks/:branchId/self", remixRoute("$id.self", "/api/tasks"))
 
 app.all("*", remixHandler);
 
@@ -60,8 +58,8 @@ function purgeRequireCache() {
  * @param replacePathname - Substring of the URL to replace.
  * @param value - Value to substitute the pathname substring.
  */
-function remixRoute(route, replacePathname, value="") {
-  return function(req, _, next) {
+function remixRoute(route, replacePathname, value = "") {
+  return function (req, _, next) {
     const query = new URLSearchParams(req.query)
     query.set("_data", `routes/${route}`)
     req.url = [

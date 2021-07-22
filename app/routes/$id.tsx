@@ -1,5 +1,6 @@
 import { useRouteData } from "remix"
-import { useLocation } from "react-router-dom"
+import { useLocation, useParams } from "react-router-dom"
+import { useQuery } from "react-query"
 import * as ScrollArea from '@radix-ui/react-scroll-area';
 import type { MetaFunction, LoaderFunction, ActionFunction, LinksFunction } from "remix";
 
@@ -14,39 +15,27 @@ import type { TaskObject } from "../models/task"
 export const meta: MetaFunction = ({ params }) => {
   return {
     title: "ReTask",
-    description: `Task #${params.id}`
+    description: params.id === "home" ? `Home Tasks` : `Tasks for branch #${params.id}`
   };
 };
 
-export const links: LinksFunction = (...args) => {
+export const links: LinksFunction = () => {
   return [
     { rel: "stylesheet", href: base },
     { rel: "stylesheet", href: Loader },
   ];
 };
 
-export const loader: LoaderFunction = async ({ request, params }) => {
+export const loader: LoaderFunction = async ({ params }) => {
   try {
-    if (params.id === "home") {
-      const tasks = await repository.query()
-      return { tasks: tasks.map(Task.toJSON) }
-    }
-    const query = (new URL(request.url)).searchParams
-    const promises: Promise<any>[] = [repository.query({ branch: params.id })]
-    if (query.get("task") !== "none") {
-      promises.push(repository.get(params.id))
-    }
-    const [tasks, task] = await Promise.all(promises)
-    return {
-      tasks: tasks.map(Task.toJSON),
-      task: task && Task.toJSON(task)
-    }
+    const tasks = await repository.query({ branch: params.id === "home" ? undefined : params.id })
+    return tasks.map(Task.toJSON)
   } catch (err) {
     console.log("error at /$id")
     console.log(err)
-    return { tasks: [] }
+    return []
   }
-};
+}
 
 export const action: ActionFunction = async ({ request, params }) => {
   const endpoint = "/" + params.id
@@ -84,8 +73,10 @@ export const action: ActionFunction = async ({ request, params }) => {
 }
 
 export default function () {
-  const data = useRouteData<{ task: TaskObject, tasks: TaskObject[] }>()
   const { search } = useLocation()
+  const { id } = useParams()
+  const initialData = useRouteData<TaskObject[]>()
+  const { data } = useQuery<TaskObject[]>("tasks", getTasks, { initialData: initialData })
   const query = new URLSearchParams(search)
 
   return (
@@ -93,8 +84,7 @@ export default function () {
       <ScrollArea.Viewport className="ScrollArea__Viewport">
         <main>
           {query.get("navbar") !== "none" && <NavBar />}
-          {query.get("task") !== "none" && data.task && <Tasks.Task task={new Task(data.task)} readOnly />}
-          <Tasks collection={Task.collection(data.tasks)} />
+          <Tasks collection={Task.collection(data)} />
         </main>
       </ScrollArea.Viewport>
       <ScrollArea.Scrollbar className="ScrollArea__Scrollbar" orientation="vertical">
@@ -102,4 +92,10 @@ export default function () {
       </ScrollArea.Scrollbar>
     </ScrollArea.Root>
   )
+
+  async function getTasks(): Promise<TaskObject[]> {
+
+
+    return []
+  }
 }
