@@ -50,7 +50,6 @@ export const action: ActionFunction = async ({ request, params }) => {
     const afterId = data.get("afterId")
     let branch = data.get("branch") || params.branch
     if (branch === "home") branch = undefined
-    console.log({ id, content, branch })
     switch (request.method) {
       case "POST":
         if (dragId) {

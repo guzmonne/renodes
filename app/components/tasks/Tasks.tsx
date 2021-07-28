@@ -34,7 +34,7 @@ export interface TasksProps {
 /**
  * Tasks renders a list of Tasks and tracks its visual mode.
  */
-export function Tasks({ branch, initialData = [], taskComponent = Tasks.Task }: TasksProps) {
+export function Tasks({ branch, initialData, taskComponent = Tasks.Task }: TasksProps) {
   const queryClient = useQueryClient()
   const { data: tasks, ...props } = useQuery<Task[]>(branch, () => fetch(`/api/tasks/${branch}`).then(response => response.json()).then(Task.collection), { initialData })
   const [[dragIndex, hoverIndex], setIndexes] = useState<number[]>([])
@@ -166,7 +166,7 @@ export function Tasks({ branch, initialData = [], taskComponent = Tasks.Task }: 
 
   const TaskComponent = taskComponent
 
-  if (props.isLoading) return <Loader />
+  if (props.isLoading) return <div style={{ margin: "0 auto" }}><Loader /></div>
 
   return (
     <DndProvider options={HTML5toTouch}>
