@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback, useRef, Fragment, ChangeEvent } from "react"
-import { useLocation } from "react-router-dom"
-import { useSubmit } from "remix"
+import { useState, useCallback, useRef, ChangeEvent } from "react"
+import { useQueryClient, useQuery, useMutation } from "react-query"
 import { ulid } from "ulid"
 import { useDrag, useDrop } from "react-dnd"
 import { DndProvider } from 'react-dnd-multi-backend';
@@ -9,10 +8,8 @@ import TextareaAutosize from "react-textarea-autosize";
 import cn from "classnames"
 import type { SyntheticEvent } from "react"
 
-import { useLocalStorage } from "../../hooks/useLocalStorage"
 import { Loader } from "../utils/Loader"
 import { useHasMounted } from "../../hooks/useHasMounted"
-import { useLevel } from "../../hooks/useLevel"
 import { useDebounce } from "../../hooks/useDebounce"
 import { Task } from "../../models/task"
 
@@ -21,9 +18,14 @@ import { Task } from "../../models/task"
  */
 export interface TasksProps {
   /**
-   * tasks is the Task list.
+   * branch represents the `Tasks` current branch.
    */
-  collection?: Task[];
+  branch: string;
+  /**
+   * initialData is a list of Task that should initialize the
+   * React-Query cache.
+   */
+  initialData?: Task[];
   /**
    * taskComponent can be used to override the default Task Component.
    */
@@ -32,13 +34,139 @@ export interface TasksProps {
 /**
  * Tasks renders a list of Tasks and tracks its visual mode.
  */
-export function Tasks({collection = [], taskComponent = Tasks.Task}: TasksProps) {
-  const TaskComponent = taskComponent
-  const [tasks, setTasks] = useState<Task[]>(collection)
-  const handleOnDrag = useCallback(onDrag, [tasks])
-  const handleOnDragEnd = useCallback(onDragEnd, [onDragEnd])
+export function Tasks({ branch, initialData = [], taskComponent = Tasks.Task }: TasksProps) {
+  const queryClient = useQueryClient()
+  const { data: tasks, ...props } = useQuery<Task[]>(branch, () => fetch(`/api/tasks/${branch}`).then(response => response.json()).then(Task.collection), { initialData })
   const [[dragIndex, hoverIndex], setIndexes] = useState<number[]>([])
-  const submit = useSubmit()
+  /**
+   * createTaskMutation handles the creation of a new `Task` using
+   * an Optimistic UI workflow.
+   * @param task - `Task` to create.
+   */
+  const createTaskMutation = useMutation((task) => {
+    return fetch(`/api/tasks/${branch}`, {
+      method: "post",
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body: toFormBody(Task.toJSON(task))
+    })
+      .then(response => {
+        if (response.ok) return task
+        throw new Error("couldn't create new task")
+      })
+  }, {
+    onMutate: async (task: Task): Promise<{ previousTasks: Task[] }> => {
+      await queryClient.cancelQueries(branch)
+      const previousTasks: Task[] = queryClient.getQueryData(branch)
+      queryClient.setQueryData(branch, (tasks: Task[]): Task[] => [...tasks, task])
+      return { previousTasks }
+    },
+    onError: (_, __, context) => {
+      queryClient.setQueryData(branch, context.previousTasks)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries(branch)
+    }
+  })
+  /**
+   * updateTaskMutation handles the updates of a `Task` using
+   * an Optimistic UI workflow.
+   * @param task - `Task` to update.
+   */
+  const updateTaskMutation = useMutation((task) => (
+    fetch(`/api/tasks/${branch}`, {
+      method: "put",
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body: toFormBody(Task.toJSON(task))
+    })
+      .then(response => {
+        if (response.ok) return task
+        throw new Error("couldn't update task")
+      })
+  ), {
+    onMutate: async (task: Task): Promise<{ previousTasks: Task[] }> => {
+      await queryClient.cancelQueries(branch)
+      const previousTasks: Task[] = queryClient.getQueryData(branch)
+      const index = previousTasks.findIndex((t: Task) => t.id === task.id)
+      queryClient.setQueryData(branch, (tasks: Task[]): Task[] => [...tasks.slice(0, index), task, ...tasks.slice(index + 1)])
+      return { previousTasks }
+    },
+    onError: (_, __, context) => {
+      queryClient.setQueryData(branch, context.previousTasks)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries(branch)
+    }
+  })
+  /**
+   * deleteTaskMutation handles the deletion of a `Task` using
+   * an Optimistic UI workflow.
+   * @param task - `Task` to delete.
+   */
+  const deleteTaskMutation = useMutation((task) => (
+    fetch(`/api/tasks/${branch}`, {
+      method: "delete",
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+    })
+      .then(response => {
+        if (response.ok) return task
+        throw new Error("couldn't delete task")
+      })
+  ), {
+    onMutate: async (task: Task): Promise<{ previousTasks: Task[] }> => {
+      await queryClient.cancelQueries(branch)
+      const previousTasks: Task[] = queryClient.getQueryData(branch)
+      queryClient.setQueryData(branch, (tasks: Task[]): Task[] => tasks.filter(t => t.id !== task.id))
+      return { previousTasks }
+    },
+    onError: (_, __, context) => {
+      queryClient.setQueryData(branch, context.previousTasks)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries(branch)
+    }
+  })
+  /**
+   * dragTaskMutation handles draggin a `Task` after another
+   * using an Optimistic UI workflow.
+   * @param task - `Task` to drag.
+   */
+  const dragTaskMutation = useMutation(({ dragIndex, hoverIndex }) => {
+    const task = tasks[dragIndex]
+    const after = hoverIndex !== 0
+      ? tasks[dragIndex < hoverIndex ? hoverIndex : hoverIndex - 1]
+      : undefined
+    return fetch(`/api/tasks/${branch}`, {
+      method: "post",
+      body: toFormBody({ dragId: task.id, afterId: after.id })
+    })
+      .then(response => {
+        if (response.ok) return task
+        throw new Error("couldn't drag task")
+      })
+  }, {
+    onMutate: async ({ dragIndex, hoverIndex }: { dragIndex: number, hoverIndex: number }): Promise<{ previousTasks: Task[] }> => {
+      await queryClient.cancelQueries(branch)
+      const previousTasks: Task[] = queryClient.getQueryData(branch)
+      queryClient.setQueryData(branch, (tasks: Task[]): Task[] => {
+        const task = tasks[dragIndex]
+        const _tasks = [...tasks]
+        _tasks.splice(dragIndex, 1)
+        _tasks.splice(hoverIndex, 0, task)
+        return _tasks
+      })
+      return { previousTasks }
+    },
+    onError: (_, __, context) => {
+      queryClient.setQueryData(branch, context.previousTasks)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries(branch)
+    }
+  })
+
+  const TaskComponent = taskComponent
+
+  if (props.isLoading) return <Loader />
 
   return (
     <DndProvider options={HTML5toTouch}>
@@ -50,8 +178,8 @@ export function Tasks({collection = [], taskComponent = Tasks.Task}: TasksProps)
             index={index}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            onDrag={handleOnDrag}
-            onDragEnd={handleOnDragEnd}
+            onDrag={onDrag}
+            onDragEnd={onDragEnd}
             hoverTop={hoverIndex === index && dragIndex > index}
             hoverBottom={hoverIndex === index && dragIndex < index}
           />
@@ -61,24 +189,24 @@ export function Tasks({collection = [], taskComponent = Tasks.Task}: TasksProps)
     </DndProvider>
   )
   /**
-   * handleAdd allows a Child component to add Tasks to the `tasks` list.
+   * handleAdd handles the creation of new `Tasks`.
    * @param task - Task to add to the list.
    */
-  function handleAdd(task: Task) {
-    setTasks([...tasks, task])
+  function handleAdd() {
+    const task = new Task({ id: ulid(), branch, content: "" })
+    createTaskMutation.mutate(task)
   }
   /**
    * handleDelete allows a Child component to remove a task from the list.
    */
-  function handleDelete(deletedTask: Task) {
-    setTasks(tasks.filter(t => t.id !== deletedTask.id))
+  function handleDelete(task: Task) {
+    deleteTaskMutation.mutate(task)
   }
   /**
-   * handleEdit allows a Child component to update a task f
+   * handleEdit handles `Task` updated.
    */
   function handleEdit(task: Task) {
-    const index = tasks.findIndex((t: Task) => t.id === task.id)
-    setTasks([...tasks.slice(0, index), task, ...tasks.slice(index + 1)])
+    updateTaskMutation.mutate(task)
   }
   /**
    * onDrag handles dragging a task.
@@ -93,27 +221,7 @@ export function Tasks({collection = [], taskComponent = Tasks.Task}: TasksProps)
   function onDragEnd(dragIndex: number, hoverIndex: number) {
     setIndexes([])
     if (dragIndex === hoverIndex) return
-    const task = tasks[dragIndex]
-    const _tasks = [...tasks]
-    _tasks.splice(dragIndex, 1)
-    _tasks.splice(hoverIndex, 0, task)
-    setTasks(_tasks)
-    const afterId = hoverIndex !== 0
-      ? tasks[dragIndex < hoverIndex ? hoverIndex : hoverIndex - 1].id
-      : undefined
-    const form  = document.createElement("form")
-    form.method = "POST"
-    const dragIdInput = document.createElement("input")
-    dragIdInput.value = task.id
-    dragIdInput.name  = "dragId"
-    form.appendChild(dragIdInput)
-    if (afterId) {
-      const afterInput  = document.createElement("input")
-      afterInput.value = afterId
-      afterInput.name  = "afterId"
-      form.appendChild(afterInput)
-    }
-    submit(form)
+    dragTaskMutation.mutate({ dragIndex, hoverIndex })
   }
 }
 
@@ -122,54 +230,41 @@ interface ToggleIsInEditModeProps {
   isInEditMode: boolean;
 }
 
-Tasks.ToggleIsInEditMode = ({onClick, isInEditMode}: ToggleIsInEditModeProps) => (
+Tasks.ToggleIsInEditMode = ({ onClick, isInEditMode }: ToggleIsInEditModeProps) => (
   <button className="link square p-color-hover hover" onClick={onClick} type={isInEditMode ? "button" : "submit"}>
-    {isInEditMode ? <i className="fa fa-sd-card"/> : <i className="fa fa-pencil"></i>}
+    {isInEditMode ? <i className="fa fa-sd-card" /> : <i className="fa fa-pencil"></i>}
   </button>
 )
 
 interface TaskFormProps {
-  method: string;
-  action: string;
-  id?: string;
   defaultContent: string;
-  readOnly?: boolean;
-  inFocus?: boolean;
   hoverTop?: boolean;
   hoverBottom?: boolean;
+  onChange: (content: string) => void;
 }
+const WHITESPACE_REGEX = /[\u0000-\u001F\u007F-\u009F]/g
 
-Tasks.Form = ({method, action, id, defaultContent, readOnly, hoverBottom, hoverTop}: TaskFormProps) => {
-  const hasMounted = useHasMounted();
-  const ref = useRef<HTMLFormElement>(null)
+Tasks.Form = ({ defaultContent, onChange, hoverBottom, hoverTop, ...props }: TaskFormProps) => {
   const [content, setContent] = useState(defaultContent)
   const [isAnimated, setIsAnimated] = useState(false)
-  const submit = useSubmit()
+  const handleSubmit = useCallback((e) => e.preventDefault(), [])
 
   useDebounce(() => {
     setIsAnimated(false)
-    if (ref.current) {
-      const elements = ref.current.elements as typeof ref.current.elements & {content: { value: string };};
-      if (elements.content.value.replace(/[\u0000-\u001F\u007F-\u009F]/g, "") === defaultContent.replace(/[\u0000-\u001F\u007F-\u009F]/g, "")) return
-      submit(ref.current, {method: "put"})
+    if (content.replace(WHITESPACE_REGEX, "") === defaultContent.replace(WHITESPACE_REGEX, "")) {
+      return
     }
+    onChange(content)
   }, 3000, [content])
 
-  if (!hasMounted) return null;
-
   return (
-    <form ref={ref} autoComplete="off" method={method} action={action}>
-      <input name="id" type="text"
-        readOnly
-        defaultValue={id || ulid()}
-        className="hidden"
-      />
+    <form onSubmit={handleSubmit}>
       <TextareaAutosize name="content"
-        className={cn({animated: isAnimated, hoverBottom, hoverTop})}
-        readOnly={readOnly}
+        className={cn({ animated: isAnimated, hoverBottom, hoverTop })}
         value={content}
         onChange={handlecontentChange}
         autoFocus={true}
+        {...props}
       />
     </form>
   )
@@ -180,55 +275,6 @@ Tasks.Form = ({method, action, id, defaultContent, readOnly, hoverBottom, hoverT
   function handlecontentChange(e: ChangeEvent<HTMLTextAreaElement>): void {
     setIsAnimated(true)
     setContent(e.currentTarget.value)
-  }
-}
-
-interface IFrameProps {
-  id: string;
-  isVisible: boolean;
-}
-
-Tasks.IFrame = ({id, isVisible}: IFrameProps) => {
-  const hasMounted = useHasMounted();
-  const [height, setHeight] = useState<string>("0px")
-  const [isLoaded, setIsLoaded] = useState<boolean>(false)
-  const level = useLevel()
-  const refId = useRef<string>(ulid())
-
-  useEffect(() => {
-    window.addEventListener("message", handleMessage)
-    return () => window.removeEventListener("message", handleMessage)
-  }, [])
-
-  if (!hasMounted) return null;
-
-  if (!isVisible && !isLoaded) return null;
-
-  return (
-    <Fragment>
-      {!isLoaded && <div className="flex align-items-center justify-content-center"><Loader /></div>}
-      <iframe
-        onLoad={handleLoad}
-        style={{width: "100%", height: isLoaded ? height : "0px", display: isVisible ? "block" : "none"}}
-        src={`/${id}?id=${refId.current}&task=none&navbar=none&level=${level + 1}`}
-      />
-    </Fragment>
-  )
-  /**
-   * handleLoad sets the `isLoaded` flag to true.
-   */
-  function handleLoad() {
-    setIsLoaded(true)
-  }
-  /**
-   * handleMessage is the listener applied to the `message` event
-   * coming from the `iframe`.
-   * @parem e - Message event object.
-   */
-  function handleMessage(e: MessageEvent<any>) {
-    const {type, payload} = e.data
-    if (type !== "RESIZE" || payload.id !== refId.current) return
-    setHeight(payload.height + "px")
   }
 }
 /**
@@ -255,7 +301,7 @@ interface TaskDrag {
 /**
  * TaskProps represent the props of the Task component.
  */
- export interface TaskProps {
+export interface TaskProps {
   /**
    * Task is the task model.
    */
@@ -264,15 +310,6 @@ interface TaskDrag {
    * index marks the position of the task in the list.
    */
   index?: number;
-  /**
-   * readOnly sets the Task form to read only.
-   */
-  readOnly?: boolean;
-  /**
-   * onToggleEditMode is a function that should be used to toggle
-   * the mode of the component.
-   */
-  onToggleEditMode?: (id: string) => void;
   /**
    * onEdit is a function that passes updates on a task to a parent
    * component.
@@ -291,37 +328,37 @@ interface TaskDrag {
    */
   onDragEnd?: (dragIndex: number, hoverIndex: number) => void;
   /**
-   * inFocus is a flag that configures the inFocus feature on
-   * the subTask input.
+   * hoverTop is a flag that it's set when another `Task` from the bottom
+   * is being hoverd on top of this `Task`.
    */
-  inFocus?: boolean;
-
   hoverTop?: boolean;
-
+  /**
+   * hoverBottom is a flag that it's set when another `Task` from the top
+   * is being hoverd on top of this `Task`.
+   */
   hoverBottom?: boolean;
 }
-Tasks.Task = ({task, readOnly, index, onDrag, onDragEnd, inFocus, hoverBottom, hoverTop}: TaskProps) => {
-  const {pathname, search} = useLocation()
-  const [isShowingSubTasks, setIsShowingSubTasks] = useLocalStorage<boolean>(`${task.id}#isShowingSubTasks`, false)
+Tasks.Task = ({ task, index, onEdit, onDrag, onDragEnd, hoverBottom, hoverTop }: TaskProps) => {
+  const [isShowingSubTasks, setIsShowingSubTasks] = useState<boolean>(false)
   const ref = useRef<HTMLDivElement>(null)
   const hasMounted = useHasMounted();
 
-  const [{handlerId}, drop] = useDrop({
+  const [{ handlerId }, drop] = useDrop({
     accept: "TASK",
-    collect: (monitor) => ({handlerId: monitor.getHandlerId()}),
+    collect: (monitor) => ({ handlerId: monitor.getHandlerId() }),
     hover: (item: TaskDrag) => {
       if (!onDrag || !ref.current || index === undefined) return
-      const {dragIndex, hoverIndex} = item
+      const { dragIndex, hoverIndex } = item
       if (hoverIndex === index) return
       item.hoverIndex = index
       onDrag(dragIndex, index)
     }
   })
 
-  const [{}, drag, preview] = useDrag({
+  const [_, drag, preview] = useDrag({
     type: "TASK",
-    item: () => ({id: task.id, dragIndex: index}),
-    collect: (monitor: any) => ({isDragging: monitor.isDragging()}),
+    item: () => ({ id: task.id, dragIndex: index }),
+    collect: (monitor: any) => ({ isDragging: monitor.isDragging() }),
     end: (item: any, _: any) => {
       onDragEnd(item.dragIndex, item.hoverIndex)
     }
@@ -340,20 +377,16 @@ Tasks.Task = ({task, readOnly, index, onDrag, onDragEnd, inFocus, hoverBottom, h
             : <i className="fa fa-chevron-right" aria-hidden="true" />}
         </div>
         <div className="control" ref={drag} data-handler-id={handlerId}>
-          <i className="fa fa-grip-vertical" aria-hidden="true"/>
+          <i className="fa fa-grip-vertical" aria-hidden="true" />
         </div>
         <Tasks.Form
-          method="put"
-          action={pathname + search}
-          id={task.id}
+          onChange={handleChange}
           defaultContent={task.content}
-          readOnly={readOnly}
           hoverBottom={hoverBottom}
           hoverTop={hoverTop}
-          inFocus={inFocus}
         />
       </div>
-      <Tasks.IFrame id={task.id} isVisible={isShowingSubTasks}/>
+      {isShowingSubTasks && <Tasks branch={task.id} />}
     </div>
   )
   /**
@@ -362,17 +395,22 @@ Tasks.Task = ({task, readOnly, index, onDrag, onDragEnd, inFocus, hoverBottom, h
   function handleToggleSubTasks() {
     setIsShowingSubTasks(!isShowingSubTasks)
   }
+  /**
+   * handleChange receives the updates from the `Task` form and
+   * calls the onEdit function with the updated `Task`.
+   */
+  function handleChange(content: string) {
+    onEdit(task.set({ content }))
+  }
 }
 
 interface EmptyTaskProps {
-  onAdd: (task: Task) => void;
+  onAdd: () => void;
 }
 
-Tasks.Empty = ({onAdd}: EmptyTaskProps) => {
-  const submit = useSubmit()
-  const {pathname, search} = useLocation()
-  const ref = useRef<HTMLFormElement>(null)
-  const [id, setId] = useState<string>(ulid())
+Tasks.Empty = ({ onAdd }: EmptyTaskProps) => {
+  const handleAdd = useCallback(() => onAdd(), [onAdd])
+  const handleSubmit = useCallback((e) => e.preventDefault(), [])
 
   return (
     <div className="Task padding-left">
@@ -381,14 +419,9 @@ Tasks.Empty = ({onAdd}: EmptyTaskProps) => {
           <i className="fa fa-chevron-right" aria-hidden="true" />
         </div>
         <div className="control" onClick={handleAdd}>
-          <i className="fa fa-plus" aria-hidden="true"/>
+          <i className="fa fa-plus" aria-hidden="true" />
         </div>
-        <form ref={ref} autoComplete="off" method="post" action={pathname + search}>
-          <input name="id" type="text"
-            readOnly
-            defaultValue={id}
-            className="hidden"
-          />
+        <form onSubmit={handleSubmit}>
           <TextareaAutosize name="content"
             defaultValue=""
             onFocusCapture={handleAdd}
@@ -397,10 +430,17 @@ Tasks.Empty = ({onAdd}: EmptyTaskProps) => {
       </div>
     </div>
   )
-
-  function handleAdd() {
-    if (ref.current) submit(ref.current)
-    onAdd(new Task({id, content: ""}))
-    setId(ulid())
+}
+/**
+ * toFormBody converts an object into a valid form encoded string.
+ * @param obj - Object to stringify.
+ */
+function toFormBody(obj: any): string {
+  const formBody = []
+  for (let key in obj) {
+    let encodedKey = encodeURIComponent(key)
+    let encodedVal = encodeURIComponent(obj[key])
+    formBody.push(encodedKey + "=" + encodedVal)
   }
+  return formBody.join("&")
 }

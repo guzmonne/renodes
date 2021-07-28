@@ -1,6 +1,8 @@
 import { useRouteData } from "remix"
 import { useLocation, useParams } from "react-router-dom"
-import { useQuery } from "react-query"
+import { QueryClient, QueryClientProvider } from "react-query"
+import { ReactQueryDevtools } from 'react-query/devtools'
+
 import * as ScrollArea from '@radix-ui/react-scroll-area';
 import type { MetaFunction, LoaderFunction, ActionFunction, LinksFunction } from "remix";
 
@@ -15,7 +17,7 @@ import type { TaskObject } from "../models/task"
 export const meta: MetaFunction = ({ params }) => {
   return {
     title: "ReTask",
-    description: params.id === "home" ? `Home Tasks` : `Tasks for branch #${params.id}`
+    description: params.branch === "home" ? `Home Tasks` : `Tasks for branch #${params.branch}`
   };
 };
 
@@ -28,17 +30,17 @@ export const links: LinksFunction = () => {
 
 export const loader: LoaderFunction = async ({ params }) => {
   try {
-    const tasks = await repository.query({ branch: params.id === "home" ? undefined : params.id })
+    const tasks = await repository.query({ branch: params.branch === "home" ? undefined : params.branch })
     return tasks.map(Task.toJSON)
   } catch (err) {
-    console.log("error at /$id")
+    console.log("error at /$branch")
     console.log(err)
     return []
   }
 }
 
 export const action: ActionFunction = async ({ request, params }) => {
-  const endpoint = "/" + params.id
+  const endpoint = "/" + params.branch
   try {
     let task: Task
     const data = new URLSearchParams(await request.text())
@@ -46,7 +48,9 @@ export const action: ActionFunction = async ({ request, params }) => {
     const content = data.get("content")
     const dragId = data.get("dragId")
     const afterId = data.get("afterId")
-    const branch = params.id === "home" ? undefined : params.id
+    let branch = data.get("branch") || params.branch
+    if (branch === "home") branch = undefined
+    console.log({ id, content, branch })
     switch (request.method) {
       case "POST":
         if (dragId) {
@@ -54,6 +58,7 @@ export const action: ActionFunction = async ({ request, params }) => {
           break
         }
         if (id === null) return endpoint
+        console.log({ id, content, branch })
         task = new Task({ id, content, branch })
         await repository.put(task)
         break;
@@ -74,28 +79,24 @@ export const action: ActionFunction = async ({ request, params }) => {
 
 export default function () {
   const { search } = useLocation()
-  const { id } = useParams()
+  const { branch } = useParams()
   const initialData = useRouteData<TaskObject[]>()
-  const { data } = useQuery<TaskObject[]>("tasks", getTasks, { initialData: initialData })
   const query = new URLSearchParams(search)
+  const queryClient = new QueryClient()
 
   return (
     <ScrollArea.Root className="ScrollArea__Root">
       <ScrollArea.Viewport className="ScrollArea__Viewport">
-        <main>
-          {query.get("navbar") !== "none" && <NavBar />}
-          <Tasks collection={Task.collection(data)} />
-        </main>
+        <QueryClientProvider client={queryClient}>
+          <main>
+            {query.get("navbar") !== "none" && <NavBar />}
+            <Tasks branch={branch} initialData={Task.collection(initialData)} />
+          </main>
+        </QueryClientProvider>
       </ScrollArea.Viewport>
       <ScrollArea.Scrollbar className="ScrollArea__Scrollbar" orientation="vertical">
         <ScrollArea.Thumb className="ScrollArea__Thumb" />
       </ScrollArea.Scrollbar>
     </ScrollArea.Root>
   )
-
-  async function getTasks(): Promise<TaskObject[]> {
-
-
-    return []
-  }
 }

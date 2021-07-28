@@ -15,7 +15,7 @@ import type { TaskObject } from "../models/task"
 export const meta: MetaFunction = ({ params }) => {
   return {
     title: "ReTask",
-    description: `Task #${params.id}`
+    description: `Task #${params.branch}`
   };
 };
 
@@ -28,9 +28,9 @@ export const links: LinksFunction = () => {
 
 export const loader: LoaderFunction = async ({ params }) => {
   try {
-    const self = await repository.get(params.id)
+    const self = await repository.get(params.branch)
     if (self === undefined) {
-      return new Response(JSON.stringify({ error: `can't find task with id ${params.id}` }), { status: 404 })
+      return new Response(JSON.stringify({ error: `can't find task with id ${params.branch}` }), { status: 404 })
     }
     return Task.toJSON(self)
   } catch (err) {
@@ -49,7 +49,7 @@ export default function () {
       <ScrollArea.Viewport className="ScrollArea__Viewport">
         <main>
           <NavBar />
-          <Tasks.Task task={new Task(data)} readOnly />
+          <Tasks.Task task={new Task(data)} />
         </main>
       </ScrollArea.Viewport>
       <ScrollArea.Scrollbar className="ScrollArea__Scrollbar" orientation="vertical">

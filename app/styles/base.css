@@ -22,14 +22,6 @@ body {
   outline: none;
 }
 
-iframe {
-  overflow: hidden;
-  border: 0;
-  margin: 0;
-  padding: 0;
-  outline: none;
-}
-
 html {
   background-color: var(--background);
   font-size: var(--font-size);
@@ -40,7 +32,7 @@ html {
 }
 
 main {
-  padding: 0 0.5rem;
+  padding: 0 0 0.5rem 0;
   margin: 0 auto;
   max-width: 960px;
 }
@@ -280,6 +272,10 @@ form input:focus-visible {
 }
 
 /** Tassks **/
+.Tasks {
+  padding-left: 0.5rem;
+}
+
 .Tasks hr {
   border: 1px solid var(--primary);
   width: calc(100% - 2.7rem);
@@ -297,10 +293,6 @@ form input:focus-visible {
   justify-content: space-between;
   padding-left: 0.5rem;
   margin-left: -0.5rem;
-}
-
-.Task iframe {
-  padding-left: 0.5rem;
 }
 
 .Task > div {

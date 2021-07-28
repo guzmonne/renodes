@@ -25,12 +25,12 @@ app.use(express.static("public", { maxAge: "1h" }));
 // Remix fingerprints its assets so we can cache forever
 app.use(express.static("public/build", { immutable: true, maxAge: "1y" }));
 
-app.get("/api/tasks/:branchId", remixRoute("$id", "/api/tasks"))
-app.post("/api/tasks/:branchId", remixRoute("$id", "/api/tasks"))
-app.put("/api/tasks/:branchId", remixRoute("$id", "/api/tasks"))
-app.delete("/api/tasks/:branchId", remixRoute("$id", "/api/tasks"))
+app.get("/api/tasks/:branch", remixRoute("$branch", "/api/tasks"))
+app.post("/api/tasks/:branch", remixRoute("$branch", "/api/tasks"))
+app.put("/api/tasks/:branch", remixRoute("$branch", "/api/tasks"))
+app.delete("/api/tasks/:branch", remixRoute("$branch", "/api/tasks"))
 
-app.get("/api/tasks/:branchId/self", remixRoute("$id.self", "/api/tasks"))
+app.get("/api/tasks/:branch/self", remixRoute("$branch.self", "/api/tasks"))
 
 app.all("*", remixHandler);
 
