@@ -6,13 +6,16 @@ import { DndProvider } from 'react-dnd-multi-backend';
 import HTML5toTouch from 'react-dnd-multi-backend/dist/cjs/HTML5toTouch';
 import TextareaAutosize from "react-textarea-autosize";
 import cn from "classnames"
-import type { SyntheticEvent } from "react"
 
 import { Loader } from "../utils/Loader"
-import { useHasMounted } from "../../hooks/useHasMounted"
 import { useDebounce } from "../../hooks/useDebounce"
 import { Task } from "../../models/task"
 
+/**
+ * WHITESPACE_REGEX is a regular expression that matches all whitespaces
+ * of a string.
+ */
+const WHITESPACE_REGEX = /[\u0000-\u001F\u007F-\u009F]/g
 /**
  * TasksProps represent the `props` of the Tasks component.
  */
@@ -224,59 +227,6 @@ export function Tasks({ branch, initialData, taskComponent = Tasks.Task }: Tasks
     dragTaskMutation.mutate({ dragIndex, hoverIndex })
   }
 }
-
-interface ToggleIsInEditModeProps {
-  onClick: (e: SyntheticEvent) => void;
-  isInEditMode: boolean;
-}
-
-Tasks.ToggleIsInEditMode = ({ onClick, isInEditMode }: ToggleIsInEditModeProps) => (
-  <button className="link square p-color-hover hover" onClick={onClick} type={isInEditMode ? "button" : "submit"}>
-    {isInEditMode ? <i className="fa fa-sd-card" /> : <i className="fa fa-pencil"></i>}
-  </button>
-)
-
-interface TaskFormProps {
-  defaultContent: string;
-  hoverTop?: boolean;
-  hoverBottom?: boolean;
-  onChange: (content: string) => void;
-}
-const WHITESPACE_REGEX = /[\u0000-\u001F\u007F-\u009F]/g
-
-Tasks.Form = ({ defaultContent, onChange, hoverBottom, hoverTop, ...props }: TaskFormProps) => {
-  const [content, setContent] = useState(defaultContent)
-  const [isAnimated, setIsAnimated] = useState(false)
-  const handleSubmit = useCallback((e) => e.preventDefault(), [])
-
-  useDebounce(() => {
-    setIsAnimated(false)
-    if (content.replace(WHITESPACE_REGEX, "") === defaultContent.replace(WHITESPACE_REGEX, "")) {
-      return
-    }
-    onChange(content)
-  }, 3000, [content])
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <TextareaAutosize name="content"
-        className={cn({ animated: isAnimated, hoverBottom, hoverTop })}
-        value={content}
-        onChange={handlecontentChange}
-        autoFocus={true}
-        {...props}
-      />
-    </form>
-  )
-  /**
-   * handlecontentChange updates the value of the content.
-   * @param e - React `onChange` event.
-   */
-  function handlecontentChange(e: ChangeEvent<HTMLTextAreaElement>): void {
-    setIsAnimated(true)
-    setContent(e.currentTarget.value)
-  }
-}
 /**
  * TaskDrag represents a Task being dragged.
  */
@@ -341,7 +291,10 @@ export interface TaskProps {
 Tasks.Task = ({ task, index, onEdit, onDrag, onDragEnd, hoverBottom, hoverTop }: TaskProps) => {
   const [isShowingSubTasks, setIsShowingSubTasks] = useState<boolean>(false)
   const ref = useRef<HTMLDivElement>(null)
-  const hasMounted = useHasMounted();
+  const [content, setContent] = useState(task.content)
+  const [isAnimated, setIsAnimated] = useState(false)
+  const handleChange = useCallback((content) => onEdit(task.set({ content })), [task, onEdit])
+  const handleSubmit = useCallback((e) => e.preventDefault(), [])
 
   const [{ handlerId }, drop] = useDrop({
     accept: "TASK",
@@ -364,7 +317,13 @@ Tasks.Task = ({ task, index, onEdit, onDrag, onDragEnd, hoverBottom, hoverTop }:
     }
   })
 
-  if (!hasMounted) return null;
+  useDebounce(() => {
+    setIsAnimated(false)
+    if (content.replace(WHITESPACE_REGEX, "") === task.content.replace(WHITESPACE_REGEX, "")) {
+      return
+    }
+    handleChange(content)
+  }, 3000, [content])
 
   drop(preview(ref))
 
@@ -379,12 +338,14 @@ Tasks.Task = ({ task, index, onEdit, onDrag, onDragEnd, hoverBottom, hoverTop }:
         <div className="control" ref={drag} data-handler-id={handlerId}>
           <i className="fa fa-grip-vertical" aria-hidden="true" />
         </div>
-        <Tasks.Form
-          onChange={handleChange}
-          defaultContent={task.content}
-          hoverBottom={hoverBottom}
-          hoverTop={hoverTop}
-        />
+        <form onSubmit={handleSubmit}>
+          <TextareaAutosize name="content"
+            className={cn({ animated: isAnimated, hoverBottom, hoverTop })}
+            value={content}
+            onChange={handlecontentChange}
+            autoFocus={true}
+          />
+        </form>
       </div>
       {isShowingSubTasks && <Tasks branch={task.id} />}
     </div>
@@ -396,11 +357,12 @@ Tasks.Task = ({ task, index, onEdit, onDrag, onDragEnd, hoverBottom, hoverTop }:
     setIsShowingSubTasks(!isShowingSubTasks)
   }
   /**
-   * handleChange receives the updates from the `Task` form and
-   * calls the onEdit function with the updated `Task`.
+   * handlecontentChange updates the value of the content.
+   * @param e - React `onChange` event.
    */
-  function handleChange(content: string) {
-    onEdit(task.set({ content }))
+  function handlecontentChange(e: ChangeEvent<HTMLTextAreaElement>): void {
+    setIsAnimated(true)
+    setContent(e.currentTarget.value)
   }
 }
 
