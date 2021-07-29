@@ -57,7 +57,6 @@ export const action: ActionFunction = async ({ request, params }) => {
           break
         }
         if (id === null) return endpoint
-        console.log({ id, content, branch })
         task = new Task({ id, content, branch })
         await repository.put(task)
         break;
