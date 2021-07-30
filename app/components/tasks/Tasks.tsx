@@ -1,9 +1,5 @@
 import { useState, useCallback, useRef, ChangeEvent } from "react"
-import { useQueryClient, useQuery, useMutation } from "react-query"
-import { ulid } from "ulid"
 import { useDrag, useDrop } from "react-dnd"
-import { DndProvider } from 'react-dnd-multi-backend';
-import HTML5toTouch from 'react-dnd-multi-backend/dist/cjs/HTML5toTouch';
 import TextareaAutosize from "react-textarea-autosize";
 import cn from "classnames"
 
@@ -12,11 +8,6 @@ import { useDebounce } from "../../hooks/useDebounce"
 import { Task } from "../../models/task"
 import { useTasksQuery } from "../../hooks/useTasksQuery";
 
-/**
- * WHITESPACE_REGEX is a regular expression that matches all whitespaces
- * of a string.
- */
-const WHITESPACE_REGEX = /[\u0000-\u001F\u007F-\u009F]/g
 /**
  * TasksProps represent the `props` of the Tasks component.
  */
@@ -43,9 +34,9 @@ export function Tasks({ branch, initialData, taskComponent = Tasks.Task }: Tasks
   const {
     tasks,
     isLoading,
-    createTaskMutation,
-    updateTaskMutation,
-    deleteTaskMutation,
+    handleAdd,
+    handleEdit,
+    handleDelete,
     dragTaskMutation,
   } = useTasksQuery(branch, initialData)
 
@@ -54,45 +45,23 @@ export function Tasks({ branch, initialData, taskComponent = Tasks.Task }: Tasks
   if (isLoading) return <div style={{ margin: "0 auto" }}><Loader /></div>
 
   return (
-    <DndProvider options={HTML5toTouch}>
-      <div className="Tasks">
-        {tasks.map((task: Task, index: number) => (
-          <TaskComponent
-            key={task.id}
-            task={task}
-            index={index}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onDrag={onDrag}
-            onDragEnd={onDragEnd}
-            hoverTop={hoverIndex === index && dragIndex > index}
-            hoverBottom={hoverIndex === index && dragIndex < index}
-          />
-        ))}
-        <Tasks.Empty onAdd={handleAdd} />
-      </div>
-    </DndProvider>
+    <div className="Tasks">
+      {tasks.map((task: Task, index: number) => (
+        <TaskComponent
+          key={task.id}
+          task={task}
+          index={index}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onDrag={onDrag}
+          onDragEnd={onDragEnd}
+          hoverTop={hoverIndex === index && dragIndex > index}
+          hoverBottom={hoverIndex === index && dragIndex < index}
+        />
+      ))}
+      <Tasks.Empty onAdd={handleAdd} />
+    </div>
   )
-  /**
-   * handleAdd handles the creation of new `Tasks`.
-   * @param task - Task to add to the list.
-   */
-  function handleAdd() {
-    const task = new Task({ id: ulid(), branch, content: "" })
-    createTaskMutation.mutate(task)
-  }
-  /**
-   * handleDelete allows a Child component to remove a task from the list.
-   */
-  function handleDelete(task: Task) {
-    deleteTaskMutation.mutate(task)
-  }
-  /**
-   * handleEdit handles `Task` updated.
-   */
-  function handleEdit(task: Task) {
-    updateTaskMutation.mutate(task)
-  }
   /**
    * onDrag handles dragging a task.
    */
@@ -171,11 +140,10 @@ export interface TaskProps {
   hoverBottom?: boolean;
 }
 Tasks.Task = ({ task, index, onEdit, onDrag, onDragEnd, hoverBottom, hoverTop }: TaskProps) => {
-  const [isShowingSubTasks, setIsShowingSubTasks] = useState<boolean>(false)
   const ref = useRef<HTMLDivElement>(null)
+  const [isShowingSubTasks, setIsShowingSubTasks] = useState<boolean>(false)
   const [content, setContent] = useState(task.content)
   const [isAnimated, setIsAnimated] = useState(false)
-  const handleChange = useCallback((content) => onEdit(task.set({ content })), [task, onEdit])
   const handleSubmit = useCallback((e) => e.preventDefault(), [])
 
   const [{ handlerId }, drop] = useDrop({
@@ -201,11 +169,9 @@ Tasks.Task = ({ task, index, onEdit, onDrag, onDragEnd, hoverBottom, hoverTop }:
 
   useDebounce(() => {
     setIsAnimated(false)
-    if (content.replace(WHITESPACE_REGEX, "") === task.content.replace(WHITESPACE_REGEX, "")) {
-      return
-    }
-    handleChange(content)
-  }, 3000, [content])
+    if (content === task.content) return
+    onEdit(task.set({ content }))
+  }, 500, [task, content])
 
   drop(preview(ref))
 

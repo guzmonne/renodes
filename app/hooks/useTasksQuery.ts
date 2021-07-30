@@ -1,4 +1,6 @@
+import { useCallback } from "react"
 import { useQueryClient, useQuery, useMutation } from "react-query"
+import { ulid } from "ulid"
 
 import { Task } from "../models/task"
 
@@ -130,7 +132,29 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
       queryClient.invalidateQueries(branch)
     }
   })
-
+  /**
+   * handleAdd handles the creation of new `Tasks`.
+   * @param task - Task to add to the list.
+   */
+  const handleAdd = useCallback(() => {
+    const task = new Task({ id: ulid(), branch, content: "" })
+    createTaskMutation.mutate(task)
+  }, [createTaskMutation])
+  /**
+   * handleDelete allows a Child component to remove a task from the list.
+   */
+  const handleDelete = useCallback((task: Task) => {
+    deleteTaskMutation.mutate(task)
+  }, [deleteTaskMutation])
+  /**
+   * handleEdit handles `Task` updated.
+   */
+  const handleEdit = useCallback((task: Task) => {
+    updateTaskMutation.mutate(task)
+  }, [updateTaskMutation])
+  /**
+   * Export
+   */
   return {
     tasks,
     ...props,
@@ -138,6 +162,9 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
     updateTaskMutation,
     deleteTaskMutation,
     dragTaskMutation,
+    handleAdd,
+    handleDelete,
+    handleEdit,
   }
 }
 /**

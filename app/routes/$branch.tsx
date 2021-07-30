@@ -2,6 +2,8 @@ import { useRouteData } from "remix"
 import { useLocation, useParams } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "react-query"
 import { ReactQueryDevtools } from 'react-query/devtools'
+import { DndProvider } from 'react-dnd-multi-backend';
+import HTML5toTouch from 'react-dnd-multi-backend/dist/cjs/HTML5toTouch';
 
 import * as ScrollArea from '@radix-ui/react-scroll-area';
 import type { MetaFunction, LoaderFunction, ActionFunction, LinksFunction } from "remix";
@@ -88,7 +90,9 @@ export default function () {
         <QueryClientProvider client={queryClient}>
           <main>
             {query.get("navbar") !== "none" && <NavBar />}
-            <Tasks branch={branch} initialData={Task.collection(initialData)} />
+            <DndProvider options={HTML5toTouch}>
+              <Tasks branch={branch} initialData={Task.collection(initialData)} />
+            </DndProvider>
           </main>
         </QueryClientProvider>
       </ScrollArea.Viewport>

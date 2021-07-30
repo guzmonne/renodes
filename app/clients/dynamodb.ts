@@ -40,19 +40,20 @@ export class TaskDynamoDBClient implements TaskDBClient {
    * @param id - Unique identifier of the `Item`.
    * @param userId - Unique identifier of the user.
    */
-  createPK(id: string, userId?: string): string {
+  createPK(id?: string, userId?: string): string {
     return [userId, "Tasks", id].filter(x => x !== undefined).join("#")
   }
   /**
    * query returns a collection of Tasks.
    */
-  async query({branch, userId}: QueryParams): Promise<DBClientResponse<Task[]>> {
+  async query(params: QueryParams = {}): Promise<DBClientResponse<Task[]>> {
     try {
+      const { branch, userId } = params
       const pk = this.createPK(branch, userId)
       const items = await this.client.list(pk)
-      return {data: items.map(this.toTask)}
-    } catch(err) {
-      return {error: err.message}
+      return { data: items.map(this.toTask) }
+    } catch (err) {
+      return { error: err.message }
     }
   }
   /**
@@ -62,11 +63,11 @@ export class TaskDynamoDBClient implements TaskDBClient {
    */
   async get(id: string, userId?: string): Promise<DBClientResponse<Task>> {
     try {
-      const pk   = this.createPK(id, userId)
+      const pk = this.createPK(id, userId)
       const item = await this.client.get(pk)
-      return {data: item && new Task(item)}
-    } catch(err) {
-      return {error: err.message}
+      return { data: item && new Task(item) }
+    } catch (err) {
+      return { error: err.message }
     }
   }
   /**
@@ -79,9 +80,9 @@ export class TaskDynamoDBClient implements TaskDBClient {
       const _b = this.createPK(task.branch)
       const ok = await this.client.put(pk, _b, task)
       if (!ok) throw new Error(`error while storing task with pk = ${pk} at branch = ${_b}`)
-      return {data: task}
-    } catch(err) {
-      return {error: err.message}
+      return { data: task }
+    } catch (err) {
+      return { error: err.message }
     }
   }
   /**
@@ -95,7 +96,7 @@ export class TaskDynamoDBClient implements TaskDBClient {
       if (!ok) throw new Error(`error while updating task with pk = ${pk}`)
       return {}
     } catch (err) {
-      return {error: err.message}
+      return { error: err.message }
     }
   }
   /**
@@ -109,8 +110,8 @@ export class TaskDynamoDBClient implements TaskDBClient {
       const ok = await this.client.delete(pk)
       if (!ok) throw new Error(`error while deleting task with pk = ${pk}`)
       return {}
-    } catch(err) {
-      return {error: err.message}
+    } catch (err) {
+      return { error: err.message }
     }
   }
   /**
@@ -132,7 +133,7 @@ export class TaskDynamoDBClient implements TaskDBClient {
       if (!ok) throw new Error(`couldn't move task with id = ${id} after task with id ${afterId}`)
       return {}
     } catch (err) {
-      return {error: err.message}
+      return { error: err.message }
     }
   }
 }

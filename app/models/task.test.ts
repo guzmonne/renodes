@@ -7,12 +7,12 @@ import { Task } from "./task"
 test("new Task() should throw an error if the body is invalid", (assert: Test) => {
   try {
     new Task({})
-  } catch(err) {
+  } catch (err) {
     assert.equal(err.message, "'content' is undefined")
   }
   try {
     new Task("")
-  } catch(err) {
+  } catch (err) {
     assert.equal(err.message, "'body' is invalid")
   }
   assert.end()
@@ -24,24 +24,23 @@ let content = "test"
 let branch = ulid()
 
 test("new Task() should correctly set the body attributes", (assert: Test) => {
-  task = new Task({id, content, branch})
-  assert.plan(8)
+  task = new Task({ id, content, branch })
   assert.equal(task.id, id)
   assert.equal(task.content, content)
   assert.equal(task.branch, branch)
   // If done is undefined it should default to false
-  task = new Task({id, content})
+  task = new Task({ id, content })
   assert.equal(task.id, id)
   assert.equal(task.content, content)
   // `task.branch` should be `undefined`
   assert.equal(task.branch, undefined)
+  assert.end()
 })
 
 test("#Task.set() should return a new Task with its update attributes", (assert: Test) => {
-  const body = {id: ulid(), content: "updated test", done: true}
-  const original = new Task({id, content, branch})
-  const updated  = original.set(body)
-  assert.plan(8)
+  const body = { id: ulid(), content: "updated test", done: true }
+  const original = new Task({ id, content, branch })
+  const updated = original.set(body)
   assert.equal(original.id, id)
   assert.equal(original.content, content)
   assert.equal(original.branch, branch)
@@ -50,4 +49,5 @@ test("#Task.set() should return a new Task with its update attributes", (assert:
   assert.equal(updated.branch, original.branch)
   // Its `id` should be the same
   assert.equal(original.id, updated.id)
+  assert.end()
 })

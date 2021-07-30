@@ -58,12 +58,22 @@ export interface TaskDocumentClientItem extends TaskDocumentClientBody {
    * of the list its value will be equal to "`.`".
    */
   _n: string;
+  /**
+   * meta holds the meta information of the TaskDocumentClientItem.
+   */
+  _m?: TaskDocumentClientMeta;
 }
 /**
  * TaskDocumentClientPatch represent the list of values that
  * can be patched through an `update`.
  */
 export type TaskDocumentClientPatch = Pick<Partial<TaskDocumentClientBody>, "content">
+/**
+ * TaskDocumentClientMeta represent the meta status of a `Task`.
+ */
+export interface TaskDocumentClientMeta {
+  isOpened?: boolean;
+}
 /**
  * ITaskDocumentClient is the public interface of the class
  * TaskDocumentClient.
@@ -92,16 +102,16 @@ export class TaskDocumentClient implements ITaskDocumentClient {
    */
   constructor(config: TaskDocumentClientConfig) {
     this.tableName = config.tableName
-    this.client    = config.client
+    this.client = config.client
   }
   /**
    * get gets a single `Task` from the table identified by its pk.
    * @param pk - `Task` unique identifier.
    */
-  async get(pk: string): Promise<TaskDocumentClientItem|undefined> {
+  async get(pk: string): Promise<TaskDocumentClientItem | undefined> {
     const response: GetCommandOutput = await this.client.send(new GetCommand({
       TableName: this.tableName,
-      Key: {pk},
+      Key: { pk },
     }))
     return response.Item
       ? response.Item as TaskDocumentClientItem
@@ -113,13 +123,13 @@ export class TaskDocumentClient implements ITaskDocumentClient {
    * @param pk - `Task` unique identifier.
    * @param branch - `Task` branch.
    */
-  private async getPointingTo(pk: string, branch: string): Promise<TaskDocumentClientItem|undefined> {
+  private async getPointingTo(pk: string, branch: string): Promise<TaskDocumentClientItem | undefined> {
     const response: QueryCommandOutput = await this.client.send(new QueryCommand({
       TableName: this.tableName,
       IndexName: "byNext",
       KeyConditionExpression: "#_b = :_b AND #_n = :_n",
-      ExpressionAttributeNames: {"#_b": "_b", "#_n": "_n"},
-      ExpressionAttributeValues: {":_b": branch, ":_n": pk},
+      ExpressionAttributeNames: { "#_b": "_b", "#_n": "_n" },
+      ExpressionAttributeValues: { ":_b": branch, ":_n": pk },
       Limit: 1,
     }))
     return response.Items && response.Items.length === 1
@@ -140,17 +150,17 @@ export class TaskDocumentClient implements ITaskDocumentClient {
     if (tail === undefined) return this.putFirst(pk, branch, item)
     const updatePromise: Promise<UpdateCommandOutput> = this.client.send(new UpdateCommand({
       TableName: this.tableName,
-      Key: {pk: tail.pk},
+      Key: { pk: tail.pk },
       UpdateExpression: "SET #_n = :new_n",
       ConditionExpression: "#_n = :_n",
-      ExpressionAttributeNames: {"#_n": "_n"},
-      ExpressionAttributeValues: {":_n": tail._n, ":new_n": pk},
+      ExpressionAttributeNames: { "#_n": "_n" },
+      ExpressionAttributeValues: { ":_n": tail._n, ":new_n": pk },
     }))
     const putPromise: Promise<PutCommandOutput> = this.client.send(new PutCommand({
       TableName: this.tableName,
-      Item: {id: item.id, content: item.content, pk, _b: branch, _n: "."},
+      Item: { id: item.id, content: item.content, pk, _b: branch, _n: "." },
       ConditionExpression: "attribute_not_exists(#pk)",
-      ExpressionAttributeNames: {"#pk": "pk"},
+      ExpressionAttributeNames: { "#pk": "pk" },
     }))
     const [updateOutput, putOutput] = await Promise.all([updatePromise, putPromise])
     return (
@@ -168,15 +178,15 @@ export class TaskDocumentClient implements ITaskDocumentClient {
   private async putFirst(pk: string, branch: string, item: TaskDocumentClientBody): Promise<boolean> {
     const putHeadPromise: Promise<PutCommandOutput> = this.client.send(new PutCommand({
       TableName: this.tableName,
-      Item: {pk: "#" + branch, _b: branch, _n: pk},
+      Item: { pk: "#" + branch, _b: branch, _n: pk },
       ConditionExpression: "attribute_not_exists(#pk)",
-      ExpressionAttributeNames: {"#pk": "pk"},
+      ExpressionAttributeNames: { "#pk": "pk" },
     }))
     const putItemPromise: Promise<PutCommandOutput> = this.client.send(new PutCommand({
       TableName: this.tableName,
-      Item: {id: item.id, content: item.content, pk, _b: branch, _n: "."},
+      Item: { id: item.id, content: item.content, pk, _b: branch, _n: "." },
       ConditionExpression: "attribute_not_exists(#pk)",
-      ExpressionAttributeNames: {"#pk": "pk"},
+      ExpressionAttributeNames: { "#pk": "pk" },
     }))
     const [putHeadOutput, putItemOutput] = await Promise.all([putHeadPromise, putItemPromise])
     return (
@@ -190,13 +200,13 @@ export class TaskDocumentClient implements ITaskDocumentClient {
    * should be set to a dot ("`.`").
    * @param branch - `Tasks` branch on which to search for the `tail`.
    */
-  private async getTail(branch: string): Promise<TaskDocumentClientItem|undefined> {
+  private async getTail(branch: string): Promise<TaskDocumentClientItem | undefined> {
     const queryOutput = await this.client.send(new QueryCommand({
       TableName: this.tableName,
       IndexName: "byNext",
       KeyConditionExpression: "#_b = :_b",
-      ExpressionAttributeNames: {"#_b": "_b"},
-      ExpressionAttributeValues: {":_b": branch},
+      ExpressionAttributeNames: { "#_b": "_b" },
+      ExpressionAttributeValues: { ":_b": branch },
       Limit: 1,
     }))
     return queryOutput.Items && queryOutput.Items.length === 1
@@ -212,38 +222,73 @@ export class TaskDocumentClient implements ITaskDocumentClient {
     if (!patch.content) return true
     const response: UpdateCommandOutput = await this.client.send(new UpdateCommand({
       TableName: this.tableName,
-      Key: {pk},
+      Key: { pk },
       UpdateExpression: "SET #content = :content",
-      ExpressionAttributeNames: {"#content": "content"},
-      ExpressionAttributeValues: {":content": patch.content}
+      ExpressionAttributeNames: { "#content": "content" },
+      ExpressionAttributeValues: { ":content": patch.content }
     }))
     return response.$metadata.httpStatusCode === 200
+  }
+  /**
+   * meta updates the meta attributes of a `Task`.
+   * @param pk - `Task` unique identifier.
+   * @param meta - Meta object to update.
+   */
+  async meta(pk: string, meta: TaskDocumentClientMeta, force?: boolean): Promise<boolean> {
+    // Check if the object is empty
+    if (meta.isOpened === undefined) return true
+    try {
+      const response: UpdateCommandOutput = await this.client.send(new UpdateCommand(
+        force
+          ? {
+            TableName: this.tableName,
+            Key: { pk },
+            UpdateExpression: "SET #_m = :_m",
+            ExpressionAttributeNames: { "#_m": "_m" },
+            ExpressionAttributeValues: { ":_m": meta },
+          }
+          : {
+            TableName: this.tableName,
+            Key: { pk },
+            UpdateExpression: "SET #_m.#isOpened = :isOpened",
+            ExpressionAttributeNames: { "#_m": "_m", "#isOpened": "isOpened" },
+            ExpressionAttributeValues: { ":isOpened": meta.isOpened },
+          }
+      ))
+      return response.$metadata.httpStatusCode === 200
+    } catch (err) {
+      if (err.name && err.name === "ValidationException") {
+        return this.meta(pk, meta, true)
+      }
+      throw err
+    }
   }
   /**
    * delete deletes a single `Task` from the table identified by its key.
    * @param key - `Task` unique identifier.
    */
-   async delete(pk: string): Promise<undefined> {
+  async delete(pk: string): Promise<undefined> {
     const task = await this.get(pk)
     if (task === undefined) return
     const pointingToTask = await this.getPointingTo(task.pk, task._b)
+    if (!pointingToTask) return
     // 1. Update `pointingToTask` to point to the `Task` currently
     //    being pointed by the `Task` to be deleted.
     const updatePromise: Promise<UpdateCommandOutput> = this.client.send(new UpdateCommand({
       TableName: this.tableName,
-      Key: {pk: pointingToTask.pk},
+      Key: { pk: pointingToTask.pk },
       UpdateExpression: "SET #_n = :_new_n",
       ConditionExpression: "#_n = :_n",
-      ExpressionAttributeNames: {"#_n": "_n"},
-      ExpressionAttributeValues: {":_new_n": task._n, ":_n": pointingToTask._n},
+      ExpressionAttributeNames: { "#_n": "_n" },
+      ExpressionAttributeValues: { ":_new_n": task._n, ":_n": pointingToTask._n },
     }))
     // 2. Delete the task.
     const deletePromise: Promise<DeleteCommandOutput> = this.client.send(new DeleteCommand({
       TableName: this.tableName,
-      Key: {pk: task.pk},
+      Key: { pk: task.pk },
       ConditionExpression: "#_n = :_n",
-      ExpressionAttributeNames: {"#_n": "_n"},
-      ExpressionAttributeValues: {":_n": task._n},
+      ExpressionAttributeNames: { "#_n": "_n" },
+      ExpressionAttributeValues: { ":_n": task._n },
     }))
     // TODO: handle errors.
     await Promise.all([updatePromise, deletePromise])
@@ -257,8 +302,8 @@ export class TaskDocumentClient implements ITaskDocumentClient {
       TableName: this.tableName,
       IndexName: "byBranch",
       KeyConditionExpression: "#_b = :_b",
-      ExpressionAttributeNames: {"#_b": "_b"},
-      ExpressionAttributeValues: {":_b": branch},
+      ExpressionAttributeNames: { "#_b": "_b" },
+      ExpressionAttributeValues: { ":_b": branch },
     }))
     if (!queryOutput.Items || queryOutput.Items.length === 0) return []
     const [head, ...items] = queryOutput.Items as TaskDocumentClientItem[]
@@ -315,27 +360,27 @@ export class TaskDocumentClient implements ITaskDocumentClient {
     const [updateFromOutput, updateAfterOutput, update$FromOutput] = await Promise.all([
       this.client.send(new UpdateCommand({
         TableName: this.tableName,
-        Key: {pk: from.pk},
+        Key: { pk: from.pk },
         ConditionExpression: "#_n <> :pk",
         UpdateExpression: "SET #_n = :_n",
-        ExpressionAttributeNames: {"#_n": "_n"},
-        ExpressionAttributeValues: {":_n": after._n, ":pk": from.pk},
+        ExpressionAttributeNames: { "#_n": "_n" },
+        ExpressionAttributeValues: { ":_n": after._n, ":pk": from.pk },
       })),
       this.client.send(new UpdateCommand({
         TableName: this.tableName,
-        Key: {pk: after.pk},
+        Key: { pk: after.pk },
         ConditionExpression: "#_n <> :pk",
         UpdateExpression: "SET #_n = :_n",
-        ExpressionAttributeNames: {"#_n": "_n"},
-        ExpressionAttributeValues: {":_n": from.pk, ":pk": after.pk},
+        ExpressionAttributeNames: { "#_n": "_n" },
+        ExpressionAttributeValues: { ":_n": from.pk, ":pk": after.pk },
       })),
       this.client.send(new UpdateCommand({
         TableName: this.tableName,
-        Key: {pk: $from.pk},
+        Key: { pk: $from.pk },
         ConditionExpression: "#_n <> :pk",
         UpdateExpression: "SET #_n = :_n",
-        ExpressionAttributeNames: {"#_n": "_n"},
-        ExpressionAttributeValues: {":_n": from._n, ":pk": $from.pk},
+        ExpressionAttributeNames: { "#_n": "_n" },
+        ExpressionAttributeValues: { ":_n": from._n, ":pk": $from.pk },
       }))
     ])
     return (
