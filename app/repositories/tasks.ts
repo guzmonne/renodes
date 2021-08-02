@@ -1,4 +1,4 @@
-import {Task} from '../models/task'
+import { Task } from '../models/task'
 import { tasksDynamoDBClient } from "../clients/dynamodb"
 import type { TaskDBClient, QueryParams } from "../types"
 
@@ -21,7 +21,7 @@ class TasksRepository {
    * query returns a list of Tasks.
    */
   async query(params: QueryParams = {}): Promise<Task[]> {
-    const {error, data} = await this.client.query(params)
+    const { error, data } = await this.client.query(params)
     if (error) throw error
     return data
   }
@@ -31,7 +31,7 @@ class TasksRepository {
    * @param userId - Task unique identifier.
    */
   async get(id: string, userId?: string): Promise<Task> {
-    const {error, data} = await this.client.get(id, userId)
+    const { error, data } = await this.client.get(id, userId)
     if (error) throw error
     return data
   }
@@ -39,8 +39,8 @@ class TasksRepository {
    * put stores a Task in the Repository.
    * @param task - Task to store in the Repository.
    */
-  async put(task: Task): Promise<Task> {
-    const {error, data} = await this.client.put(task)
+  async put(task: Task, afterId?: string): Promise<Task> {
+    const { error, data } = await this.client.put(task, afterId)
     if (error) throw error
     return data
   }
@@ -49,7 +49,7 @@ class TasksRepository {
    * @param task - Update Task to store
    */
   async update(task: Task): Promise<undefined> {
-    const {error} = await this.client.update(task)
+    const { error } = await this.client.update(task)
     if (error) throw error
     return undefined
   }
@@ -58,7 +58,7 @@ class TasksRepository {
    * @param id - Task unique identifier.
    */
   async delete(id: string): Promise<undefined> {
-    const {error} = await this.client.delete(id)
+    const { error } = await this.client.delete(id)
     if (error) throw error
     return undefined
   }
@@ -79,4 +79,4 @@ class TasksRepository {
   }
 }
 
-export const repository = new TasksRepository({client: tasksDynamoDBClient})
+export const repository = new TasksRepository({ client: tasksDynamoDBClient })

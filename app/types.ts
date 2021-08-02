@@ -61,7 +61,7 @@ export interface QueryParams {
  * to talk to the database. For each function a `DBClientResponse` object
  * must be returned.
  */
- export interface TaskDBClient {
+export interface TaskDBClient {
   /**
    * update updates valid values of a `Task`
    * @param task - Updated `Task` to be stored.
@@ -70,8 +70,9 @@ export interface QueryParams {
   /**
    * put creates or updates a new `Task` element.
    * @param model - Model to store or update on the database.
+   * @param afterId - Id of the `Task` after which the new `Task` should be put.
    */
-  put(task: Task): Promise<DBClientResponse<Task>>;
+  put(task: Task, afterId?: string): Promise<DBClientResponse<Task>>;
   /**
    * query returns a collection of `Task` elements.
    */
@@ -123,9 +124,9 @@ export interface DBClientResponse<Data> {
 }
 
 export interface BranchDocumentClient<Item, Body, Patch> {
-  get(pk: string): Promise<Item|undefined>;
+  get(pk: string): Promise<Item | undefined>;
   delete(pk: string): Promise<undefined>;
-  put(pk: string, branch: string, item: Body): Promise<boolean>;
+  put(pk: string, branch: string, item: Body, afterPk?: string): Promise<boolean>;
   update(pk: string, patch: Patch): Promise<boolean>;
   list(branch: string): Promise<Item[]>;
   after(fromPK: string, branch: string, afterPK?: string): Promise<boolean>;

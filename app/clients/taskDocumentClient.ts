@@ -144,21 +144,24 @@ export class TaskDocumentClient implements ITaskDocumentClient {
    * @param pk - `Task` unique identifier.
    * @param branch - `Task` branch.
    * @param item - `Task` item to be stored.
+   * @param afterPk - `Task` to set the new `Task` after.
    */
-  async put(pk: string, branch: string, item: TaskDocumentClientBody): Promise<boolean> {
-    const tail = await this.getTail(branch)
-    if (tail === undefined) return this.putFirst(pk, branch, item)
+  async put(pk: string, branch: string, item: TaskDocumentClientBody, afterPk?: string): Promise<boolean> {
+    const after = afterPk === undefined
+      ? await this.getTail(branch)
+      : await this.get(afterPk)
+    if (after === undefined) return this.putFirst(pk, branch, item)
     const updatePromise: Promise<UpdateCommandOutput> = this.client.send(new UpdateCommand({
       TableName: this.tableName,
-      Key: { pk: tail.pk },
+      Key: { pk: after.pk },
       UpdateExpression: "SET #_n = :new_n",
       ConditionExpression: "#_n = :_n",
       ExpressionAttributeNames: { "#_n": "_n" },
-      ExpressionAttributeValues: { ":_n": tail._n, ":new_n": pk },
+      ExpressionAttributeValues: { ":_n": after._n, ":new_n": pk },
     }))
     const putPromise: Promise<PutCommandOutput> = this.client.send(new PutCommand({
       TableName: this.tableName,
-      Item: { id: item.id, content: item.content, pk, _b: branch, _n: "." },
+      Item: { id: item.id, content: item.content, pk, _b: branch, _n: after === undefined ? "." : after._n },
       ConditionExpression: "attribute_not_exists(#pk)",
       ExpressionAttributeNames: { "#pk": "pk" },
     }))

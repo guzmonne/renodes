@@ -12,7 +12,7 @@ import { taskDocumentClient as tdc, TaskDocumentClientItem } from "./taskDocumen
  *  3.  `list`  : Lists all of the `Tasks` under a `pk`.
  *  4.  `delete`: Deletes a single `Task` identified by its `pk` and `sk`.
  *  5.  `update`: Updates a single `Task` identified by its `pk` and `sk`.
- *  6.  `after`  : Changes the position of a `Task` identified by its `pk`
+ *  6.  `after` : Changes the position of a `Task` identified by its `pk`
  *                and `sk` to a new one identified by its `sk`.
  */
 test("Task Linked List abstraction", async (assert: Test) => {
@@ -98,6 +98,38 @@ test("Task Linked List abstraction", async (assert: Test) => {
    * End
    */
   assert.end()
+})
+
+test("Task create", async (assert: Test) => {
+  try {
+    let tasks: TaskDocumentClientItem[]
+    const userId = ulid()
+    const branch = userId + "#Tasks"
+    const id1 = "001"
+    const id2 = "002"
+    const id3 = "003"
+    const pk1 = key({ userId, id: id1 })
+    const pk2 = key({ userId, id: id2 })
+    const pk3 = key({ userId, id: id3 })
+    const content = Math.random().toLocaleString()
+    // Put the first element
+    assert.equal(await tdc.put(pk1, branch, { id: id1, content }), true)
+    // Put the second element
+    assert.equal(await tdc.put(pk2, branch, { id: id2, content }), true)
+    // Check both `Task` where created in the correct order
+    tasks = await tdc.list(branch)
+    assert.deepEqual(tasks.map(task => task.id), [id1, id2])
+    // Put a new `Task` after `pk1` not the Root.
+    assert.equal(await tdc.put(pk3, branch, { id: id3, content }, pk1), true)
+    // Check to see if the new `Task` was correctly added.
+    tasks = await tdc.list(branch)
+    assert.deepEqual(tasks.map(task => task.id), [id1, id3, id2])
+    // End assertions
+    assert.end()
+  } catch (err) {
+    console.error("Error inside Try/Catch!!!")
+    throw err
+  }
 })
 
 test("Task meta object updates", async (assert: Test) => {

@@ -73,12 +73,14 @@ export class TaskDynamoDBClient implements TaskDBClient {
   /**
    * put creates or updates a Task in the table.
    * @param task - `Task` to store.
+   * @param afterId - Id of the `Task` after which the new `Task` should be put.
    */
-  async put(task: Task): Promise<DBClientResponse<Task>> {
+  async put(task: Task, afterId?: string): Promise<DBClientResponse<Task>> {
     try {
       const pk = this.createPK(task.id)
       const _b = this.createPK(task.branch)
-      const ok = await this.client.put(pk, _b, task)
+      const afterPk = this.createPK(afterId)
+      const ok = await this.client.put(pk, _b, task, afterPk)
       if (!ok) throw new Error(`error while storing task with pk = ${pk} at branch = ${_b}`)
       return { data: task }
     } catch (err) {

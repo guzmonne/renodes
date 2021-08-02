@@ -48,6 +48,7 @@ export const action: ActionFunction = async ({ request, params }) => {
     const data = new URLSearchParams(await request.text())
     const id = data.get("id")
     const content = data.get("content")
+    console.log({ content })
     const dragId = data.get("dragId")
     const afterId = data.get("afterId")
     let branch = data.get("branch") || params.branch
@@ -60,7 +61,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         }
         if (id === null) return endpoint
         task = new Task({ id, content, branch })
-        await repository.put(task)
+        await repository.put(task, afterId)
         break;
       case "PUT":
         if (id === null) return endpoint

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, ChangeEvent } from "react"
+import { useState, useCallback, useRef, ChangeEvent, KeyboardEvent } from "react"
 import { useDrag, useDrop } from "react-dnd"
 import TextareaAutosize from "react-textarea-autosize";
 import cn from "classnames"
@@ -34,6 +34,7 @@ export function Tasks({ branch, initialData, taskComponent = Tasks.Task }: Tasks
   const {
     tasks,
     isLoading,
+    handleAddEmpty,
     handleAdd,
     handleEdit,
     handleDelete,
@@ -51,6 +52,7 @@ export function Tasks({ branch, initialData, taskComponent = Tasks.Task }: Tasks
           key={task.id}
           task={task}
           index={index}
+          onAdd={handleAdd}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onDrag={onDrag}
@@ -59,7 +61,7 @@ export function Tasks({ branch, initialData, taskComponent = Tasks.Task }: Tasks
           hoverBottom={hoverIndex === index && dragIndex < index}
         />
       ))}
-      <Tasks.Empty onAdd={handleAdd} />
+      {tasks.length === 0 && <Tasks.Empty onAdd={handleAddEmpty} />}
     </div>
   )
   /**
@@ -81,7 +83,7 @@ export function Tasks({ branch, initialData, taskComponent = Tasks.Task }: Tasks
 /**
  * TaskDrag represents a Task being dragged.
  */
-interface TaskDrag {
+export interface TaskDrag {
   /**
    * dragIndex corresponds to the index of the `Tasks` being dragged.
    */
@@ -112,6 +114,11 @@ export interface TaskProps {
    */
   index?: number;
   /**
+   * onAdd is a function that creates an empty new `Task` under the
+   * current one.
+   */
+  onAdd: (task: Task) => void;
+  /**
    * onEdit is a function that passes updates on a task to a parent
    * component.
    */
@@ -139,7 +146,10 @@ export interface TaskProps {
    */
   hoverBottom?: boolean;
 }
-Tasks.Task = ({ task, index, onEdit, onDrag, onDragEnd, hoverBottom, hoverTop }: TaskProps) => {
+/**
+ * Tasks.Task is the main `Task` component.
+ */
+Tasks.Task = ({ task, index, onAdd, onEdit, onDrag, onDragEnd, hoverBottom, hoverTop }: TaskProps) => {
   const ref = useRef<HTMLDivElement>(null)
   const [isShowingSubTasks, setIsShowingSubTasks] = useState<boolean>(false)
   const [content, setContent] = useState(task.content)
@@ -162,9 +172,7 @@ Tasks.Task = ({ task, index, onEdit, onDrag, onDragEnd, hoverBottom, hoverTop }:
     type: "TASK",
     item: () => ({ id: task.id, dragIndex: index }),
     collect: (monitor: any) => ({ isDragging: monitor.isDragging() }),
-    end: (item: any, _: any) => {
-      onDragEnd(item.dragIndex, item.hoverIndex)
-    }
+    end: (item: any, _: any) => onDragEnd(item.dragIndex, item.hoverIndex)
   })
 
   useDebounce(() => {
@@ -191,6 +199,7 @@ Tasks.Task = ({ task, index, onEdit, onDrag, onDragEnd, hoverBottom, hoverTop }:
             className={cn({ animated: isAnimated, hoverBottom, hoverTop })}
             value={content}
             onChange={handlecontentChange}
+            onKeyDown={handleShiftKey}
             autoFocus={true}
           />
         </form>
@@ -212,12 +221,29 @@ Tasks.Task = ({ task, index, onEdit, onDrag, onDragEnd, hoverBottom, hoverTop }:
     setIsAnimated(true)
     setContent(e.currentTarget.value)
   }
+  /**
+   * handleShiftKey creates adds a new `Task` when the Shift+Enter
+   * keys are pressed.
+   */
+  function handleShiftKey(e: KeyboardEvent) {
+    if (e.key !== "Enter" || !e.shiftKey) return
+    e.preventDefault()
+    onAdd(task)
+  }
 }
-
+/**
+ * EmptyTaskProps represent the props for the Empty component.
+ */
 interface EmptyTaskProps {
+  /**
+   * onAdd adds a new empty `Task`.
+   */
   onAdd: () => void;
 }
-
+/**
+ * Tasks.Empty renders a component that shows an empty textarea that
+ * creates new `Tasks`.
+ */
 Tasks.Empty = ({ onAdd }: EmptyTaskProps) => {
   const handleAdd = useCallback(() => onAdd(), [onAdd])
   const handleSubmit = useCallback((e) => e.preventDefault(), [])

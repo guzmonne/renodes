@@ -12,21 +12,25 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
    * an Optimistic UI workflow.
    * @param task - `Task` to create.
    */
-  const createTaskMutation = useMutation((task) => {
+  const createTaskMutation = useMutation(({ task, afterTask }) => {
     return fetch(`/api/tasks/${branch}`, {
       method: "post",
       headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-      body: toFormBody(Task.toJSON(task))
+      body: toFormBody({ ...Task.toJSON(task), afterId: afterTask ? afterTask.id : undefined })
     })
       .then(response => {
         if (response.ok) return task
         throw new Error("couldn't create new task")
       })
   }, {
-    onMutate: async (task: Task): Promise<{ previousTasks: Task[] }> => {
+    onMutate: async ({ task, afterTask }: { task: Task, afterTask?: Task }): Promise<{ previousTasks: Task[] }> => {
       await queryClient.cancelQueries(branch)
       const previousTasks: Task[] = queryClient.getQueryData(branch)
-      queryClient.setQueryData(branch, (tasks: Task[]): Task[] => [...tasks, task])
+      queryClient.setQueryData(branch, (tasks: Task[]): Task[] => {
+        if (afterTask === undefined) return [...tasks, task]
+        const index = tasks.findIndex(task => task.id === afterTask.id)
+        return [...tasks.slice(0, index), afterTask, task, ...tasks.slice(index + 1)]
+      })
       return { previousTasks }
     },
     onError: (_, __, context) => {
@@ -133,12 +137,20 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
     }
   })
   /**
+   * handleAddEmpty handles the creation of a new empty `Task`.
+   * @param task - Task to add to the list.
+   */
+  const handleAddEmpty = useCallback(() => {
+    const task = new Task({ id: ulid(), branch, content: "" })
+    createTaskMutation.mutate({ task })
+  }, [createTaskMutation])
+  /**
    * handleAdd handles the creation of new `Tasks`.
    * @param task - Task to add to the list.
    */
-  const handleAdd = useCallback(() => {
-    const task = new Task({ id: ulid(), branch, content: "" })
-    createTaskMutation.mutate(task)
+  const handleAdd = useCallback((task: Task) => {
+    const newTask = new Task({ id: ulid(), branch, content: "" })
+    createTaskMutation.mutate({ task: newTask, afterTask: task })
   }, [createTaskMutation])
   /**
    * handleDelete allows a Child component to remove a task from the list.
@@ -163,6 +175,7 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
     deleteTaskMutation,
     dragTaskMutation,
     handleAdd,
+    handleAddEmpty,
     handleDelete,
     handleEdit,
   }
