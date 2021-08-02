@@ -1,12 +1,13 @@
 import { useRouteData } from "remix"
 import { useLocation, useParams } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "react-query"
-import { ReactQueryDevtools } from 'react-query/devtools'
-import { DndProvider } from 'react-dnd-multi-backend';
-import HTML5toTouch from 'react-dnd-multi-backend/dist/cjs/HTML5toTouch';
+import { ReactQueryDevtools } from "react-query/devtools"
+import { DndProvider } from "react-dnd-multi-backend"
+import { IdProvider } from "@radix-ui/react-id"
+import HTML5toTouch from "react-dnd-multi-backend/dist/cjs/HTML5toTouch"
 
-import * as ScrollArea from '@radix-ui/react-scroll-area';
-import type { MetaFunction, LoaderFunction, ActionFunction, LinksFunction } from "remix";
+import * as ScrollArea from "@radix-ui/react-scroll-area"
+import type { MetaFunction, LoaderFunction, ActionFunction, LinksFunction } from "remix"
 
 import base from "../styles/base.css"
 import Loader from "../components/utils/Loader.css"
@@ -20,15 +21,15 @@ export const meta: MetaFunction = ({ params }) => {
   return {
     title: "ReTask",
     description: params.branch === "home" ? `Home Tasks` : `Tasks for branch #${params.branch}`
-  };
-};
+  }
+}
 
 export const links: LinksFunction = () => {
   return [
     { rel: "stylesheet", href: base },
     { rel: "stylesheet", href: Loader },
-  ];
-};
+  ]
+}
 
 export const loader: LoaderFunction = async ({ params }) => {
   try {
@@ -61,7 +62,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         if (id === null) return endpoint
         task = new Task({ id, content, branch })
         await repository.put(task, afterId)
-        break;
+        break
       case "PUT":
         if (id === null) return endpoint
         task = await repository.get(id)
@@ -85,20 +86,23 @@ export default function () {
   const queryClient = new QueryClient()
 
   return (
-    <ScrollArea.Root className="ScrollArea__Root">
-      <ScrollArea.Viewport className="ScrollArea__Viewport">
-        <QueryClientProvider client={queryClient}>
-          <main>
-            {query.get("navbar") !== "none" && <NavBar />}
-            <DndProvider options={HTML5toTouch}>
-              <Tasks branch={branch} initialData={Task.collection(initialData)} />
-            </DndProvider>
-          </main>
-        </QueryClientProvider>
-      </ScrollArea.Viewport>
-      <ScrollArea.Scrollbar className="ScrollArea__Scrollbar" orientation="vertical">
-        <ScrollArea.Thumb className="ScrollArea__Thumb" />
-      </ScrollArea.Scrollbar>
-    </ScrollArea.Root>
+    <IdProvider>
+      <ScrollArea.Root className="ScrollArea__Root">
+        <ScrollArea.Viewport className="ScrollArea__Viewport">
+          <QueryClientProvider client={queryClient}>
+            <main>
+              {query.get("navbar") !== "none" && <NavBar />}
+              <DndProvider options={HTML5toTouch}>
+                <Tasks branch={branch} initialData={Task.collection(initialData)} />
+              </DndProvider>
+            </main>
+            <ReactQueryDevtools initialIsOpen={false} />
+          </QueryClientProvider>
+        </ScrollArea.Viewport>
+        <ScrollArea.Scrollbar className="ScrollArea__Scrollbar" orientation="vertical">
+          <ScrollArea.Thumb className="ScrollArea__Thumb" />
+        </ScrollArea.Scrollbar>
+      </ScrollArea.Root>
+    </IdProvider>
   )
 }

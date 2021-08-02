@@ -15,7 +15,7 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
   const createTaskMutation = useMutation(({ task, afterTask }) => {
     return fetch(`/api/tasks/${branch}`, {
       method: "post",
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
       body: toFormBody({ ...Task.toJSON(task), afterId: afterTask ? afterTask.id : undefined })
     })
       .then(response => {
@@ -48,7 +48,7 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
   const updateTaskMutation = useMutation((task) => (
     fetch(`/api/tasks/${branch}`, {
       method: "put",
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
       body: toFormBody(Task.toJSON(task))
     })
       .then(response => {
@@ -75,16 +75,17 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
    * an Optimistic UI workflow.
    * @param task - `Task` to delete.
    */
-  const deleteTaskMutation = useMutation((task) => (
-    fetch(`/api/tasks/${branch}`, {
+  const deleteTaskMutation = useMutation((task) => {
+    console.log(branch)
+    return confirm("Are you sure you want to delete this Task?") && fetch(`/api/tasks/${task.id}`, {
       method: "delete",
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
     })
       .then(response => {
         if (response.ok) return task
         throw new Error("couldn't delete task")
       })
-  ), {
+  }, {
     onMutate: async (task: Task): Promise<{ previousTasks: Task[] }> => {
       await queryClient.cancelQueries(branch)
       const previousTasks: Task[] = queryClient.getQueryData(branch)
@@ -108,9 +109,11 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
     const after = hoverIndex !== 0
       ? tasks[dragIndex < hoverIndex ? hoverIndex : hoverIndex - 1]
       : undefined
+    const body: { dragId: string, afterId?: string } = { dragId: task.id }
+    if (after) body.afterId = after.id
     return fetch(`/api/tasks/${branch}`, {
       method: "post",
-      body: toFormBody({ dragId: task.id, afterId: after.id })
+      body: toFormBody(body)
     })
       .then(response => {
         if (response.ok) return task

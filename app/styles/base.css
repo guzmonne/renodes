@@ -99,7 +99,6 @@ button.circle {
 }
 
 /** FORM **/
-
 form,
 form fieldset {
   position: relative;
@@ -156,7 +155,6 @@ form input:focus-visible {
 }
 
 /** LAYOUT **/
-
 .flex {
   display: flex;
 }
@@ -236,42 +234,7 @@ form input:focus-visible {
   margin-bottom: 0.5rem;
 }
 
-/** Input **/
-.Input button {
-  position: absolute;
-  right: 1.25rem;
-}
-
-.Input input[type="text"] {
-  padding: 0.75rem 0.5rem;
-}
-
-/** Backgrounds **/
-.bg-0 {
-  background: linear-gradient(180deg, rgba(105, 110, 255, 0.549) 0%, rgba(247, 171, 255, 0.179) 100%);
-}
-
-.bg-1 {
-  background: linear-gradient(180deg, #F4E3B8 0%, #BFDDEE 100%);
-}
-
-.bg-2 {
-  background: linear-gradient(180deg, #F5C4B7 0%, #F4E3B8 100%);
-}
-
-.bg-3 {
-  background: linear-gradient(90deg, rgba(225, 236, 246, 0.412) 0%, rgba(240, 227, 227, 0.309) 100%);
-}
-
-.bg-4 {
-  background: linear-gradient(180deg, #696eff56 0%, #bfeee887 100%);
-}
-
-.bg-5 {
-  background: linear-gradient(90deg, #E1ECF6 0%, #F0E3E3 100%);
-}
-
-/** Tassks **/
+/** Tasks **/
 .Tasks {
   padding-left: 0.5rem;
 }
@@ -286,7 +249,6 @@ form input:focus-visible {
 }
 
 /** Task **/
-
 .Task {
   display: flex;
   flex-direction: column;
@@ -307,12 +269,12 @@ form input:focus-visible {
 }
 
 .Task .fa-grip-vertical {
-  cursor: grab;
+  cursor: pointer;
 }
 
-.Task .fa-chevron-up,
+.Task .fa-chevron-right,
 .Task .fa-chevron-down {
-  cursor: pointer;
+  cursor: grab;
 }
 
 /** ScrollArea **/
@@ -335,4 +297,111 @@ form input:focus-visible {
   flex: 1;
   background: var(--handle);
   border-radius: 0.5rem;
+}
+
+/** DropdownMenu */
+.DropdownMenu__Content {
+  min-width: 15rem;
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 0.4rem;
+  box-shadow: 0px 10px 38px -10px rgba(22, 23, 24, 0.35), 0px 10px 20px -15px rgba(22, 23, 24, 0.2);
+  margin-left: -1.1rem;
+  margin-top: -0.5rem;
+}
+
+.DropdownMenu__Trigger {
+  color: var(--handle);
+  margin-right: 0.125rem;
+  width: 1.2rem;
+  padding-top: 0.6rem;
+}
+
+.DropdownMenu__Item {
+  all: unset;
+  font-size: 0.8rem;
+  line-height: 1;
+  color: var(--text-body);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  height: 1.5rem;
+  padding: 0 0.4rem;
+  position: relative;
+  padding-left: 1.5rem;
+  user-select: none;
+}
+
+.DropdownMenu__Item[data-disabled] {
+  color: var(--handle);
+  pointer-events: none;
+}
+
+.DropdownMenu__Item:focus {
+  background-color: var(--handle);
+}
+
+.DropdownMenu__RightSlot {
+  margin-left: auto;
+  padding-left: 1.3rem;
+  color: var(--text-body);
+}
+
+.DropdownMenu__Item:focus > .DropdownMenu__RightSlot {
+  background-color: var(--handle);
+}
+
+.DropdownMenu__Item[data-disabled] > .DropdownMenu__RightSlot {
+  color: var(--handle);
+  pointer-events: none;
+}
+
+.DropdownMenu__Arrow {
+  margin-right: 1rem;
+  fill: white;
+  filter: drop-shadow(0px 10px 38px -10px rgba(22, 23, 24, 0.35), 0px 10px 20px -15px rgba(22, 23, 24, 0.2));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .DropdownMenu__Content {
+    animation-duration: 400ms;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform, opacity;
+  }
+
+  .DropdownMenu__Content[data-state="open"] {
+    animation-name: slideDownAndFade;
+  }
+
+  .DropdownMenu__Content[data-state="right"] {
+    animation-name: slideLeftAndFade;
+  }
+
+  .DropdownMenu__Content[data-state="bottom"] {
+    animation-name: slideUpAndFade;
+  }
+
+  .DropdownMenu__Content[data-state="left"] {
+    animation-name: slideRightAndFade;
+  }
+}
+
+@keyframes slideUpAndFade {
+  0% { opacity: 0; transform: translateY(2px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideRightAndFade {
+  0% { opacity: 0; transform: translateX(-2px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideDownAndFade {
+  0% { opacity: 0; transform: translateY(-2px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideLeftAndFade {
+  0% { opacity: 0; transform: translateX(2px); }
+  100% { opacity: 1; transform: translateX(0); }
 }

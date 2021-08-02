@@ -1,6 +1,9 @@
 import { useState, useCallback, useRef, ChangeEvent, KeyboardEvent } from "react"
 import { useDrag, useDrop } from "react-dnd"
 import TextareaAutosize from "react-textarea-autosize";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faChevronDown, faChevronRight, faEllipsisV } from "@fortawesome/free-solid-svg-icons"
 import cn from "classnames"
 
 import { Loader } from "../utils/Loader"
@@ -136,12 +139,12 @@ export interface TaskProps {
    */
   onDragEnd?: (dragIndex: number, hoverIndex: number) => void;
   /**
-   * hoverTop is a flag that it's set when another `Task` from the bottom
+   * hoverTop is a flag that it"s set when another `Task` from the bottom
    * is being hoverd on top of this `Task`.
    */
   hoverTop?: boolean;
   /**
-   * hoverBottom is a flag that it's set when another `Task` from the top
+   * hoverBottom is a flag that it"s set when another `Task` from the top
    * is being hoverd on top of this `Task`.
    */
   hoverBottom?: boolean;
@@ -149,15 +152,17 @@ export interface TaskProps {
 /**
  * Tasks.Task is the main `Task` component.
  */
-Tasks.Task = ({ task, index, onAdd, onEdit, onDrag, onDragEnd, hoverBottom, hoverTop }: TaskProps) => {
-  const ref = useRef<HTMLDivElement>(null)
+Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onDrag, onDragEnd, hoverBottom, hoverTop }: TaskProps) => {
+  const ref = useRef<any>(null)
   const [isShowingSubTasks, setIsShowingSubTasks] = useState<boolean>(false)
   const [content, setContent] = useState(task.content)
   const [isAnimated, setIsAnimated] = useState(false)
   const handleSubmit = useCallback((e) => e.preventDefault(), [])
+  const handleSelectAdd = useCallback(() => onAdd(task), [onAdd, task])
+  const handleSelectDelete = useCallback(() => onDelete(task), [onDelete, task])
 
   const [{ handlerId }, drop] = useDrop({
-    accept: "TASK",
+    accept: task.branch || "TASK",
     collect: (monitor) => ({ handlerId: monitor.getHandlerId() }),
     hover: (item: TaskDrag) => {
       if (!onDrag || !ref.current || index === undefined) return
@@ -169,8 +174,8 @@ Tasks.Task = ({ task, index, onAdd, onEdit, onDrag, onDragEnd, hoverBottom, hove
   })
 
   const [_, drag, preview] = useDrag({
-    type: "TASK",
-    item: () => ({ id: task.id, dragIndex: index }),
+    type: task.branch || "TASK",
+    item: () => ({ id: task.id, dragIndex: index, type: task.branch || "TASK" }),
     collect: (monitor: any) => ({ isDragging: monitor.isDragging() }),
     end: (item: any, _: any) => onDragEnd(item.dragIndex, item.hoverIndex)
   })
@@ -186,14 +191,24 @@ Tasks.Task = ({ task, index, onAdd, onEdit, onDrag, onDragEnd, hoverBottom, hove
   return (
     <div className="Task padding-left" ref={ref}>
       <div className={"flex row justify-content-space-between"}>
-        <div onClick={handleToggleSubTasks} className="control">
-          {isShowingSubTasks
-            ? <i className="fa fa-chevron-down" aria-hidden="true" />
-            : <i className="fa fa-chevron-right" aria-hidden="true" />}
+        <div onClick={handleToggleSubTasks} className="control" ref={drag} data-handler-id={handlerId}>
+          <FontAwesomeIcon icon={isShowingSubTasks ? faChevronDown : faChevronRight} />
         </div>
-        <div className="control" ref={drag} data-handler-id={handlerId}>
-          <i className="fa fa-grip-vertical" aria-hidden="true" />
-        </div>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger as="div" className="DropdownMenu__Trigger">
+            <FontAwesomeIcon icon={faEllipsisV} />
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content className="DropdownMenu__Content">
+            <DropdownMenu.Item className="DropdownMenu__Item" onSelect={handleSelectAdd}>
+              Add Task
+              <div className="DropdownMenu__RightSlot">⇧+Enter</div>
+            </DropdownMenu.Item>
+            <DropdownMenu.Item className="DropdownMenu__Item" onSelect={handleSelectDelete}>
+              Delete Task<div className="DropdownMenu__RightSlot">⇧+Del</div>
+            </DropdownMenu.Item>
+            <DropdownMenu.Arrow className="DropdownMenu__Arrow" />
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
         <form onSubmit={handleSubmit}>
           <TextareaAutosize name="content"
             className={cn({ animated: isAnimated, hoverBottom, hoverTop })}
