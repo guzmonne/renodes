@@ -37,7 +37,7 @@ test("new Task() should correctly set the body attributes", (assert: Test) => {
   assert.end()
 })
 
-test("#Task.set() should return a new Task with its update attributes", (assert: Test) => {
+test("Task.set() should return a new Task with its update attributes", (assert: Test) => {
   const body = { id: ulid(), content: "updated test", done: true }
   const original = new Task({ id, content, branch })
   const updated = original.set(body)

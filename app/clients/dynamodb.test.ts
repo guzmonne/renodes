@@ -87,3 +87,33 @@ test("taskDocumentDBClient.delete()", async (assert: Test) => {
   assert.deepEqual(await tdc.get(task.id, task.userId), { error: `task with id = ${id} not found` })
   assert.end()
 })
+
+test("taskDocumentDBClient.after()", async (assert: Test) => {
+  const branch = ulid()
+  const userId = ulid()
+  const task1 = new Task({ id: ulid(), content: ulid(), branch, userId })
+  const task2 = new Task({ id: ulid(), content: ulid(), branch, userId })
+  const task3 = new Task({ id: ulid(), content: ulid(), branch, userId })
+  assert.deepEqual(await tdc.put(task1), { data: task1 })
+  assert.deepEqual(await tdc.put(task2), { data: task2 })
+  assert.deepEqual(await tdc.put(task3), { data: task3 })
+  assert.deepEqual(await tdc.query({ branch, userId }), { data: [task1, task2, task3] })
+  assert.deepEqual(await tdc.after(task3.id, branch, task1.id, userId), {})
+  assert.deepEqual(await tdc.query({ branch, userId }), { data: [task1, task3, task2] })
+  assert.deepEqual(await tdc.after(task2.id, branch, undefined, userId), {})
+  assert.deepEqual(await tdc.query({ branch, userId }), { data: [task2, task1, task3] })
+  assert.end()
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
