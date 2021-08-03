@@ -44,7 +44,8 @@
     "react-router-dom": "^6.0.0-beta.0",
     "react-textarea-autosize": "^8.3.3",
     "remix": "^0.17.5",
-    "ulid": "^2.3.0"
+    "ulid": "^2.3.0",
+    "winston": "^3.3.3"
   },
   "devDependencies": {
     "@remix-run/dev": "^0.17.5",

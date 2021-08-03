@@ -27,11 +27,12 @@ export class TaskDynamoDBClient implements TaskDBClient {
    * @param TaskDynamoDBObject - DynamoDB response to convert.
    */
   toTask(object: TaskDocumentClientItem): Task {
-    const splitedBranch = object._b.split("#")
+    const [b0, b1, b2] = object._b.split("#")
     return new Task({
       id: object.id,
       content: object.content,
-      branch: splitedBranch.length === 1 ? undefined : splitedBranch.slice(-1)[0],
+      userId: b0 === "Tasks" ? undefined : b0,
+      branch: b1 === "Tasks" ? b2 : b1,
     })
   }
   /**
@@ -65,7 +66,8 @@ export class TaskDynamoDBClient implements TaskDBClient {
     try {
       const pk = this.createPK(id, userId)
       const item = await this.client.get(pk)
-      return { data: item && new Task(item) }
+      if (!item) throw new Error(`task with id = ${id} not found`)
+      return { data: this.toTask(item) }
     } catch (err) {
       return { error: err.message }
     }
@@ -77,10 +79,9 @@ export class TaskDynamoDBClient implements TaskDBClient {
    */
   async put(task: Task, afterId?: string): Promise<DBClientResponse<Task>> {
     try {
-      const pk = this.createPK(task.id)
-      const _b = this.createPK(task.branch)
-      const afterPk = this.createPK(afterId)
-      const ok = await this.client.put(pk, _b, task, afterPk)
+      const pk = this.createPK(task.id, task.userId)
+      const _b = this.createPK(task.branch, task.userId)
+      const ok = await this.client.put(pk, _b, task, afterId && this.createPK(afterId, task.userId))
       if (!ok) throw new Error(`error while storing task with pk = ${pk} at branch = ${_b}`)
       return { data: task }
     } catch (err) {
@@ -93,7 +94,7 @@ export class TaskDynamoDBClient implements TaskDBClient {
    */
   async update(task: Task): Promise<DBClientResponse<undefined>> {
     try {
-      const pk = this.createPK(task.id)
+      const pk = this.createPK(task.id, task.userId)
       const ok = await this.client.update(pk, task)
       if (!ok) throw new Error(`error while updating task with pk = ${pk}`)
       return {}
@@ -123,7 +124,7 @@ export class TaskDynamoDBClient implements TaskDBClient {
    * @param id - Task unique identifier.
    * @param branch - Task branch.
    * @param afterId - Unique identifier of the `Task` after which the
-   *                `Task` must be positioned after.
+   *                  `Task` must be positioned after.
    * @param userId - User unique identifier.
    */
   async after(id: string, branch?: string, afterId?: string, userId?: string): Promise<DBClientResponse<any>> {

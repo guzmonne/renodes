@@ -76,7 +76,6 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
    * @param task - `Task` to delete.
    */
   const deleteTaskMutation = useMutation((task) => {
-    console.log(branch)
     return confirm("Are you sure you want to delete this Task?") && fetch(`/api/tasks/${task.id}`, {
       method: "delete",
       headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },

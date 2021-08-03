@@ -125,7 +125,7 @@ export interface DBClientResponse<Data> {
 
 export interface BranchDocumentClient<Item, Body, Patch> {
   get(pk: string): Promise<Item | undefined>;
-  delete(pk: string): Promise<undefined>;
+  delete(pk: string): Promise<boolean>;
   put(pk: string, branch: string, item: Body, afterPk?: string): Promise<boolean>;
   update(pk: string, patch: Patch): Promise<boolean>;
   list(branch: string): Promise<Item[]>;

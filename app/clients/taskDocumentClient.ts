@@ -270,11 +270,11 @@ export class TaskDocumentClient implements ITaskDocumentClient {
    * delete deletes a single `Task` from the table identified by its key.
    * @param key - `Task` unique identifier.
    */
-  async delete(pk: string): Promise<undefined> {
+  async delete(pk: string): Promise<boolean> {
     const task = await this.get(pk)
-    if (task === undefined) return
+    if (task === undefined) return true
     const pointingToTask = await this.getPointingTo(task.pk, task._b)
-    if (!pointingToTask) return
+    if (!pointingToTask) return false
     // 1. Update `pointingToTask` to point to the `Task` currently
     //    being pointed by the `Task` to be deleted.
     const updatePromise: Promise<UpdateCommandOutput> = this.client.send(new UpdateCommand({
@@ -295,6 +295,7 @@ export class TaskDocumentClient implements ITaskDocumentClient {
     }))
     // TODO: handle errors.
     await Promise.all([updatePromise, deletePromise])
+    return true
   }
   /**
    * list returns the list of `Tasks` under a `pk`.

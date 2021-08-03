@@ -72,19 +72,19 @@ test("Task Linked List abstraction", async (assert: Test) => {
   /**
    * Deleting an element shouldn't break the list.
    */
-  assert.equal(await tdc.delete(pk4), undefined)
+  assert.equal(await tdc.delete(pk4), true)
   assert.deepEqual((await tdc.list(root)).map(item => item.pk), [pk2, pk1, pk3])
   /**
    * Deleting the tail or the head shouldn't break the list.
    */
-  assert.equal(await tdc.delete(pk3), undefined)
+  assert.equal(await tdc.delete(pk3), true)
   assert.deepEqual((await tdc.list(root)).map(item => item.pk), [pk2, pk1])
-  assert.equal(await tdc.delete(pk2), undefined)
+  assert.equal(await tdc.delete(pk2), true)
   assert.deepEqual((await tdc.list(root)).map(item => item.pk), [pk1])
   /**
    * Deleting the last element of the list should return an empty list
    */
-  assert.equal(await tdc.delete(pk1), undefined)
+  assert.equal(await tdc.delete(pk1), true)
   assert.deepEqual((await tdc.list(root)).map(item => item.pk), [])
   /**
    * Adding new `Tasks` after it gets empty should return a correctly
