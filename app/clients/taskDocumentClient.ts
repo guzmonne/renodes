@@ -222,7 +222,7 @@ export class TaskDocumentClient implements ITaskDocumentClient {
    * @param patch - `Task` patch to be applied to the `item`.
    */
   async update(pk: string, patch: TaskDocumentClientPatch): Promise<boolean> {
-    if (!patch.content) return true
+    if (patch.content === undefined || patch.content === null) return true
     const response: UpdateCommandOutput = await this.client.send(new UpdateCommand({
       TableName: this.tableName,
       Key: { pk },
@@ -325,9 +325,10 @@ export class TaskDocumentClient implements ITaskDocumentClient {
     const map = new Map<string, TaskDocumentClientItem>()
     const result: TaskDocumentClientItem[] = []
     const remaining: TaskDocumentClientItem[] = []
+    if (head._n === ".") return []
     // First pass, we create the `sk` to `item` map, plus start
     // populating the `result` list.
-    items.forEach((item: TaskDocumentClientItem, index: number) => {
+    items.forEach((item: TaskDocumentClientItem, _: number) => {
       map.set(item.pk, item)
       if (item.pk === head._n) {
         result.push(item)

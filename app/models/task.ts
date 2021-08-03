@@ -18,10 +18,10 @@ export class Task {
   constructor(body: any) {
     if (typeof body !== "object") throw new Error("'body' is invalid")
     this.object = {
-      id     : body.id || ulid(),
+      id: body.id || ulid(),
       content: body.content || "",
-      branch : body.branch,
-      userId : body.userId,
+      branch: body.branch,
+      userId: body.userId,
     }
   }
   /**
@@ -43,15 +43,15 @@ export class Task {
   /**
    * Key getters.
    */
-  get id()      { return this.object.id }
+  get id() { return this.object.id }
   get content() { return this.object.content }
-  get branch()  { return this.object.branch }
-  get userId()  { return this.object.userId }
+  get branch() { return this.object.branch }
+  get userId() { return this.object.userId }
   /**
    * toJSON returns an object representation of the model.
    */
   static toJSON = (task: Task): TaskObject => {
-    return {...task.object}
+    return { ...task.object }
   }
   /**
    * set applies new updates to the model.
@@ -60,11 +60,10 @@ export class Task {
   set(body: any): Task {
     if (typeof body !== "object") throw new Error("`body` is not an object")
     return new Task({
-      id     : this.id,
-      content: body.content || this.content,
-      branch : this.branch,
-      userId : this.userId,
+      id: this.id,
+      content: body.content !== undefined ? body.content : this.content,
+      branch: this.branch,
+      userId: this.userId,
     })
   }
 }
-// something new

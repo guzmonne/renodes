@@ -1,9 +1,9 @@
-import { useState, useCallback, useRef, ChangeEvent, KeyboardEvent } from "react"
+import { useState, useCallback, useRef, ChangeEvent, KeyboardEvent, Fragment } from "react"
 import { useDrag, useDrop } from "react-dnd"
 import TextareaAutosize from "react-textarea-autosize";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faChevronDown, faChevronRight, faEllipsisV } from "@fortawesome/free-solid-svg-icons"
+import { faChevronDown, faChevronRight, faEllipsisV, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons"
 import cn from "classnames"
 
 import { Loader } from "../utils/Loader"
@@ -36,7 +36,7 @@ export function Tasks({ branch, initialData, taskComponent = Tasks.Task }: Tasks
   const [[dragIndex, hoverIndex], setIndexes] = useState<number[]>([])
   const {
     tasks,
-    isLoading,
+    query,
     handleAddEmpty,
     handleAdd,
     handleEdit,
@@ -46,7 +46,7 @@ export function Tasks({ branch, initialData, taskComponent = Tasks.Task }: Tasks
 
   const TaskComponent = taskComponent
 
-  if (isLoading) return <div style={{ margin: "0 auto" }}><Loader /></div>
+  if (query.isLoading) return <div className="Tasks"><Loader /></div>
 
   return (
     <div className="Tasks">
@@ -183,15 +183,17 @@ Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onDrag, onDragEnd, hoverBo
   useDebounce(() => {
     setIsAnimated(false)
     if (content === task.content) return
-    onEdit(task.set({ content }))
-  }, 500, [task, content])
+    const updatedTask = task.set({ content })
+    console.log({ content, task: task.content, updated: updatedTask.content })
+    onEdit(updatedTask)
+  }, 500, [content])
 
   drop(preview(ref))
 
   return (
-    <div className="Task padding-left" ref={ref}>
-      <div className={"flex row justify-content-space-between"}>
-        <div onClick={handleToggleSubTasks} className="control" ref={drag} data-handler-id={handlerId}>
+    <Fragment>
+      <div className="Task" ref={ref}>
+        <div onClick={handleToggleSubTasks} className="Task__Control" ref={drag} data-handler-id={handlerId}>
           <FontAwesomeIcon icon={isShowingSubTasks ? faChevronDown : faChevronRight} />
         </div>
         <DropdownMenu.Root>
@@ -200,11 +202,14 @@ Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onDrag, onDragEnd, hoverBo
           </DropdownMenu.Trigger>
           <DropdownMenu.Content className="DropdownMenu__Content">
             <DropdownMenu.Item className="DropdownMenu__Item" onSelect={handleSelectAdd}>
-              Add Task
+              <div className="DropdownMenu__LeftSlot"><FontAwesomeIcon icon={faPlus} /></div>
+              <div className="DropdownMenu__CenterSlot">Add Task</div>
               <div className="DropdownMenu__RightSlot">⇧+Enter</div>
             </DropdownMenu.Item>
-            <DropdownMenu.Item className="DropdownMenu__Item" onSelect={handleSelectDelete}>
-              Delete Task<div className="DropdownMenu__RightSlot">⇧+Del</div>
+            <DropdownMenu.Item className="DropdownMenu__Item DropdownMenu__Item--red" onSelect={handleSelectDelete}>
+              <div className="DropdownMenu__LeftSlot"><FontAwesomeIcon icon={faTrash} /></div>
+              <div className="DropdownMenu__CenterSlot">Delete Task</div>
+              <div className="DropdownMenu__RightSlot">⇧+Del</div>
             </DropdownMenu.Item>
             <DropdownMenu.Arrow className="DropdownMenu__Arrow" />
           </DropdownMenu.Content>
@@ -220,7 +225,7 @@ Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onDrag, onDragEnd, hoverBo
         </form>
       </div>
       {isShowingSubTasks && <Tasks branch={task.id} />}
-    </div>
+    </Fragment>
   )
   /**
    * handleToggleSubTasks toggles showing or hiding sub-tasks.
@@ -241,9 +246,11 @@ Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onDrag, onDragEnd, hoverBo
    * keys are pressed.
    */
   function handleShiftKey(e: KeyboardEvent) {
-    if (e.key !== "Enter" || !e.shiftKey) return
-    e.preventDefault()
-    onAdd(task)
+    if (!e.shiftKey) return
+    switch (e.key) {
+      case "Enter": { e.preventDefault(); handleSelectAdd(); break }
+      case "Delete": { e.preventDefault(); handleSelectDelete(); break }
+    }
   }
 }
 /**
@@ -264,21 +271,19 @@ Tasks.Empty = ({ onAdd }: EmptyTaskProps) => {
   const handleSubmit = useCallback((e) => e.preventDefault(), [])
 
   return (
-    <div className="Task padding-left">
-      <div className="flex row justify-content-space-between">
-        <div className="control transparent">
-          <i className="fa fa-chevron-right" aria-hidden="true" />
-        </div>
-        <div className="control" onClick={handleAdd}>
-          <i className="fa fa-plus" aria-hidden="true" />
-        </div>
-        <form onSubmit={handleSubmit}>
-          <TextareaAutosize name="content"
-            defaultValue=""
-            onFocusCapture={handleAdd}
-          />
-        </form>
+    <div className="Task">
+      <div className="Task__Control Task__Control--transparent">
+        <i className="fa fa-chevron-right" aria-hidden="true" />
       </div>
+      <div className="Task__Control" onClick={handleAdd}>
+        <i className="fa fa-plus" aria-hidden="true" />
+      </div>
+      <form onSubmit={handleSubmit}>
+        <TextareaAutosize name="content"
+          defaultValue=""
+          onFocusCapture={handleAdd}
+        />
+      </form>
     </div>
   )
 }

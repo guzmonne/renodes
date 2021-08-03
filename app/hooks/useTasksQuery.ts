@@ -6,7 +6,7 @@ import { Task } from "../models/task"
 
 export function useTasksQuery(branch: string, initialData?: Task[]) {
   const queryClient = useQueryClient()
-  const { data: tasks, ...props } = useQuery<Task[]>(branch, () => fetch(`/api/tasks/${branch}`).then(response => response.json()).then(Task.collection), { initialData })
+  const { data: tasks, ...query } = useQuery<Task[]>(branch, () => fetch(`/api/tasks/${branch}`).then(response => response.json()).then(Task.collection), { initialData })
   /**
    * createTaskMutation handles the creation of a new `Task` using
    * an Optimistic UI workflow.
@@ -76,7 +76,7 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
    * @param task - `Task` to delete.
    */
   const deleteTaskMutation = useMutation((task) => {
-    return confirm("Are you sure you want to delete this Task?") && fetch(`/api/tasks/${task.id}`, {
+    return fetch(`/api/tasks/${task.id}`, {
       method: "delete",
       headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
     })
@@ -143,35 +143,39 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
    * @param task - Task to add to the list.
    */
   const handleAddEmpty = useCallback(() => {
+    if (createTaskMutation.isLoading) return
     const task = new Task({ id: ulid(), branch, content: "" })
     createTaskMutation.mutate({ task })
-  }, [createTaskMutation])
+  }, [])
   /**
    * handleAdd handles the creation of new `Tasks`.
    * @param task - Task to add to the list.
    */
   const handleAdd = useCallback((task: Task) => {
+    if (createTaskMutation.isLoading) return
     const newTask = new Task({ id: ulid(), branch, content: "" })
     createTaskMutation.mutate({ task: newTask, afterTask: task })
-  }, [createTaskMutation])
+  }, [])
   /**
    * handleDelete allows a Child component to remove a task from the list.
    */
   const handleDelete = useCallback((task: Task) => {
-    deleteTaskMutation.mutate(task)
-  }, [deleteTaskMutation])
+    if (deleteTaskMutation.isLoading) return
+    confirm("Are you sure you want to delete this Task?") && deleteTaskMutation.mutate(task)
+  }, [])
   /**
    * handleEdit handles `Task` updated.
    */
   const handleEdit = useCallback((task: Task) => {
+    if (updateTaskMutation.isLoading) return
     updateTaskMutation.mutate(task)
-  }, [updateTaskMutation])
+  }, [])
   /**
    * Export
    */
   return {
     tasks,
-    ...props,
+    query,
     createTaskMutation,
     updateTaskMutation,
     deleteTaskMutation,
@@ -191,9 +195,10 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
  */
 function toFormBody(obj: any): string {
   const formBody = []
-  for (let key in obj) {
+  for (let [key, value] of Object.entries(obj)) {
+    if (value === undefined || value === null) continue
     let encodedKey = encodeURIComponent(key)
-    let encodedVal = encodeURIComponent(obj[key])
+    let encodedVal = encodeURIComponent(value as any)
     formBody.push(encodedKey + "=" + encodedVal)
   }
   return formBody.join("&")

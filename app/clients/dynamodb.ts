@@ -80,9 +80,10 @@ export class TaskDynamoDBClient implements TaskDBClient {
   async put(task: Task, afterId?: string): Promise<DBClientResponse<Task>> {
     try {
       const pk = this.createPK(task.id, task.userId)
-      const _b = this.createPK(task.branch, task.userId)
-      const ok = await this.client.put(pk, _b, task, afterId && this.createPK(afterId, task.userId))
-      if (!ok) throw new Error(`error while storing task with pk = ${pk} at branch = ${_b}`)
+      const branchPk = this.createPK(task.branch, task.userId)
+      const afterPk = afterId ? this.createPK(afterId, task.userId) : undefined
+      const ok = await this.client.put(pk, branchPk, task, afterPk)
+      if (!ok) throw new Error(`error while storing task with pk = ${pk} at branch = ${branchPk}`)
       return { data: task }
     } catch (err) {
       return { error: err.message }

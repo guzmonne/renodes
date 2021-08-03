@@ -2,7 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Lobster&display=swap');
 
 :root {
-  --background: #F9F9F9;
+  --background: hsl(0, 0%, 93.0%);
   --handle: #d1d1d1;
   --text-body: #1D1D1D;
   --primary: #114BE0;
@@ -32,70 +32,26 @@ html {
 }
 
 main {
-  padding: 0 0 0.5rem 0;
+  padding: 0 0.5rem;
   margin: 0 auto;
   max-width: 960px;
 }
 
-h1, h2, h3, h4, h5 {
-  margin: 0.5rem;
+h1 {
+  margin: 0.5rem 3.2rem;
   font-family: 'Lobster', cursive;
 }
 
-/** TEXT **/
-
-p {
-  line-height: calc(var(--font-size) + 0.25rem);
+/** Title **/
+.Title {
+  color: var(--purple);
 }
 
-.title {
+.Title .Title__gradient {
   background: linear-gradient(90deg, var(--purple) 0%, var(--pink) 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-}
-
-/** BUTTON **/
-button {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  background: var(--primary);
-  border-radius: 0.3rem;
-  padding: 0.5rem 1.5rem;
-  color: white;
-  font-weight: 500;
-  text-align: center;
-  outline: none;
-  border: 0;
-  cursor: pointer;
-}
-
-button.outline {
-  background: var(--background);
-  border: 0.15rem solid var(--primary);
-  color: var(--primary);
-}
-
-button.link {
-  background: transparent;
-  color: var(--primary);
-}
-
-button.square {
-  min-width: 2rem;
-  padding: 0.4rem;
-}
-
-button.hover {
-  color: var(--text-body);
-  opacity: 0.3;
-}
-
-button.circle {
-  padding: 0.5rem 0.6rem;
-  border-radius: 50%;
 }
 
 /** FORM **/
@@ -128,7 +84,7 @@ form textarea {
   font-weight: normal;
   color: var(--text-body);
   resize: none;
-  transition: background 0.5s, border 0.5s, height 0.25s;
+  transition: background 0.5s, border 0.5s;
 }
 
 form textarea {
@@ -154,118 +110,40 @@ form input:focus-visible {
   border: 2px solid var(--primary);
 }
 
-/** LAYOUT **/
-.flex {
+/** Tasks **/
+.Tasks {
+  width: 100%;
   display: flex;
-}
-
-.flex.row {
-  flex-direction: row;
-}
-
-.flex.align-items-center {
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
 }
 
-.flex.justify-content-center {
-  justify-content: center;
-}
-
-.flex.justify-content-space-between {
-  justify-content: space-between;
-}
-
-/** UTILITIES **/
-.hidden {
-  display: none;
-}
-
-.transparent {
-  opacity: 0;
-}
-
-.muted {
-  opacity: 0.3;
-}
-
-.h-color {
-  color: var(--highlight)!important;
-}
-
-.purple-color {
-  color: var(--purple)!important;
-}
-
-.p-color-hover:hover {
-  color: var(--primary)!important;
-  opacity: 1;
-}
-
-.h-color-hover:hover {
-  color: var(--highlight)!important;
-  opacity: 1;
-}
-
-.h-border {
-  border: 0.15rem solid var(--highlight);
-}
-
-.h-background {
-  background-color: var(--highlight);
-}
-
-.padding-left {
+.Tasks > .Tasks {
   padding-left: 0.5rem;
-}
-
-.padding-right {
-  padding-right: 0.5rem;
-}
-
-.padding-top {
-  padding-top: 0.5rem;
-}
-
-.padding-bottom {
-  padding-bottom: 0.5rem;
-}
-
-.margin-bottom {
-  margin-bottom: 0.5rem;
-}
-
-/** Tasks **/
-.Tasks {
-  padding-left: 0.5rem;
-}
-
-.Tasks hr {
-  border: 1px solid var(--primary);
-  width: calc(100% - 2.7rem);
-  margin: 0 0 0 2.2rem;
-  transition: border-color 0.5s;
-  margin-top: -1px;
-  margin-bottom: -1px;
 }
 
 /** Task **/
 .Task {
+  width: 100%;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   justify-content: space-between;
-  padding-left: 0.5rem;
-  margin-left: -0.5rem;
 }
 
 .Task > div {
   border-radius: 26.9217px;
 }
 
-.Task .control {
+.Task .Task__Control {
   color: var(--handle);
   margin-right: 0.125rem;
-  width: 1.2rem;
+  min-width: 18px;
   padding-top: 0.6rem;
+}
+
+.Task .Task__Control--transparent {
+  opacity: 0;
 }
 
 .Task .fa-grip-vertical {
@@ -325,19 +203,23 @@ form input:focus-visible {
   border-radius: 3px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   height: 1.5rem;
   padding: 0 0.4rem;
   position: relative;
-  padding-left: 1.5rem;
   user-select: none;
 }
 
-.DropdownMenu__Item[data-disabled] {
-  color: var(--handle);
-  pointer-events: none;
+.DropdownMenu__Item:focus {
+  background-color: var(--handle);
 }
 
-.DropdownMenu__Item:focus {
+.DropdownMenu__LeftSlot {
+  margin-right: 1rem;
+  color: var(--text-body);
+}
+
+.DropdownMenu__Item:focus > .DropdownMenu__LeftSlot {
   background-color: var(--handle);
 }
 
@@ -351,9 +233,31 @@ form input:focus-visible {
   background-color: var(--handle);
 }
 
-.DropdownMenu__Item[data-disabled] > .DropdownMenu__RightSlot {
-  color: var(--handle);
-  pointer-events: none;
+.DropdownMenu__Item.DropdownMenu__Item--red {
+  color: var(--highlight);
+}
+
+.DropdownMenu__Item.DropdownMenu__Item--red:focus {
+  color: var(--background);
+  background-color: var(--highlight);
+}
+
+.DropdownMenu__Item--red > .DropdownMenu__LeftSlot {
+  color: var(--highlight)
+}
+
+.DropdownMenu__Item.DropdownMenu__Item--red:focus > .DropdownMenu__LeftSlot {
+  color: var(--background);
+  background-color: var(--highlight);
+}
+
+.DropdownMenu__Item--red > .DropdownMenu__RightSlot {
+  color: var(--highlight)
+}
+
+.DropdownMenu__Item.DropdownMenu__Item--red:focus > .DropdownMenu__RightSlot {
+  color: var(--background);
+  background-color: var(--highlight);
 }
 
 .DropdownMenu__Arrow {

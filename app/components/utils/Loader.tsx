@@ -1,5 +1,5 @@
 export function Loader() {
   return (
-    <div className="loader"><div></div><div></div><div></div></div>
+    <div className="Loader"><div></div><div></div><div></div></div>
   )
 }
