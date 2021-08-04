@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, ChangeEvent, KeyboardEvent, Fragment, RefObject, forwardRef } from "react"
+import { useState, useCallback, useRef, ChangeEvent, KeyboardEvent, Fragment, forwardRef } from "react"
 import { useDrag, useDrop } from "react-dnd"
 import TextareaAutosize from "react-textarea-autosize";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
@@ -197,7 +197,7 @@ Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onDrag, onDragEnd, hoverBo
       <div className="Task" ref={ref}>
         <Tasks.TaskControl icon={isShowingSubTasks ? faChevronDown : faChevronRight} onClick={handleToggleSubTasks} ref={drag} data-handler-id={handlerId} />
         <DropdownMenu.Root>
-          <DropdownMenu.Trigger as={Tasks.TaskControl} className="DropdownMenu__Trigger" icon={faEllipsisV} />
+          <DropdownMenu.Trigger as={Tasks.TaskControl} icon={faEllipsisV} />
           <DropdownMenu.Content className="DropdownMenu__Content">
             <DropdownMenu.Item className="DropdownMenu__Item" onSelect={handleSelectExternalLink}>
               <div className="DropdownMenu__LeftSlot"><FontAwesomeIcon icon={faExternalLinkAlt} /></div>
