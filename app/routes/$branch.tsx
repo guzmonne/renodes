@@ -1,7 +1,6 @@
 import { useRouteData } from "remix"
 import { useLocation, useParams } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "react-query"
-import { ReactQueryDevtools } from "react-query/devtools"
 import { DndProvider } from "react-dnd-multi-backend"
 import { IdProvider } from "@radix-ui/react-id"
 import HTML5toTouch from "react-dnd-multi-backend/dist/cjs/HTML5toTouch"
@@ -98,7 +97,6 @@ export default function () {
                 <Tasks branch={branch} initialData={Task.collection(initialData)} />
               </DndProvider>
             </main>
-            <ReactQueryDevtools initialIsOpen={false} />
           </QueryClientProvider>
         </ScrollArea.Viewport>
         <ScrollArea.Scrollbar className="ScrollArea__Scrollbar" orientation="vertical">

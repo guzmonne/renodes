@@ -1,10 +1,11 @@
-import { useState, useCallback, useRef, ChangeEvent, KeyboardEvent, Fragment } from "react"
+import { useState, useCallback, useRef, ChangeEvent, KeyboardEvent, Fragment, RefObject, forwardRef } from "react"
 import { useDrag, useDrop } from "react-dnd"
 import TextareaAutosize from "react-textarea-autosize";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faChevronDown, faChevronRight, faEllipsisV, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons"
+import { faChevronDown, faChevronRight, faEllipsisV, faExternalLinkAlt, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons"
 import cn from "classnames"
+import type { IconDefinition } from "@fortawesome/free-solid-svg-icons"
 
 import { Loader } from "../utils/Loader"
 import { useDebounce } from "../../hooks/useDebounce"
@@ -160,6 +161,8 @@ Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onDrag, onDragEnd, hoverBo
   const handleSubmit = useCallback((e) => e.preventDefault(), [])
   const handleSelectAdd = useCallback(() => onAdd(task), [onAdd, task])
   const handleSelectDelete = useCallback(() => onDelete(task), [onDelete, task])
+  const handleSelectExternalLink = useCallback(() => window.open(window.location.origin + "/" + task.id), [task])
+  const handleToggleSubTasks = useCallback(() => setIsShowingSubTasks(!isShowingSubTasks), [isShowingSubTasks])
 
   const [{ handlerId }, drop] = useDrop({
     accept: task.branch || "TASK",
@@ -184,7 +187,6 @@ Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onDrag, onDragEnd, hoverBo
     setIsAnimated(false)
     if (content === task.content) return
     const updatedTask = task.set({ content })
-    console.log({ content, task: task.content, updated: updatedTask.content })
     onEdit(updatedTask)
   }, 500, [content])
 
@@ -193,14 +195,16 @@ Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onDrag, onDragEnd, hoverBo
   return (
     <Fragment>
       <div className="Task" ref={ref}>
-        <div onClick={handleToggleSubTasks} className="Task__Control" ref={drag} data-handler-id={handlerId}>
-          <FontAwesomeIcon icon={isShowingSubTasks ? faChevronDown : faChevronRight} />
-        </div>
+        <Tasks.TaskControl icon={isShowingSubTasks ? faChevronDown : faChevronRight} onClick={handleToggleSubTasks} ref={drag} data-handler-id={handlerId} />
         <DropdownMenu.Root>
-          <DropdownMenu.Trigger as="div" className="DropdownMenu__Trigger">
-            <FontAwesomeIcon icon={faEllipsisV} />
-          </DropdownMenu.Trigger>
+          <DropdownMenu.Trigger as={Tasks.TaskControl} className="DropdownMenu__Trigger" icon={faEllipsisV} />
           <DropdownMenu.Content className="DropdownMenu__Content">
+            <DropdownMenu.Item className="DropdownMenu__Item" onSelect={handleSelectExternalLink}>
+              <div className="DropdownMenu__LeftSlot"><FontAwesomeIcon icon={faExternalLinkAlt} /></div>
+              <div className="DropdownMenu__CenterSlot">Open in new page</div>
+              <div className="DropdownMenu__RightSlot"></div>
+            </DropdownMenu.Item>
+            <DropdownMenu.Separator className="DropdownMenu__Separator" />
             <DropdownMenu.Item className="DropdownMenu__Item" onSelect={handleSelectAdd}>
               <div className="DropdownMenu__LeftSlot"><FontAwesomeIcon icon={faPlus} /></div>
               <div className="DropdownMenu__CenterSlot">Add Task</div>
@@ -211,7 +215,6 @@ Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onDrag, onDragEnd, hoverBo
               <div className="DropdownMenu__CenterSlot">Delete Task</div>
               <div className="DropdownMenu__RightSlot">⇧+Del</div>
             </DropdownMenu.Item>
-            <DropdownMenu.Arrow className="DropdownMenu__Arrow" />
           </DropdownMenu.Content>
         </DropdownMenu.Root>
         <form onSubmit={handleSubmit}>
@@ -227,12 +230,6 @@ Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onDrag, onDragEnd, hoverBo
       {isShowingSubTasks && <Tasks branch={task.id} />}
     </Fragment>
   )
-  /**
-   * handleToggleSubTasks toggles showing or hiding sub-tasks.
-   */
-  function handleToggleSubTasks() {
-    setIsShowingSubTasks(!isShowingSubTasks)
-  }
   /**
    * handlecontentChange updates the value of the content.
    * @param e - React `onChange` event.
@@ -287,3 +284,21 @@ Tasks.Empty = ({ onAdd }: EmptyTaskProps) => {
     </div>
   )
 }
+/**
+ * TaskControlProps represent the props of the TaskControl component.
+ */
+export interface TaskControlProps {
+  icon: IconDefinition;
+  onClick?: () => void;
+  className?: string;
+}
+/**
+ * TaskControl is a component that handles a control option of a Task.
+ */
+Tasks.TaskControl = forwardRef<HTMLDivElement, TaskControlProps>(({ onClick, icon, className, ...props }, ref) => {
+  return (
+    <div onClick={onClick} className={cn("Task__Control", className)} ref={ref} {...props}>
+      <FontAwesomeIcon icon={icon} />
+    </div>
+  )
+})

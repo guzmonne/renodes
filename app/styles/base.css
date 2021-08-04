@@ -38,7 +38,7 @@ main {
 }
 
 h1 {
-  margin: 0.5rem 3.2rem;
+  margin: 0.5rem 2.6rem;
   font-family: 'Lobster', cursive;
 }
 
@@ -137,9 +137,12 @@ form input:focus-visible {
 
 .Task .Task__Control {
   color: var(--handle);
-  margin-right: 0.125rem;
-  min-width: 18px;
+  margin-top: 3px;
+  margin-right: 3px;
+  min-width: 1rem;
   padding-top: 0.6rem;
+  display: flex;
+  justify-content: center;
 }
 
 .Task .Task__Control--transparent {
@@ -184,15 +187,7 @@ form input:focus-visible {
   border-radius: 0.5rem;
   padding: 0.4rem;
   box-shadow: 0px 10px 38px -10px rgba(22, 23, 24, 0.35), 0px 10px 20px -15px rgba(22, 23, 24, 0.2);
-  margin-left: -1.1rem;
   margin-top: -0.5rem;
-}
-
-.DropdownMenu__Trigger {
-  color: var(--handle);
-  margin-right: 0.125rem;
-  width: 1.2rem;
-  padding-top: 0.6rem;
 }
 
 .DropdownMenu__Item {
@@ -258,6 +253,12 @@ form input:focus-visible {
 .DropdownMenu__Item.DropdownMenu__Item--red:focus > .DropdownMenu__RightSlot {
   color: var(--background);
   background-color: var(--highlight);
+}
+
+.DropdownMenu__Separator {
+  height: 1px;
+  background-color: var(--background);
+  margin: 5px;
 }
 
 .DropdownMenu__Arrow {
