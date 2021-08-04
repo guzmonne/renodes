@@ -49,6 +49,7 @@ export const action: ActionFunction = async ({ request, params }) => {
     const id = data.get("id")
     const content = data.get("content")
     const dragId = data.get("dragId")
+    const meta = data.get("meta")
     let afterId = data.get("afterId")
     let branch = data.get("branch") || params.branch
     if (branch === "home") branch = undefined
@@ -65,9 +66,13 @@ export const action: ActionFunction = async ({ request, params }) => {
         break
       case "PUT":
         if (id === null) return endpoint
-        console.log({ content })
         task = await repository.get(id)
         await repository.update(task.set({ content }))
+        break
+      case "PATCH":
+        if (id === null || meta === null) return endpoint
+        const metadata = new URLSearchParams(meta)
+        await repository.meta(id, { isOpened: metadata.get("isOpened") === "true" })
         break
       case "DELETE":
         await repository.delete(branch)

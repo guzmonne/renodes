@@ -11,6 +11,7 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
    * createTaskMutation handles the creation of a new `Task` using
    * an Optimistic UI workflow.
    * @param task - `Task` to create.
+   * @param afterTask - `Task` after which the new `Task` should be created.
    */
   const createTaskMutation = useMutation(({ task, afterTask }) => {
     return fetch(`/api/tasks/${branch}`, {
@@ -71,6 +72,36 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
     }
   })
   /**
+   * metaTaskMutation updates the metadata of a `Task` using an
+   * Optimistic UI workflow.
+   * @param task - `Task` whose metadata should be updated.
+   */
+  const metaTaskMutation = useMutation((task) => (
+    fetch(`/api/tasks/${branch}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+      body: toFormBody(Task.toJSON(task))
+    })
+      .then(response => {
+        if (response.ok) return task
+        throw new Error("couldn't update task")
+      })
+  ), {
+    onMutate: async (task: Task): Promise<{ previousTasks: Task[] }> => {
+      await queryClient.cancelQueries(branch)
+      const previousTasks: Task[] = queryClient.getQueryData(branch)
+      const index = previousTasks.findIndex((t: Task) => t.id === task.id)
+      queryClient.setQueryData(branch, (tasks: Task[]): Task[] => [...tasks.slice(0, index), task, ...tasks.slice(index + 1)])
+      return { previousTasks }
+    },
+    onError: (_, __, context) => {
+      queryClient.setQueryData(branch, context.previousTasks)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries(branch)
+    }
+  })
+  /**
    * deleteTaskMutation handles the deletion of a `Task` using
    * an Optimistic UI workflow.
    * @param task - `Task` to delete.
@@ -101,7 +132,8 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
   /**
    * dragTaskMutation handles draggin a `Task` after another
    * using an Optimistic UI workflow.
-   * @param task - `Task` to drag.
+   * @param dragIndex - Index of the `Task` being dragged.
+   * @param hoverIndex - Index of the `Task` being hovered.
    */
   const dragTaskMutation = useMutation(({ dragIndex, hoverIndex }) => {
     const task = tasks[dragIndex]
@@ -157,7 +189,8 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
     createTaskMutation.mutate({ task: newTask, afterTask: task })
   }, [])
   /**
-   * handleDelete allows a Child component to remove a task from the list.
+   * handleDelete allows a Child component to remove a task from the list.\
+   * @param task - Task to be deleted.
    */
   const handleDelete = useCallback((task: Task) => {
     if (deleteTaskMutation.isLoading) return
@@ -165,10 +198,19 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
   }, [])
   /**
    * handleEdit handles `Task` updated.
+   * @param task - Task to be updated.
    */
   const handleEdit = useCallback((task: Task) => {
     if (updateTaskMutation.isLoading) return
     updateTaskMutation.mutate(task)
+  }, [])
+  /**
+   * handleMeta handles a `Task` metadata updates.
+   * @param task - Task whose metadata should be updated.
+   */
+  const handleMeta = useCallback((task: Task) => {
+    if (metaTaskMutation.isLoading) return
+    metaTaskMutation.mutate(task)
   }, [])
   /**
    * Export
@@ -180,10 +222,12 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
     updateTaskMutation,
     deleteTaskMutation,
     dragTaskMutation,
+    metaTaskMutation,
     handleAdd,
     handleAddEmpty,
     handleDelete,
     handleEdit,
+    handleMeta,
   }
 }
 /**
@@ -198,7 +242,7 @@ function toFormBody(obj: any): string {
   for (let [key, value] of Object.entries(obj)) {
     if (value === undefined || value === null) continue
     let encodedKey = encodeURIComponent(key)
-    let encodedVal = encodeURIComponent(value as any)
+    let encodedVal = typeof value === "object" ? toFormBody(value) : encodeURIComponent(value as any)
     formBody.push(encodedKey + "=" + encodedVal)
   }
   return formBody.join("&")

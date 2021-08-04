@@ -1,5 +1,6 @@
 import { Task } from '../models/task'
 import { tasksDynamoDBClient } from "../clients/dynamodb"
+import type { TaskMetaObject } from "../models/task"
 import type { TaskDBClient, QueryParams } from "../types"
 
 export interface TasksRepositoryConfig {
@@ -56,9 +57,21 @@ class TasksRepository {
   /**
    * delete removes a Task from the repository
    * @param id - Task unique identifier.
+   * @param userId - User unique identifier.
    */
-  async delete(id: string): Promise<undefined> {
-    const { error } = await this.client.delete(id)
+  async delete(id: string, userId?: string): Promise<undefined> {
+    const { error } = await this.client.delete(id, userId)
+    if (error) throw error
+    return undefined
+  }
+  /**
+   * meta updates the metadata information of a `Task`
+   * @param id - Task unique identifier.
+   * @param meta - Metadata object to apply.
+   * @param userId - User unique identifier.
+   */
+  async meta(id: string, meta: TaskMetaObject, userId?: string): Promise<undefined> {
+    const { error } = await this.client.meta(id, userId, meta)
     if (error) throw error
     return undefined
   }

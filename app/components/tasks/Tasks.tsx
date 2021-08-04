@@ -42,6 +42,7 @@ export function Tasks({ branch, initialData, taskComponent = Tasks.Task }: Tasks
     handleAdd,
     handleEdit,
     handleDelete,
+    handleMeta,
     dragTaskMutation,
   } = useTasksQuery(branch, initialData)
 
@@ -59,6 +60,7 @@ export function Tasks({ branch, initialData, taskComponent = Tasks.Task }: Tasks
           onAdd={handleAdd}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          onToggle={handleMeta}
           onDrag={onDrag}
           onDragEnd={onDragEnd}
           hoverTop={hoverIndex === index && dragIndex > index}
@@ -120,23 +122,35 @@ export interface TaskProps {
   /**
    * onAdd is a function that creates an empty new `Task` under the
    * current one.
+   * @param task - Task to be added.
    */
   onAdd: (task: Task) => void;
   /**
    * onEdit is a function that passes updates on a task to a parent
    * component.
+   * @param task - Task to be deleted.
    */
   onEdit?: (task: Task) => void;
   /**
    * onDelete is a function that passes a task deletion ot its parent.
+   * @param task - Task to be deleted.
    */
   onDelete?: (task: Task) => void;
   /**
+   * onToggle toggles the `isOpened` status of a `Task`.
+   * @param task - Task whose `isOpened` flag should be toggled.
+   */
+  onToggle?: (task: Task) => void;
+  /**
    * onDrag will be called when a Task gets dragged.
+   * @param dragIndex - Index of the Task being dragged.
+   * @param hoverIndex - Index of the Task being hovered.
    */
   onDrag?: (dragIndex: number, hoverIndex: number) => void;
   /**
    * onDragEnd will be called whene the dragin motion is stopped.
+   * @param dragIndex - Index of the Task being dragged.
+   * @param hoverIndex - Index of the Task being hovered.
    */
   onDragEnd?: (dragIndex: number, hoverIndex: number) => void;
   /**
@@ -153,16 +167,15 @@ export interface TaskProps {
 /**
  * Tasks.Task is the main `Task` component.
  */
-Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onDrag, onDragEnd, hoverBottom, hoverTop }: TaskProps) => {
+Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onToggle, onDrag, onDragEnd, hoverBottom, hoverTop }: TaskProps) => {
   const ref = useRef<any>(null)
-  const [isShowingSubTasks, setIsShowingSubTasks] = useState<boolean>(false)
   const [content, setContent] = useState(task.content)
   const [isAnimated, setIsAnimated] = useState(false)
   const handleSubmit = useCallback((e) => e.preventDefault(), [])
   const handleSelectAdd = useCallback(() => onAdd(task), [onAdd, task])
   const handleSelectDelete = useCallback(() => onDelete(task), [onDelete, task])
   const handleSelectExternalLink = useCallback(() => window.open(window.location.origin + "/" + task.id), [task])
-  const handleToggleSubTasks = useCallback(() => setIsShowingSubTasks(!isShowingSubTasks), [isShowingSubTasks])
+  const handleToggleSubTasks = useCallback(() => onToggle(task.set({ meta: { isOpened: !task.meta.isOpened } })), [task])
 
   const [{ handlerId }, drop] = useDrop({
     accept: task.branch || "TASK",
@@ -195,7 +208,7 @@ Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onDrag, onDragEnd, hoverBo
   return (
     <Fragment>
       <div className="Task" ref={ref}>
-        <Tasks.TaskControl icon={isShowingSubTasks ? faChevronDown : faChevronRight} onClick={handleToggleSubTasks} ref={drag} data-handler-id={handlerId} />
+        <Tasks.TaskControl icon={task.meta.isOpened ? faChevronDown : faChevronRight} onClick={handleToggleSubTasks} ref={drag} data-handler-id={handlerId} />
         <DropdownMenu.Root>
           <DropdownMenu.Trigger as={Tasks.TaskControl} icon={faEllipsisV} />
           <DropdownMenu.Content className="DropdownMenu__Content">
@@ -227,7 +240,7 @@ Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onDrag, onDragEnd, hoverBo
           />
         </form>
       </div>
-      {isShowingSubTasks && <Tasks branch={task.id} />}
+      {task.meta.isOpened && <Tasks branch={task.id} />}
     </Fragment>
   )
   /**

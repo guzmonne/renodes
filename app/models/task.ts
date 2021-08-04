@@ -1,6 +1,13 @@
 import { ulid } from 'ulid'
 
 /**
+ * TaskMetaObject is a plain JavaScript object that contains
+ * metadata of the current Task.
+ */
+export interface TaskMetaObject {
+  isOpened?: boolean;
+}
+/**
  * TaskObject is a plain JavaScript object representation of a Task.
  */
 export interface TaskObject {
@@ -8,7 +15,7 @@ export interface TaskObject {
   content: string;
   userId?: string;
   branch?: string;
-  conga?: number;
+  meta?: TaskMetaObject;
 }
 /**
  * Task is the model representation of a task.
@@ -22,6 +29,7 @@ export class Task {
       content: body.content || "",
       branch: body.branch,
       userId: body.userId,
+      meta: body.meta,
     }
   }
   /**
@@ -47,6 +55,7 @@ export class Task {
   get content() { return this.object.content }
   get branch() { return this.object.branch }
   get userId() { return this.object.userId }
+  get meta() { return this.object.meta === undefined ? {} : this.object.meta }
   /**
    * toJSON returns an object representation of the model.
    */
@@ -64,6 +73,7 @@ export class Task {
       content: body.content !== undefined ? body.content : this.content,
       branch: this.branch,
       userId: this.userId,
+      meta: body.meta !== undefined ? { ...this.meta, ...body.meta } : this.meta,
     })
   }
 }

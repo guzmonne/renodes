@@ -1,4 +1,4 @@
-import type { Task } from "./models/task"
+import type { Task, TaskMetaObject } from "./models/task"
 /**
  * ResponseItem represent a response object return by the API.
  * It should be used to extend an existing model which will be
@@ -69,7 +69,7 @@ export interface TaskDBClient {
   update(task: Task): Promise<DBClientResponse<undefined>>;
   /**
    * put creates or updates a new `Task` element.
-   * @param model - Model to store or update on the database.
+   * @param task - New `Task` to add to the database.
    * @param afterId - Id of the `Task` after which the new `Task` should be put.
    */
   put(task: Task, afterId?: string): Promise<DBClientResponse<Task>>;
@@ -85,8 +85,9 @@ export interface TaskDBClient {
   get: (id: string, userId?: string) => Promise<DBClientResponse<Task>>;
   /**
    * @param id - Task unique identifier.
+   * @param userId - User unique identifier.
    */
-  delete: (id: string) => Promise<DBClientResponse<undefined>>;
+  delete: (id: string, userId?: string) => Promise<DBClientResponse<undefined>>;
   /**
    * after drops a `Task` to the position after another `Task`. If
    * `after` is `undefined` then the `Task` should be dragged to
@@ -98,6 +99,13 @@ export interface TaskDBClient {
    * @param userId - User unique identifier.
    */
   after: (id: string, branch: string, afterId?: string, userId?: string) => Promise<DBClientResponse<undefined>>;
+  /**
+   * meta updates or read the metadata object of a `Task`.
+   * @param id - Task unique identifier.
+   * @param userId - User unique identifier.
+   * @param meta - Metadata object to apply.
+   */
+  meta(id: string, userId?: string, meta?: TaskMetaObject): Promise<DBClientResponse<TaskMetaObject | undefined>>
 }
 /**
  * DBClientResponse is a wrapper that should be used to handle communication
@@ -123,11 +131,12 @@ export interface DBClientResponse<Data> {
   meta?: any;
 }
 
-export interface BranchDocumentClient<Item, Body, Patch> {
+export interface BranchDocumentClient<Item, Body, Patch, Meta> {
   get(pk: string): Promise<Item | undefined>;
   delete(pk: string): Promise<boolean>;
   put(pk: string, branch: string, item: Body, afterPk?: string): Promise<boolean>;
   update(pk: string, patch: Patch): Promise<boolean>;
   list(branch: string): Promise<Item[]>;
   after(fromPK: string, branch: string, afterPK?: string): Promise<boolean>;
+  meta(pk: string, meta: Meta, force?: boolean): Promise<boolean>;
 }

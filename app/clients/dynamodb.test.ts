@@ -105,8 +105,24 @@ test("taskDocumentDBClient.after()", async (assert: Test) => {
   assert.end()
 })
 
-
-
+test("taskDocumentDBClient.meta()", async (assert: Test) => {
+  const branch = ulid()
+  const userId = ulid()
+  const isOpened = true
+  const task = new Task({ id: ulid(), content: ulid(), branch, userId })
+  assert.deepEqual(await tdc.put(task), { data: task })
+  const resp1 = await tdc.get(task.id, task.userId)
+  // A task should not have a meta object by default
+  assert.deepEqual(resp1.data && resp1.data.meta, undefined)
+  // Setting a new meta object
+  assert.deepEqual(await tdc.meta(task.id, task.userId, { isOpened }), { data: { isOpened } })
+  // Checking if it the meta object is now present
+  const resp2 = await tdc.get(task.id, task.userId)
+  assert.deepEqual(resp2.data && resp2.data.meta, { isOpened })
+  // Calling the meta function without a meta object will return the current meta object.
+  assert.deepEqual(await tdc.meta(task.id, task.userId), { data: { isOpened } })
+  assert.end()
+})
 
 
 

@@ -1,7 +1,7 @@
 import { taskDocumentClient } from "./taskDocumentClient"
 import { Task } from "../models/task"
 import type { TaskDBClient, DBClientResponse, QueryParams } from "../types"
-import type { ITaskDocumentClient, TaskDocumentClientItem } from "./taskDocumentClient"
+import type { ITaskDocumentClient, TaskDocumentClientItem, TaskDocumentClientMeta } from "./taskDocumentClient"
 
 /**
  * TaskDynamoDBClientConfig is the configuration object for a
@@ -33,6 +33,7 @@ export class TaskDynamoDBClient implements TaskDBClient {
       content: object.content,
       userId: b0 === "Tasks" ? undefined : b0,
       branch: b1 === "Tasks" ? b2 : b1,
+      meta: object._m,
     })
   }
   /**
@@ -68,6 +69,27 @@ export class TaskDynamoDBClient implements TaskDBClient {
       const item = await this.client.get(pk)
       if (!item) throw new Error(`task with id = ${id} not found`)
       return { data: this.toTask(item) }
+    } catch (err) {
+      return { error: err.message }
+    }
+  }
+  /**
+   * meta returns the current `Task` metadata, or updates it.
+   * @param id - `Task` unique identifier.
+   * @param userId - User unique identifier.
+   * @param meta - Metadata to be updated.
+   */
+  async meta(id: string, userId?: string, meta?: TaskDocumentClientMeta): Promise<DBClientResponse<TaskDocumentClientMeta | undefined>> {
+    try {
+      if (!meta) {
+        const { data, error } = await this.get(id, userId)
+        if (!data || error) throw new Error(`couldn't get the metadata for the task with id = ${id}`)
+        return { data: data.meta }
+      }
+      const pk = this.createPK(id, userId)
+      const ok = await this.client.meta(pk, meta)
+      if (!ok) throw new Error(`couldn't apply new metadata changes to the task with id = ${id}`)
+      return { data: meta }
     } catch (err) {
       return { error: err.message }
     }

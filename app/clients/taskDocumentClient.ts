@@ -78,7 +78,7 @@ export interface TaskDocumentClientMeta {
  * ITaskDocumentClient is the public interface of the class
  * TaskDocumentClient.
  */
-export type ITaskDocumentClient = BranchDocumentClient<TaskDocumentClientItem, TaskDocumentClientBody, TaskDocumentClientPatch>
+export type ITaskDocumentClient = BranchDocumentClient<TaskDocumentClientItem, TaskDocumentClientBody, TaskDocumentClientPatch, TaskDocumentClientMeta>
 /**
  * TaskClient is an abstraction built to hide the DynamoDB
  * access patterns used to handle `Tasks` as a Linked List.

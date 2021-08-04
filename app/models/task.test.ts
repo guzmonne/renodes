@@ -38,7 +38,7 @@ test("new Task() should correctly set the body attributes", (assert: Test) => {
 })
 
 test("Task.set() should return a new Task with its update attributes", (assert: Test) => {
-  const body = { id: ulid(), content: "updated test", done: true }
+  const body = { id: ulid(), content: "updated test" }
   const original = new Task({ id, content, branch })
   const updated = original.set(body)
   assert.equal(original.id, id)
@@ -49,5 +49,12 @@ test("Task.set() should return a new Task with its update attributes", (assert: 
   assert.equal(updated.branch, original.branch)
   // Its `id` should be the same
   assert.equal(original.id, updated.id)
+  assert.end()
+})
+
+test("Task should contain a meta attribute", (assert: Test) => {
+  const body = { id: ulid(), content: ulid(), meta: { isOpened: true } }
+  const task = new Task(body)
+  assert.deepEqual(body.meta, task.meta)
   assert.end()
 })

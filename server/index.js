@@ -29,6 +29,7 @@ app.get("/api/tasks/:branch", remixRoute("$branch", "/api/tasks"))
 app.post("/api/tasks/:branch", remixRoute("$branch", "/api/tasks"))
 app.put("/api/tasks/:branch", remixRoute("$branch", "/api/tasks"))
 app.delete("/api/tasks/:branch", remixRoute("$branch", "/api/tasks"))
+app.patch("/api/tasks/:branch", remixRoute("$branch", "/api/tasks"))
 
 app.get("/api/tasks/:branch/self", remixRoute("$branch.self", "/api/tasks"))
 
