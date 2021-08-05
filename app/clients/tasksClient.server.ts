@@ -1,27 +1,24 @@
-import { taskDocumentClient } from "./taskDocumentClient.server"
+import { taskDocumentClient } from "../drivers/tasksDynamoDriver.server"
 import { Task } from "../models/task"
-import type { TaskDBClient, DBClientResponse, QueryParams } from "../types"
-import type { ITaskDocumentClient, TaskDocumentClientItem, TaskDocumentClientMeta } from "./taskDocumentClient.server"
+import type { TasksDBClient, DBClientResponse, TasksQueryParams } from "../types"
+import type { TaskDocumentClient, TaskDocumentClientItem, TaskDocumentClientMeta } from "../drivers/tasksDynamoDriver.server"
 
-/**
- * TaskDynamoDBClientConfig is the configuration object for a
- * TaskDynamoDBClient class instance.
- */
-interface TaskDynamoDBClientConfig {
-  client: ITaskDocumentClient;
-}
 /**
  * TaskDynamoDBClient handles communication with the DynamoDB table.
  * @param config - Configuration object.
  */
-export class TaskDynamoDBClient implements TaskDBClient {
-  constructor(config: TaskDynamoDBClientConfig) {
-    this.client = config.client
-  }
+export class TaskDynamoDBClient implements TasksDBClient {
   /**
    * client is the interface to be used against a DynamoDB table.
    */
-  client: ITaskDocumentClient
+  client: TaskDocumentClient
+  /**
+   * constructor creates a new TaskDynamoDBClient instance.
+   * @param client - Client driver to interact with the database.
+   */
+  constructor(client: TaskDocumentClient) {
+    this.client = client
+  }
   /**
    * toTask converts a TaskDocumentClientItem into a Task object.
    * @param TaskDynamoDBObject - DynamoDB response to convert.
@@ -48,7 +45,7 @@ export class TaskDynamoDBClient implements TaskDBClient {
   /**
    * query returns a collection of Tasks.
    */
-  async query(params: QueryParams = {}): Promise<DBClientResponse<Task[]>> {
+  async query(params: TasksQueryParams = {}): Promise<DBClientResponse<Task[]>> {
     try {
       const { branch, userId } = params
       const pk = this.createPK(branch, userId)
@@ -164,8 +161,6 @@ export class TaskDynamoDBClient implements TaskDBClient {
   }
 }
 /**
- * tasksDynamoDBClient is a singleton instance of the TaskDynamoDBClient class.
+ * tasksClient is a singleton instance of the TaskDynamoDBClient class.
  */
-export const tasksDynamoDBClient = new TaskDynamoDBClient({
-  client: taskDocumentClient
-})
+export const tasksClient = new TaskDynamoDBClient(taskDocumentClient)

@@ -3,8 +3,8 @@ import { ulid } from "ulid"
 import type { Test } from "tape"
 
 import { Task } from "../models/task"
-import { tasksDynamoDBClient as tdc } from "./dynamodb.server"
-import type { TaskDocumentClientItem } from "./taskDocumentClient.server"
+import { tasksDynamoDBClient as tdc } from "./tasksClient.server"
+import type { TaskDocumentClientItem } from "../drivers/tasksDynamoDriver.server"
 
 test("taskDocumentDBClient.createPK()", async (assert: Test) => {
   const id = ulid()

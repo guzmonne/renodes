@@ -2,7 +2,7 @@ import test from "tape"
 import { ulid } from "ulid"
 import type { Test } from "tape"
 
-import { taskDocumentClient as tdc, TaskDocumentClientItem } from "./taskDocumentClient.server"
+import { taskDocumentClient as tdc, TaskDocumentClientItem } from "./tasksDynamoDriver.server"
 
 /**
  * To simplify this patterns an abstraction must be made

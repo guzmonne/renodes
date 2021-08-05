@@ -1,52 +1,9 @@
 import type { Task, TaskMetaObject } from "./models/task"
-/**
- * ResponseItem represent a response object return by the API.
- * It should be used to extend an existing model which will be
- * decorated with its action links.
- */
-export interface ResponseItem {
-  /**
-   * _links represent a dictionary of actions that can be done
-   * on the resource.
-   */
-  _links: ResponseLinks
-}
-/**
- * ResponseItemValue is the interface that each action link should
- * enforce.
- */
-export interface ResponseItemValue {
-  /**
-   * href represents the endpoint of the action.
-   */
-  href: string;
-  /**
-   * rel identifies the resource the action is related.
-   */
-  rel: string;
-  /**
-   * type represents the HTTP method of the request.
-   */
-  type: RequestMethods
-}
-/**
- * ResponseItemKey is the list of valid action links that can be
- * set on a resource.
- */
-export type ResponseItemKey = "self" | "read" | "update" | "delete" | "query" | "create"
-/**
- * RequestMethods is the list of HTTP methods.
- */
-export type RequestMethods = "GET" | "POST" | "PUT" | "DELETE"
-/**
- * ResponseLinks is a dictionary with a partial list of actions that
- * shoud decorate a response model.
- */
-export type ResponseLinks = Partial<Record<ResponseItemKey, ResponseItemValue>>
+
 /**
  * QueryParams is the configuration interface of a `#TaskDBClient.query()` command.
  */
-export interface QueryParams {
+export interface TasksQueryParams {
   /**
    * branch corresponds to the branch where the query should run.
    */
@@ -57,37 +14,48 @@ export interface QueryParams {
   userId?: string;
 }
 /**
- * TaskDBClient represent the interface that should be define for a repository
- * to talk to the database. For each function a `DBClientResponse` object
- * must be returned.
+ * DBClient is the standard interface that a DBClient must support.
  */
-export interface TaskDBClient {
+export interface DBClient<Model, QueryParams> {
   /**
-   * update updates valid values of a `Task`
-   * @param task - Updated `Task` to be stored.
+   * query returns a collection of Models.
+   * @param params - Query parameters.
    */
-  update(task: Task): Promise<DBClientResponse<undefined>>;
+  query: (params?: QueryParams) => Promise<DBClientResponse<Model[]>>;
   /**
-   * put creates or updates a new `Task` element.
+   * get returns a single Model identified by its `id` and `userId`.
+   * @param id - Model unique identifier.
+   * @param userId - User unique identifier.
+   */
+  get: (id: string, userId?: string) => Promise<DBClientResponse<Model>>;
+  /**
+   * put creates or updates a Model.
+   * @param model - New Model to add to the database.
+   */
+  put(model: Model): Promise<DBClientResponse<Model>>;
+  /**
+   * update updates valid values of a Model
+   * @param model - Updated Model to be stored.
+   */
+  update(model: Model): Promise<DBClientResponse<undefined>>;
+  /**
+   * delete deletes a Model identified by its `id` and `userId`.
+   * @param id - Model unique identifier.
+   * @param userId - User unique identifier.
+   */
+  delete: (id: string, userId?: string) => Promise<DBClientResponse<undefined>>;
+}
+/**
+ * TaskDBClient is the Database interface to interact with the `Tasks`
+ * entities in the Database.
+ */
+export interface TasksDBClient extends DBClient<Task, TasksQueryParams> {
+  /**
+   * put creates or updates a `Task`.
    * @param task - New `Task` to add to the database.
    * @param afterId - Id of the `Task` after which the new `Task` should be put.
    */
   put(task: Task, afterId?: string): Promise<DBClientResponse<Task>>;
-  /**
-   * query returns a collection of `Task` elements.
-   */
-  query: (params?: QueryParams) => Promise<DBClientResponse<Task[]>>;
-  /**
-   * get returns a single `Task` element identified by its `id`.
-   * @param id - Task unique identifier.
-   * @param userId - User unique identifier.
-   */
-  get: (id: string, userId?: string) => Promise<DBClientResponse<Task>>;
-  /**
-   * @param id - Task unique identifier.
-   * @param userId - User unique identifier.
-   */
-  delete: (id: string, userId?: string) => Promise<DBClientResponse<undefined>>;
   /**
    * after drops a `Task` to the position after another `Task`. If
    * `after` is `undefined` then the `Task` should be dragged to
@@ -129,14 +97,4 @@ export interface DBClientResponse<Data> {
    * meta contains any aditional information that may pertain to the request.
    */
   meta?: any;
-}
-
-export interface BranchDocumentClient<Item, Body, Patch, Meta> {
-  get(pk: string): Promise<Item | undefined>;
-  delete(pk: string): Promise<boolean>;
-  put(pk: string, branch: string, item: Body, afterPk?: string): Promise<boolean>;
-  update(pk: string, patch: Patch): Promise<boolean>;
-  list(branch: string): Promise<Item[]>;
-  after(fromPK: string, branch: string, afterPK?: string): Promise<boolean>;
-  meta(pk: string, meta: Meta, force?: boolean): Promise<boolean>;
 }

@@ -15,8 +15,7 @@ if (DB_ENDPOINT) {
   config.endpoint = DB_ENDPOINT
 }
 
-export const dynamo = new DynamoDBClient(config)
-export const client = DynamoDBDocumentClient.from(dynamo, {
+export const client = DynamoDBDocumentClient.from(new DynamoDBClient(config), {
   marshallOptions: {
     removeUndefinedValues: true,
   }

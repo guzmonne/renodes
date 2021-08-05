@@ -2,7 +2,6 @@ import { DeleteCommand, QueryCommand, GetCommand, PutCommand, UpdateCommand } fr
 import type { DynamoDBDocumentClient, GetCommandOutput, PutCommandOutput, QueryCommandOutput, UpdateCommandOutput, DeleteCommandOutput } from "@aws-sdk/lib-dynamodb"
 
 import { client } from "./dynamo.server"
-import type { BranchDocumentClient } from "../types"
 
 /**
  * TaskDocumentClientConfig is the configuration interface
@@ -75,18 +74,13 @@ export interface TaskDocumentClientMeta {
   isOpened?: boolean;
 }
 /**
- * ITaskDocumentClient is the public interface of the class
- * TaskDocumentClient.
- */
-export type ITaskDocumentClient = BranchDocumentClient<TaskDocumentClientItem, TaskDocumentClientBody, TaskDocumentClientPatch, TaskDocumentClientMeta>
-/**
  * TaskClient is an abstraction built to hide the DynamoDB
  * access patterns used to handle `Tasks` as a Linked List.
  * Is must be provided with a `DynamoDBDocumentClient`
  * instance upon creation, and the name of the table where
  * the `Tasks` will be stored.
  */
-export class TaskDocumentClient implements ITaskDocumentClient {
+export class TaskDocumentClient {
   /**
    * client is a `DynamoDBDocumentClient` instance used to
    * communicate with DynamoDB.
