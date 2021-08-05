@@ -73,7 +73,9 @@ export class Task {
       content: body.content !== undefined ? body.content : this.content,
       branch: this.branch,
       userId: this.userId,
-      meta: body.meta !== undefined ? { ...this.meta, ...body.meta } : this.meta,
+      meta: body.meta !== undefined
+        ? { ...this.meta, ...body.meta }
+        : this.object.meta,
     })
   }
 }

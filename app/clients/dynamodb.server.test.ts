@@ -3,8 +3,8 @@ import { ulid } from "ulid"
 import type { Test } from "tape"
 
 import { Task } from "../models/task"
-import { tasksDynamoDBClient as tdc } from "./dynamodb"
-import type { TaskDocumentClientItem } from "./taskDocumentClient"
+import { tasksDynamoDBClient as tdc } from "./dynamodb.server"
+import type { TaskDocumentClientItem } from "./taskDocumentClient.server"
 
 test("taskDocumentDBClient.createPK()", async (assert: Test) => {
   const id = ulid()
@@ -113,7 +113,7 @@ test("taskDocumentDBClient.meta()", async (assert: Test) => {
   assert.deepEqual(await tdc.put(task), { data: task })
   const resp1 = await tdc.get(task.id, task.userId)
   // A task should not have a meta object by default
-  assert.deepEqual(resp1.data && resp1.data.meta, undefined)
+  assert.deepEqual(resp1.data && resp1.data.meta, {})
   // Setting a new meta object
   assert.deepEqual(await tdc.meta(task.id, task.userId, { isOpened }), { data: { isOpened } })
   // Checking if it the meta object is now present
