@@ -124,7 +124,7 @@ export interface TaskProps {
    * current one.
    * @param task - Task to be added.
    */
-  onAdd: (task: Task) => void;
+  onAdd?: (task: Task) => void;
   /**
    * onEdit is a function that passes updates on a task to a parent
    * component.
