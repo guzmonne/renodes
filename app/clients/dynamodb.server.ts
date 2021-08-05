@@ -1,7 +1,7 @@
-import { taskDocumentClient } from "./taskDocumentClient"
+import { taskDocumentClient } from "./taskDocumentClient.server"
 import { Task } from "../models/task"
 import type { TaskDBClient, DBClientResponse, QueryParams } from "../types"
-import type { ITaskDocumentClient, TaskDocumentClientItem, TaskDocumentClientMeta } from "./taskDocumentClient"
+import type { ITaskDocumentClient, TaskDocumentClientItem, TaskDocumentClientMeta } from "./taskDocumentClient.server"
 
 /**
  * TaskDynamoDBClientConfig is the configuration object for a

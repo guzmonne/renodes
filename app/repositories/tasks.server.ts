@@ -1,5 +1,5 @@
 import { Task } from '../models/task'
-import { tasksDynamoDBClient } from "../clients/dynamodb"
+import { tasksDynamoDBClient } from "../clients/dynamodb.server"
 import type { TaskMetaObject } from "../models/task"
 import type { TaskDBClient, QueryParams } from "../types"
 

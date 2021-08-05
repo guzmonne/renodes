@@ -1,7 +1,7 @@
 import { DeleteCommand, QueryCommand, GetCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb"
 import type { DynamoDBDocumentClient, GetCommandOutput, PutCommandOutput, QueryCommandOutput, UpdateCommandOutput, DeleteCommandOutput } from "@aws-sdk/lib-dynamodb"
 
-import { client } from "./dynamo"
+import { client } from "./dynamo.server"
 import type { BranchDocumentClient } from "../types"
 
 /**

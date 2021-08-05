@@ -9,7 +9,7 @@ import Loader from "../components/utils/Loader.css"
 import { NavBar } from "../components/layout/NavBar"
 import { Tasks } from "../components/tasks/Tasks"
 import { Task } from "../models/task"
-import { repository } from "../repositories/tasks"
+import { repository } from "../repositories/tasks.server"
 import type { TaskObject } from "../models/task"
 
 export const meta: MetaFunction = ({ params }) => {

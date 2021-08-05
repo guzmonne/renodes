@@ -1,19 +1,19 @@
-import { useRouteData } from "remix"
+import { useRouteData, json } from "remix"
 import { useLocation, useParams } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "react-query"
 import { DndProvider } from "react-dnd-multi-backend"
 import { IdProvider } from "@radix-ui/react-id"
 import HTML5toTouch from "react-dnd-multi-backend/dist/cjs/HTML5toTouch"
-
 import * as ScrollArea from "@radix-ui/react-scroll-area"
-import type { MetaFunction, LoaderFunction, ActionFunction, LinksFunction } from "remix"
+import type { HeadersFunction, MetaFunction, LoaderFunction, ActionFunction, LinksFunction } from "remix"
 
+import etag from "../server/etag.server"
+import { repository } from "../repositories/tasks.server"
 import base from "../styles/base.css"
 import Loader from "../components/utils/Loader.css"
 import { NavBar } from "../components/layout/NavBar"
 import { Tasks } from "../components/tasks/Tasks"
 import { Task } from "../models/task"
-import { repository } from "../repositories/tasks"
 import type { TaskObject } from "../models/task"
 
 export const meta: MetaFunction = ({ params }) => {
@@ -21,6 +21,10 @@ export const meta: MetaFunction = ({ params }) => {
     title: "ReTask",
     description: params.branch === "home" ? `Home Tasks` : `Tasks for branch #${params.branch}`
   }
+}
+
+export const headers: HeadersFunction = ({ loaderHeaders }) => {
+  return { Etag: `W\\${loaderHeaders.get("Etag")}` }
 }
 
 export const links: LinksFunction = () => {
@@ -33,7 +37,10 @@ export const links: LinksFunction = () => {
 export const loader: LoaderFunction = async ({ params }) => {
   try {
     const tasks = await repository.query({ branch: params.branch === "home" ? undefined : params.branch })
-    return tasks.map(Task.toJSON)
+    const data = tasks.map(Task.toJSON)
+    return json(data, {
+      headers: { Etag: etag(JSON.stringify(data)) }
+    })
   } catch (err) {
     console.log("error at /$branch")
     console.log(err)
