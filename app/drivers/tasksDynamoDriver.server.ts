@@ -390,11 +390,11 @@ export class TaskDocumentClient {
   }
 }
 /**
- * taskDocumentClient is a singleton `TaskDocumentClient`
+ * driver is a singleton `TaskDocumentClient`
  * connected to a DynamoDB table using the default app
  * `dynamo document client`.
  */
-export const taskDocumentClient = new TaskDocumentClient({
+export const driver = new TaskDocumentClient({
   tableName: process.env.TABLE_NAME || "retask",
   client,
 })

@@ -2,7 +2,7 @@ import test from "tape"
 import { ulid } from "ulid"
 import type { Test } from "tape"
 
-import { taskDocumentClient as tdc, TaskDocumentClientItem } from "./tasksDynamoDriver.server"
+import { driver, TaskDocumentClientItem } from "./tasksDynamoDriver.server"
 
 /**
  * To simplify this patterns an abstraction must be made
@@ -33,67 +33,67 @@ test("Task Linked List abstraction", async (assert: Test) => {
   /**
    * First, we'll insert three new `Tasks` using the `put` method.
    */
-  assert.equal(await tdc.put(pk1, root, { id: id1, content: c1 }), true)
-  assert.equal(await tdc.put(pk2, root, { id: id2, content: c2 }), true)
-  assert.equal(await tdc.put(pk3, root, { id: id3, content: c3 }), true)
+  assert.equal(await driver.put(pk1, root, { id: id1, content: c1 }), true)
+  assert.equal(await driver.put(pk2, root, { id: id2, content: c2 }), true)
+  assert.equal(await driver.put(pk3, root, { id: id3, content: c3 }), true)
   /**
    * Now we'll run the `list` method to see if the items come back
    * in the correct order.
    */
-  assert.deepEqual((await tdc.list(root)).map(item => item.pk), [pk1, pk2, pk3])
+  assert.deepEqual((await driver.list(root)).map(item => item.pk), [pk1, pk2, pk3])
   /**
    * Let's after an element and see if the list order is updated.
    */
-  assert.equal(await tdc.after(pk3, root), true)
-  assert.deepEqual((await tdc.list(root)).map(item => item.pk), [pk3, pk1, pk2])
+  assert.equal(await driver.after(pk3, root), true)
+  assert.deepEqual((await driver.list(root)).map(item => item.pk), [pk3, pk1, pk2])
   /**
    * Adding more items should append them to the end of the list.
    */
-  assert.equal(await tdc.put(pk4, root, { id: id4, content: c4 }), true)
-  assert.deepEqual((await tdc.list(root)).map(item => item.pk), [pk3, pk1, pk2, pk4])
+  assert.equal(await driver.put(pk4, root, { id: id4, content: c4 }), true)
+  assert.deepEqual((await driver.list(root)).map(item => item.pk), [pk3, pk1, pk2, pk4])
   /**
    * Let's swap the middle elements and then move the first element
    * to the end of the list.
    */
-  assert.equal(await tdc.after(pk1, root, pk2), true)
-  assert.deepEqual((await tdc.list(root)).map(item => item.pk), [pk3, pk2, pk1, pk4])
-  assert.equal(await tdc.after(pk3, root, pk4), true)
-  assert.deepEqual((await tdc.list(root)).map(item => item.pk), [pk2, pk1, pk4, pk3])
+  assert.equal(await driver.after(pk1, root, pk2), true)
+  assert.deepEqual((await driver.list(root)).map(item => item.pk), [pk3, pk2, pk1, pk4])
+  assert.equal(await driver.after(pk3, root, pk4), true)
+  assert.deepEqual((await driver.list(root)).map(item => item.pk), [pk2, pk1, pk4, pk3])
   /**
    * Updating the content of any element element shouldn't modify
    * the order.
    */
   const content = ulid()
   const pk = [pk1, pk2, pk3, pk4][Math.round((Math.random() * 4))]
-  assert.equal(await tdc.update(pk, { content }), true)
-  const actual = await tdc.get(pk)
+  assert.equal(await driver.update(pk, { content }), true)
+  const actual = await driver.get(pk)
   assert.equal(actual && actual.content, content)
-  assert.deepEqual((await tdc.list(root)).map(item => item.pk), [pk2, pk1, pk4, pk3])
+  assert.deepEqual((await driver.list(root)).map(item => item.pk), [pk2, pk1, pk4, pk3])
   /**
    * Deleting an element shouldn't break the list.
    */
-  assert.equal(await tdc.delete(pk4), true)
-  assert.deepEqual((await tdc.list(root)).map(item => item.pk), [pk2, pk1, pk3])
+  assert.equal(await driver.delete(pk4), true)
+  assert.deepEqual((await driver.list(root)).map(item => item.pk), [pk2, pk1, pk3])
   /**
    * Deleting the tail or the head shouldn't break the list.
    */
-  assert.equal(await tdc.delete(pk3), true)
-  assert.deepEqual((await tdc.list(root)).map(item => item.pk), [pk2, pk1])
-  assert.equal(await tdc.delete(pk2), true)
-  assert.deepEqual((await tdc.list(root)).map(item => item.pk), [pk1])
+  assert.equal(await driver.delete(pk3), true)
+  assert.deepEqual((await driver.list(root)).map(item => item.pk), [pk2, pk1])
+  assert.equal(await driver.delete(pk2), true)
+  assert.deepEqual((await driver.list(root)).map(item => item.pk), [pk1])
   /**
    * Deleting the last element of the list should return an empty list
    */
-  assert.equal(await tdc.delete(pk1), true)
-  assert.deepEqual((await tdc.list(root)).map(item => item.pk), [])
+  assert.equal(await driver.delete(pk1), true)
+  assert.deepEqual((await driver.list(root)).map(item => item.pk), [])
   /**
    * Adding new `Tasks` after it gets empty should return a correctly
    * sorted list.
    */
-  assert.equal(await tdc.put(pk1, root, { id: id1, content: c1 }), true)
-  assert.equal(await tdc.put(pk2, root, { id: id2, content: c2 }), true)
-  assert.equal(await tdc.put(pk3, root, { id: id3, content: c3 }), true)
-  assert.deepEqual((await tdc.list(root)).map(item => item.pk), [pk1, pk2, pk3])
+  assert.equal(await driver.put(pk1, root, { id: id1, content: c1 }), true)
+  assert.equal(await driver.put(pk2, root, { id: id2, content: c2 }), true)
+  assert.equal(await driver.put(pk3, root, { id: id3, content: c3 }), true)
+  assert.deepEqual((await driver.list(root)).map(item => item.pk), [pk1, pk2, pk3])
   /**
    * End
    */
@@ -113,16 +113,16 @@ test("Task create", async (assert: Test) => {
     const pk3 = key({ userId, id: id3 })
     const content = Math.random().toLocaleString()
     // Put the first element
-    assert.equal(await tdc.put(pk1, branch, { id: id1, content }), true)
+    assert.equal(await driver.put(pk1, branch, { id: id1, content }), true)
     // Put the second element
-    assert.equal(await tdc.put(pk2, branch, { id: id2, content }), true)
+    assert.equal(await driver.put(pk2, branch, { id: id2, content }), true)
     // Check both `Task` where created in the correct order
-    tasks = await tdc.list(branch)
+    tasks = await driver.list(branch)
     assert.deepEqual(tasks.map(task => task.id), [id1, id2])
     // Put a new `Task` after `pk1` not the Root.
-    assert.equal(await tdc.put(pk3, branch, { id: id3, content }, pk1), true)
+    assert.equal(await driver.put(pk3, branch, { id: id3, content }, pk1), true)
     // Check to see if the new `Task` was correctly added.
-    tasks = await tdc.list(branch)
+    tasks = await driver.list(branch)
     assert.deepEqual(tasks.map(task => task.id), [id1, id3, id2])
     // End assertions
     assert.end()
@@ -141,23 +141,23 @@ test("Task meta object updates", async (assert: Test) => {
     const pk = key({ userId, id: id })
     const content = Math.random().toLocaleString()
     // Put the element
-    assert.equal(await tdc.put(pk, root, { id, content }), true)
+    assert.equal(await driver.put(pk, root, { id, content }), true)
     // Expect the `meta` object to be empty
-    task = await tdc.get(pk)
+    task = await driver.get(pk)
     if (!task) throw new Error("task is undefined")
     assert.equal(task.pk, pk)
     assert.deepEqual(task._m, undefined)
     // Update the value of `isOpened`
-    assert.equal(await tdc.meta(pk, { isOpened: true }), true)
+    assert.equal(await driver.meta(pk, { isOpened: true }), true)
     // Check that the value of `isOpened` has been updated correctly
-    task = await tdc.get(pk)
+    task = await driver.get(pk)
     if (!task) throw new Error("task is undefined")
     assert.equal(task.pk, pk)
     assert.deepEqual(task._m, { isOpened: true })
     // Change the value of `isOpened` to false
-    assert.equal(await tdc.meta(pk, { isOpened: false }), true)
+    assert.equal(await driver.meta(pk, { isOpened: false }), true)
     // Check that the value of `isOpened` has been updated correctly
-    task = await tdc.get(pk)
+    task = await driver.get(pk)
     if (!task) throw new Error("task is undefined")
     assert.equal(task.pk, pk)
     assert.deepEqual(task._m, { isOpened: false })

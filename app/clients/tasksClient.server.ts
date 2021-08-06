@@ -1,4 +1,4 @@
-import { taskDocumentClient } from "../drivers/tasksDynamoDriver.server"
+import { driver } from "../drivers/tasksDynamoDriver.server"
 import { Task } from "../models/task"
 import type { TasksDBClient, DBClientResponse, TasksQueryParams } from "../types"
 import type { TaskDocumentClient, TaskDocumentClientItem, TaskDocumentClientMeta } from "../drivers/tasksDynamoDriver.server"
@@ -9,15 +9,15 @@ import type { TaskDocumentClient, TaskDocumentClientItem, TaskDocumentClientMeta
  */
 export class TaskDynamoDBClient implements TasksDBClient {
   /**
-   * client is the interface to be used against a DynamoDB table.
+   * driver is the interface to be used against a DynamoDB table.
    */
-  client: TaskDocumentClient
+  driver: TaskDocumentClient
   /**
    * constructor creates a new TaskDynamoDBClient instance.
-   * @param client - Client driver to interact with the database.
+   * @param driver - Client driver to interact with the database.
    */
-  constructor(client: TaskDocumentClient) {
-    this.client = client
+  constructor(driver: TaskDocumentClient) {
+    this.driver = driver
   }
   /**
    * toTask converts a TaskDocumentClientItem into a Task object.
@@ -49,7 +49,7 @@ export class TaskDynamoDBClient implements TasksDBClient {
     try {
       const { branch, userId } = params
       const pk = this.createPK(branch, userId)
-      const items = await this.client.list(pk)
+      const items = await this.driver.list(pk)
       return { data: items.map(this.toTask) }
     } catch (err) {
       return { error: err.message }
@@ -63,7 +63,7 @@ export class TaskDynamoDBClient implements TasksDBClient {
   async get(id: string, userId?: string): Promise<DBClientResponse<Task>> {
     try {
       const pk = this.createPK(id, userId)
-      const item = await this.client.get(pk)
+      const item = await this.driver.get(pk)
       if (!item) throw new Error(`task with id = ${id} not found`)
       return { data: this.toTask(item) }
     } catch (err) {
@@ -84,7 +84,7 @@ export class TaskDynamoDBClient implements TasksDBClient {
         return { data: data.meta }
       }
       const pk = this.createPK(id, userId)
-      const ok = await this.client.meta(pk, meta)
+      const ok = await this.driver.meta(pk, meta)
       if (!ok) throw new Error(`couldn't apply new metadata changes to the task with id = ${id}`)
       return { data: meta }
     } catch (err) {
@@ -101,7 +101,7 @@ export class TaskDynamoDBClient implements TasksDBClient {
       const pk = this.createPK(task.id, task.userId)
       const branchPk = this.createPK(task.branch, task.userId)
       const afterPk = afterId ? this.createPK(afterId, task.userId) : undefined
-      const ok = await this.client.put(pk, branchPk, task, afterPk)
+      const ok = await this.driver.put(pk, branchPk, task, afterPk)
       if (!ok) throw new Error(`error while storing task with pk = ${pk} at branch = ${branchPk}`)
       return { data: task }
     } catch (err) {
@@ -115,7 +115,7 @@ export class TaskDynamoDBClient implements TasksDBClient {
   async update(task: Task): Promise<DBClientResponse<undefined>> {
     try {
       const pk = this.createPK(task.id, task.userId)
-      const ok = await this.client.update(pk, task)
+      const ok = await this.driver.update(pk, task)
       if (!ok) throw new Error(`error while updating task with pk = ${pk}`)
       return {}
     } catch (err) {
@@ -130,7 +130,7 @@ export class TaskDynamoDBClient implements TasksDBClient {
   async delete(id: string, userId?: string): Promise<DBClientResponse<undefined>> {
     try {
       const pk = this.createPK(id, userId)
-      const ok = await this.client.delete(pk)
+      const ok = await this.driver.delete(pk)
       if (!ok) throw new Error(`error while deleting task with pk = ${pk}`)
       return {}
     } catch (err) {
@@ -152,7 +152,7 @@ export class TaskDynamoDBClient implements TasksDBClient {
       const pk = this.createPK(id, userId)
       const _b = this.createPK(branch, userId)
       const apk = !afterId ? undefined : this.createPK(afterId, userId)
-      const ok = await this.client.after(pk, _b, apk)
+      const ok = await this.driver.after(pk, _b, apk)
       if (!ok) throw new Error(`couldn't move task with id = ${id} after task with id ${afterId}`)
       return {}
     } catch (err) {
@@ -161,6 +161,6 @@ export class TaskDynamoDBClient implements TasksDBClient {
   }
 }
 /**
- * tasksClient is a singleton instance of the TaskDynamoDBClient class.
+ * client is a singleton instance of the TaskDynamoDBClient class.
  */
-export const tasksClient = new TaskDynamoDBClient(taskDocumentClient)
+export const client = new TaskDynamoDBClient(driver)

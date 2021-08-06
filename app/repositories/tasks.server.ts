@@ -1,5 +1,5 @@
 import { Task } from '../models/task'
-import { tasksClient } from "../clients/tasksClient.server"
+import { client } from "../clients/tasksClient.server"
 import { Repository } from "./repository.server"
 import type { TaskMetaObject } from "../models/task"
 import type { TasksDBClient, TasksQueryParams } from "../types"
@@ -47,4 +47,4 @@ class TasksRepository extends Repository<Task, TasksQueryParams> {
   }
 }
 
-export const repository = new TasksRepository(tasksClient)
+export const repository = new TasksRepository(client)
