@@ -12,5 +12,8 @@ module.exports = {
   }, {
     name: "DB Admin",
     script: "npm run db-admin"
-  }]
+  }],
+  env: {
+    FORCE_COLOR: "1",
+  }
 }

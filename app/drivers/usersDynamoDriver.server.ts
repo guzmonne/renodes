@@ -4,40 +4,8 @@ import type { QueryCommandOutput, PutCommandOutput, UpdateCommandOutput } from "
 
 import { DynamoDriver } from "./dynamoDriver.server"
 import type { DynamoDriverItem } from "./dynamoDriver.server"
+import type { UserObject } from "../models/user"
 
-/**
- * UsersDynamoDriverBody is the body accepted to create a new `User`.
- */
-export interface UsersDynamoDriverBody {
-  /**
-   * id is the unprefixed identifier of the `User`.
-   */
-  id: string;
-  /**
-   * username is the user's username
-   */
-  username: string;
-  /**
-   * provider represent the authentication provider used by this user.
-   */
-  provider: string;
-  /**
-   * email is the user's email.
-   */
-  email: string;
-  /**
-   * avatarURL is the URL for the user avatar.
-   */
-  avatarURL?: string;
-  /**
-   * name is the name of the user.
-   */
-  name?: string;
-  /**
-   * location represents the location of the user.
-   */
-  location?: string;
-}
 /**
  * UsersDynamoDriverItem is the interface that represent how the `Users`
  * items are stored in the table.
@@ -59,11 +27,11 @@ export interface UsersDynamoDriverItem extends DynamoDriverItem {
 /**
  * UsersDynamoDriverProfile is the interface that represents a `User` profile.
  */
-export type UsersDynamoDriverProfile = Omit<UsersDynamoDriverBody, "id" | "username" | "provider">
+export type UsersDynamoDriverProfile = Omit<UserObject, "id" | "username" | "provider">
 /**
  * UsersDynamoDriver handles the logic of `User` items inside a DynamoDB table.
  */
-export class UsersDynamoDriver extends DynamoDriver<UsersDynamoDriverBody, UsersDynamoDriverItem, UsersDynamoDriverProfile> {
+export class UsersDynamoDriver extends DynamoDriver<UserObject, UsersDynamoDriverItem, UsersDynamoDriverProfile> {
   /**
    * list returns a list of all the `Users` in the table.
    */
@@ -81,7 +49,7 @@ export class UsersDynamoDriver extends DynamoDriver<UsersDynamoDriverBody, Users
   /**
    * put inserts a new `User` in the table.
    */
-  async put(pk: string, body: UsersDynamoDriverBody): Promise<boolean> {
+  async put(pk: string, body: UserObject): Promise<boolean> {
     const putOutput: PutCommandOutput = await this.db.send(new PutCommand({
       TableName: this.tableName,
       Item: {

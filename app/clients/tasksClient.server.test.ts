@@ -44,7 +44,7 @@ test("tasksClient.get()", async (assert: Test) => {
   const userId = ulid()
   const task = new Task({ id: ulid(), content: ulid(), branch, userId })
   assert.deepEqual(await client.put(task), { data: task })
-  assert.deepEqual(await client.get("invalid_id"), { error: "task with id = invalid_id not found" })
+  assert.deepEqual(await client.get("invalid_id"), { error: "get error" })
   assert.deepEqual(await client.get(task.id, userId), { data: task })
   assert.end()
 })
@@ -84,7 +84,7 @@ test("tasksClient.delete()", async (assert: Test) => {
   assert.deepEqual(await client.put(task), { data: task })
   assert.deepEqual(await client.get(task.id, task.userId), { data: task })
   assert.deepEqual(await client.delete(task.id, task.userId), {})
-  assert.deepEqual(await client.get(task.id, task.userId), { error: `task with id = ${id} not found` })
+  assert.deepEqual(await client.get(task.id, task.userId), { error: `get error` })
   assert.end()
 })
 

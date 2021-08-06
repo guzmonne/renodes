@@ -7,7 +7,8 @@ import type { Test } from "tape"
 import type { DeleteCommandOutput } from "@aws-sdk/lib-dynamodb"
 
 import { db } from "./dynamo.server"
-import { driver, UsersDynamoDriverBody } from "./usersDynamoDriver.server"
+import { driver } from "./usersDynamoDriver.server"
+import type { UserObject } from "../models/user"
 import type { UsersDynamoDriverItem } from "./usersDynamoDriver.server"
 
 const email = ulid() + "@example.test"
@@ -119,7 +120,7 @@ test("driver.delete()", async (assert: Test) => {
 /**
  * Functions
  */
-function createBodyAndPK(username: string = "username"): [UsersDynamoDriverBody, string] {
+function createBodyAndPK(username: string = "username"): [UserObject, string] {
   const body = {
     id: ulid(),
     username: `${username}.${ulid()}`,

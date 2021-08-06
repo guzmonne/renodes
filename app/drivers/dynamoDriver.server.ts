@@ -2,6 +2,7 @@ import { DeleteCommand, GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb"
 import type { DynamoDBDocumentClient, DeleteCommandOutput, GetCommandOutput, PutCommandOutput } from "@aws-sdk/lib-dynamodb"
 
 import { db } from "./dynamo.server"
+import type { DBDriver } from "../types"
 /**
  * DynamoDriverConfig is the configuration interface
  * needed to create a `DynamoDriver` instance.
@@ -38,7 +39,7 @@ export interface DynamoDriverItem {
  * must be provided with a connection to DynamoDB through following the
  * `DynamoDBDocumentClient` interface, and the name of the table.
  */
-export abstract class DynamoDriver<Body, Item extends DynamoDriverItem, Patch> {
+export abstract class DynamoDriver<Body, Item extends DynamoDriverItem, Patch> implements DBDriver<Body, Item, Patch, DynamoDBDocumentClient> {
   /**
    * db is a `DynamoDBDocumentClient` instance used to
    * communicate with DynamoDB.

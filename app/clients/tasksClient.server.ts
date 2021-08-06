@@ -1,22 +1,37 @@
 import { driver } from "../drivers/tasksDynamoDriver.server"
-import { Task } from "../models/task"
-import type { TasksDBClient, DBClientResponse, TasksQueryParams } from "../types"
-import type { TasksDynamoDriver, TasksDynamoDriverItem, TasksDynamoDriverMeta } from "../drivers/tasksDynamoDriver.server"
+import { Task, TaskObject } from "../models/task"
+import { DynamoClient } from "./dynamoClient.server"
+import type { DBClientResponse } from "../types"
+import type { TasksDynamoDriver, TasksDynamoDriverItem, TasksDynamoDriverPatch, TasksDynamoDriverMeta } from "../drivers/tasksDynamoDriver.server"
 
+/**
+ * QueryParams is the configuration interface of a `#TaskDBClient.query()` command.
+ */
+export interface TasksQueryParams {
+  /**
+   * branch corresponds to the branch where the query should run.
+   */
+  branch?: string;
+  /**
+   * userId corresponds to the unique identifier of the user.
+   */
+  userId?: string;
+}
 /**
  * TaskDynamoDBClient handles communication with the DynamoDB table.
  * @param config - Configuration object.
  */
-export class TaskDynamoDBClient implements TasksDBClient {
+export class TaskDynamoDBClient extends DynamoClient<Task, TasksQueryParams, TaskObject, TasksDynamoDriverItem, TasksDynamoDriverPatch> {
   /**
    * driver is the interface to be used against a DynamoDB table.
    */
   driver: TasksDynamoDriver
   /**
-   * constructor creates a new TaskDynamoDBClient instance.
+   * constructor creates a new Client instance.
    * @param driver - Client driver to interact with the database.
    */
   constructor(driver: TasksDynamoDriver) {
+    super(driver)
     this.driver = driver
   }
   /**
@@ -34,6 +49,32 @@ export class TaskDynamoDBClient implements TasksDBClient {
     })
   }
   /**
+   * toModel converts a TasksDynamoDriverItem into a Task object.
+   * @param TaskDynamoDBObject - DynamoDB response to convert.
+   */
+  toModel(object: TasksDynamoDriverItem): Task {
+    const [b0, b1, b2] = object._b.split("#")
+    return new Task({
+      id: object.id,
+      content: object.content,
+      userId: b0 === "Tasks" ? undefined : b0,
+      branch: b1 === "Tasks" ? b2 : b1,
+      meta: object._m,
+    })
+  }
+  /**
+   * toBody converts a Task into a valid body value.
+   * @param task - Task model to convert
+   */
+  toBody = (task: Task): TaskObject => task
+  /**
+   * toPatch converts a Task into a valid patch value.
+   * @param patch - Task model to convert
+   */
+  toPatch = (task: Task): TasksDynamoDriverPatch => ({
+    content: task.content
+  })
+  /**
    * createPK creates a valid `pk` for the current schema
    * of the DynamoDB table.
    * @param id - Unique identifier of the `Item`.
@@ -50,22 +91,7 @@ export class TaskDynamoDBClient implements TasksDBClient {
       const { branch, userId } = params
       const pk = this.createPK(branch, userId)
       const items = await this.driver.list(pk)
-      return { data: items.map(this.toTask) }
-    } catch (err) {
-      return { error: err.message }
-    }
-  }
-  /**
-   * get returns a Task identified by its `id`.
-   * @param id - `Task` unique identifier.
-   * @param userId - User unique identifier.
-   */
-  async get(id: string, userId?: string): Promise<DBClientResponse<Task>> {
-    try {
-      const pk = this.createPK(id, userId)
-      const item = await this.driver.get(pk)
-      if (!item) throw new Error(`task with id = ${id} not found`)
-      return { data: this.toTask(item) }
+      return { data: items.map(this.toModel) }
     } catch (err) {
       return { error: err.message }
     }
@@ -104,35 +130,6 @@ export class TaskDynamoDBClient implements TasksDBClient {
       const ok = await this.driver.put(pk, task, branchPk, afterPk)
       if (!ok) throw new Error(`error while storing task with pk = ${pk} at branch = ${branchPk}`)
       return { data: task }
-    } catch (err) {
-      return { error: err.message }
-    }
-  }
-  /**
-   * update updates a `Task` in the table.
-   * @param task - Updated `Task` to store
-   */
-  async update(task: Task): Promise<DBClientResponse<undefined>> {
-    try {
-      const pk = this.createPK(task.id, task.userId)
-      const ok = await this.driver.update(pk, task)
-      if (!ok) throw new Error(`error while updating task with pk = ${pk}`)
-      return {}
-    } catch (err) {
-      return { error: err.message }
-    }
-  }
-  /**
-   * delete deletes an Task from the table.
-   * @param id - `Task` unique identifier.
-   * @param userId - User unique identifier.
-   */
-  async delete(id: string, userId?: string): Promise<DBClientResponse<undefined>> {
-    try {
-      const pk = this.createPK(id, userId)
-      const ok = await this.driver.delete(pk)
-      if (!ok) throw new Error(`error while deleting task with pk = ${pk}`)
-      return {}
     } catch (err) {
       return { error: err.message }
     }
