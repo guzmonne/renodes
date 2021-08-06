@@ -4,7 +4,8 @@
   "description": "",
   "license": "",
   "scripts": {
-    "test": "DB_ENDPOINT=\"http://dynamodb:8000\" TABLE_NAME=retask ts-node node_modules/tape/bin/tape \"app/**/*.test.ts\"",
+    "pretest": "DB_ENDPOINT=\"http://dynamodb:8000\" TABLE_NAME=renodes-test ts-node -O '{\"resolveJsonModule\": true}' scripts/tables reset",
+    "test": "DB_ENDPOINT=\"http://dynamodb:8000\" TABLE_NAME=renodes-test ts-node node_modules/tape/bin/tape \"app/**/*.test.ts\"",
     "build": "remix build",
     "dev": "remix dev",
     "start": "NODE_ENV=production node server/index.js",

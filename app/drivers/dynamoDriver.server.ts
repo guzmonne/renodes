@@ -1,5 +1,5 @@
 import { DeleteCommand, GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb"
-import type { DynamoDBDocumentClient, GetCommandOutput, PutCommandOutput } from "@aws-sdk/lib-dynamodb"
+import type { DynamoDBDocumentClient, DeleteCommandOutput, GetCommandOutput, PutCommandOutput } from "@aws-sdk/lib-dynamodb"
 
 import { db } from "./dynamo.server"
 /**
@@ -101,13 +101,10 @@ export abstract class DynamoDriver<Body, Item extends DynamoDriverItem, Patch> {
    * @param key - item unique identifier.
    */
   async delete(pk: string): Promise<boolean> {
-    this.db.send(new DeleteCommand({
+    const deleteOutput: DeleteCommandOutput = await this.db.send(new DeleteCommand({
       TableName: this.tableName,
       Key: { pk },
-      ConditionExpression: "#pk = :pk",
-      ExpressionAttributeNames: { "#pk": "pk" },
-      ExpressionAttributeValues: { ":pk": pk },
     }))
-    return true
+    return deleteOutput.$metadata.httpStatusCode === 200
   }
 }
