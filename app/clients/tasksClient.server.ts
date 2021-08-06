@@ -1,7 +1,7 @@
 import { driver } from "../drivers/tasksDynamoDriver.server"
 import { Task } from "../models/task"
 import type { TasksDBClient, DBClientResponse, TasksQueryParams } from "../types"
-import type { TaskDocumentClient, TaskDocumentClientItem, TaskDocumentClientMeta } from "../drivers/tasksDynamoDriver.server"
+import type { TasksDynamoDriver, TasksDynamoDriverItem, TasksDynamoDriverMeta } from "../drivers/tasksDynamoDriver.server"
 
 /**
  * TaskDynamoDBClient handles communication with the DynamoDB table.
@@ -11,19 +11,19 @@ export class TaskDynamoDBClient implements TasksDBClient {
   /**
    * driver is the interface to be used against a DynamoDB table.
    */
-  driver: TaskDocumentClient
+  driver: TasksDynamoDriver
   /**
    * constructor creates a new TaskDynamoDBClient instance.
    * @param driver - Client driver to interact with the database.
    */
-  constructor(driver: TaskDocumentClient) {
+  constructor(driver: TasksDynamoDriver) {
     this.driver = driver
   }
   /**
-   * toTask converts a TaskDocumentClientItem into a Task object.
+   * toTask converts a TasksDynamoDriverItem into a Task object.
    * @param TaskDynamoDBObject - DynamoDB response to convert.
    */
-  toTask(object: TaskDocumentClientItem): Task {
+  toTask(object: TasksDynamoDriverItem): Task {
     const [b0, b1, b2] = object._b.split("#")
     return new Task({
       id: object.id,
@@ -76,7 +76,7 @@ export class TaskDynamoDBClient implements TasksDBClient {
    * @param userId - User unique identifier.
    * @param meta - Metadata to be updated.
    */
-  async meta(id: string, userId?: string, meta?: TaskDocumentClientMeta): Promise<DBClientResponse<TaskDocumentClientMeta | undefined>> {
+  async meta(id: string, userId?: string, meta?: TasksDynamoDriverMeta): Promise<DBClientResponse<TasksDynamoDriverMeta | undefined>> {
     try {
       if (!meta) {
         const { data, error } = await this.get(id, userId)
@@ -101,7 +101,7 @@ export class TaskDynamoDBClient implements TasksDBClient {
       const pk = this.createPK(task.id, task.userId)
       const branchPk = this.createPK(task.branch, task.userId)
       const afterPk = afterId ? this.createPK(afterId, task.userId) : undefined
-      const ok = await this.driver.put(pk, branchPk, task, afterPk)
+      const ok = await this.driver.put(pk, task, branchPk, afterPk)
       if (!ok) throw new Error(`error while storing task with pk = ${pk} at branch = ${branchPk}`)
       return { data: task }
     } catch (err) {

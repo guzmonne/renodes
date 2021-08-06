@@ -4,9 +4,9 @@ import type { Test } from "tape"
 
 import { Task } from "../models/task"
 import { client } from "./tasksClient.server"
-import type { TaskDocumentClientItem } from "../drivers/tasksDynamoDriver.server"
+import type { TasksDynamoDriverItem } from "../drivers/tasksDynamoDriver.server"
 
-test("taskDocumentDBClient.createPK()", async (assert: Test) => {
+test("tasksClient.createPK()", async (assert: Test) => {
   const id = ulid()
   const userId = ulid()
   assert.equal(client.createPK(), "Tasks")
@@ -16,12 +16,12 @@ test("taskDocumentDBClient.createPK()", async (assert: Test) => {
 })
 
 
-test("taskDynamoDBClient.toTask()", async (assert: Test) => {
+test("tasksClient.toTask()", async (assert: Test) => {
   const id = ulid()
   const branch = ulid()
   const userId = ulid()
   const content = ulid()
-  const item: TaskDocumentClientItem = {
+  const item: TasksDynamoDriverItem = {
     id,
     content,
     pk: `${userId}#Tasks#${id}`,
@@ -39,7 +39,7 @@ test("taskDynamoDBClient.toTask()", async (assert: Test) => {
   assert.end()
 })
 
-test("taskDocumentDBClient.get()", async (assert: Test) => {
+test("tasksClient.get()", async (assert: Test) => {
   const branch = ulid()
   const userId = ulid()
   const task = new Task({ id: ulid(), content: ulid(), branch, userId })
@@ -49,7 +49,7 @@ test("taskDocumentDBClient.get()", async (assert: Test) => {
   assert.end()
 })
 
-test("taskDocumentDBClient.put()", async (assert: Test) => {
+test("tasksClient.put()", async (assert: Test) => {
   const branch = ulid()
   const userId = ulid()
   const task1 = new Task({ id: ulid(), content: ulid(), branch, userId })
@@ -63,7 +63,7 @@ test("taskDocumentDBClient.put()", async (assert: Test) => {
   assert.end()
 })
 
-test("taskDocumentDBClient.update()", async (assert: Test) => {
+test("tasksClient.update()", async (assert: Test) => {
   const branch = ulid()
   const userId = ulid()
   const content = "example"
@@ -76,7 +76,7 @@ test("taskDocumentDBClient.update()", async (assert: Test) => {
   assert.end()
 })
 
-test("taskDocumentDBClient.delete()", async (assert: Test) => {
+test("tasksClient.delete()", async (assert: Test) => {
   const branch = ulid()
   const userId = ulid()
   const id = ulid()
@@ -88,7 +88,7 @@ test("taskDocumentDBClient.delete()", async (assert: Test) => {
   assert.end()
 })
 
-test("taskDocumentDBClient.after()", async (assert: Test) => {
+test("tasksClient.after()", async (assert: Test) => {
   const branch = ulid()
   const userId = ulid()
   const task1 = new Task({ id: ulid(), content: ulid(), branch, userId })
@@ -105,7 +105,7 @@ test("taskDocumentDBClient.after()", async (assert: Test) => {
   assert.end()
 })
 
-test("taskDocumentDBClient.meta()", async (assert: Test) => {
+test("tasksClient.meta()", async (assert: Test) => {
   const branch = ulid()
   const userId = ulid()
   const isOpened = true

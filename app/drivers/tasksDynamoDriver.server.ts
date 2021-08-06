@@ -1,33 +1,13 @@
-import { DeleteCommand, QueryCommand, GetCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb"
-import type { DynamoDBDocumentClient, GetCommandOutput, PutCommandOutput, QueryCommandOutput, UpdateCommandOutput, DeleteCommandOutput } from "@aws-sdk/lib-dynamodb"
+import { DeleteCommand, QueryCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb"
+import type { PutCommandOutput, QueryCommandOutput, UpdateCommandOutput, DeleteCommandOutput } from "@aws-sdk/lib-dynamodb"
 
-import { client } from "./dynamo.server"
+import { DynamoDriver } from "./dynamoDriver.server"
+import type { DynamoDriverItem } from "./dynamoDriver.server"
 
 /**
- * TaskDocumentClientConfig is the configuration interface
- * needed to create a `TaskDocumentClient` instance.
- *
- * It is important that the table exists prior to instantiating
- * an instance of it. No checks of its availability
- * will be run at runtime, and no methods to configure it
- * will be available through the `TaskDocumentClient` class.
+ * TasksDynamoDriverBody is the body accepted to create a new `Task`.
  */
-export interface TaskDocumentClientConfig {
-  /**
-   * client must be a `DynamoDBDocumentClient` instance.
-   */
-  client: DynamoDBDocumentClient;
-  /**
-   * tableName is the name of the table that will be used
-   * to store the `Tasks`.
-   */
-  tableName: string;
-}
-/**
- * TaskDocumentClientItem is the `Task` item representation
- * inside DynamoDB.
- */
-export interface TaskDocumentClientBody {
+export interface TasksDynamoDriverBody {
   /**
    * id is the unprefixed identifier of the `Task`.
    */
@@ -38,17 +18,12 @@ export interface TaskDocumentClientBody {
   content: string;
 }
 /**
- * TaskDocumentClientBody is a TaskDocumentClientItem without
- * some attributes only necessary internaly.
+ * TasksDynamoDriverItem is the interface that represent how the `Tasks`
+ * items are stored in the table.
  */
-export interface TaskDocumentClientItem extends TaskDocumentClientBody {
+export interface TasksDynamoDriverItem extends TasksDynamoDriverBody, DynamoDriverItem {
   /**
-   * pk represents the `Task` unique identifier.
-   */
-  pk: string;
-  /**
-   * _b corresponds to the name of the branch that the item
-   * belongs.
+   * _b represents the name of the branch that the item belongs.
    */
   _b: string;
   /**
@@ -58,67 +33,36 @@ export interface TaskDocumentClientItem extends TaskDocumentClientBody {
    */
   _n: string;
   /**
-   * meta holds the meta information of the TaskDocumentClientItem.
+   * meta holds the meta information of the TasksDynamoDriverItem.
    */
-  _m?: TaskDocumentClientMeta;
+  _m?: TasksDynamoDriverMeta;
 }
 /**
- * TaskDocumentClientPatch represent the list of values that
+ * TasksDynamoDriverPatch represent the list of values that
  * can be patched through an `update`.
  */
-export type TaskDocumentClientPatch = Pick<Partial<TaskDocumentClientBody>, "content">
+export type TasksDynamoDriverPatch = Pick<Partial<TasksDynamoDriverBody>, "content">
 /**
- * TaskDocumentClientMeta represent the meta status of a `Task`.
+ * TasksDynamoDriverMeta represent the meta status of a `Task`.
  */
-export interface TaskDocumentClientMeta {
+export interface TasksDynamoDriverMeta {
+  /**
+   * isOpened is a flag used to indicate if the `Task sub-tasks` should be shown.
+   */
   isOpened?: boolean;
 }
 /**
- * TaskClient is an abstraction built to hide the DynamoDB
- * access patterns used to handle `Tasks` as a Linked List.
- * Is must be provided with a `DynamoDBDocumentClient`
- * instance upon creation, and the name of the table where
- * the `Tasks` will be stored.
+ * TasksDynamoDriver handles the logic of `Task` items inside a DynamoDB table.
  */
-export class TaskDocumentClient {
-  /**
-   * client is a `DynamoDBDocumentClient` instance used to
-   * communicate with DynamoDB.
-   */
-  private client: DynamoDBDocumentClient
-  /**
-   * tableName is the name of DynamoDB`s table where the
-   * `Tasks` will be stored.
-   */
-  private tableName: string
-  /**
-   * @param config - Configuration object
-   */
-  constructor(config: TaskDocumentClientConfig) {
-    this.tableName = config.tableName
-    this.client = config.client
-  }
-  /**
-   * get gets a single `Task` from the table identified by its pk.
-   * @param pk - `Task` unique identifier.
-   */
-  async get(pk: string): Promise<TaskDocumentClientItem | undefined> {
-    const response: GetCommandOutput = await this.client.send(new GetCommand({
-      TableName: this.tableName,
-      Key: { pk },
-    }))
-    return response.Item
-      ? response.Item as TaskDocumentClientItem
-      : undefined
-  }
+export class TasksDynamoDriver extends DynamoDriver<TasksDynamoDriverBody, TasksDynamoDriverItem, TasksDynamoDriverPatch> {
   /**
    * getPointingTo returns the `Task` item pointing to the
    * `Task` identified by its `sk` value.
    * @param pk - `Task` unique identifier.
    * @param branch - `Task` branch.
    */
-  private async getPointingTo(pk: string, branch: string): Promise<TaskDocumentClientItem | undefined> {
-    const response: QueryCommandOutput = await this.client.send(new QueryCommand({
+  private async getPointingTo(pk: string, branch: string): Promise<TasksDynamoDriverItem | undefined> {
+    const response: QueryCommandOutput = await this.db.send(new QueryCommand({
       TableName: this.tableName,
       IndexName: "byNext",
       KeyConditionExpression: "#_b = :_b AND #_n = :_n",
@@ -127,7 +71,7 @@ export class TaskDocumentClient {
       Limit: 1,
     }))
     return response.Items && response.Items.length === 1
-      ? response.Items[0] as TaskDocumentClientItem
+      ? response.Items[0] as TasksDynamoDriverItem
       : undefined
   }
   /**
@@ -136,16 +80,17 @@ export class TaskDocumentClient {
    * an existing `Task` with a new one by checking if an
    * item already exist on the table with the same `pk`.
    * @param pk - `Task` unique identifier.
+   * @param body - `Task` body to be stored.
    * @param branch - `Task` branch.
-   * @param item - `Task` item to be stored.
    * @param afterPk - `Task` to set the new `Task` after.
    */
-  async put(pk: string, branch: string, item: TaskDocumentClientBody, afterPk?: string): Promise<boolean> {
+  async put(pk: string, body: TasksDynamoDriverBody, branch?: string, afterPk?: string): Promise<boolean> {
+    if (!branch) return false
     const after = afterPk === undefined
       ? await this.getTail(branch)
       : await this.get(afterPk)
-    if (after === undefined) return this.putFirst(pk, branch, item)
-    const updatePromise: Promise<UpdateCommandOutput> = this.client.send(new UpdateCommand({
+    if (after === undefined) return this.putFirst(pk, branch, body)
+    const updatePromise: Promise<UpdateCommandOutput> = this.db.send(new UpdateCommand({
       TableName: this.tableName,
       Key: { pk: after.pk },
       UpdateExpression: "SET #_n = :new_n",
@@ -153,9 +98,9 @@ export class TaskDocumentClient {
       ExpressionAttributeNames: { "#_n": "_n" },
       ExpressionAttributeValues: { ":_n": after._n, ":new_n": pk },
     }))
-    const putPromise: Promise<PutCommandOutput> = this.client.send(new PutCommand({
+    const putPromise: Promise<PutCommandOutput> = this.db.send(new PutCommand({
       TableName: this.tableName,
-      Item: { id: item.id, content: item.content, pk, _b: branch, _n: after === undefined ? "." : after._n },
+      Item: { id: body.id, content: body.content, pk, _b: branch, _n: after === undefined ? "." : after._n },
       ConditionExpression: "attribute_not_exists(#pk)",
       ExpressionAttributeNames: { "#pk": "pk" },
     }))
@@ -166,20 +111,19 @@ export class TaskDocumentClient {
     )
   }
   /**
-   * putFirst creates the `head` item along the first `Task`
-   * of a new branch.
+   * putFirst creates the `head` item along the first `Task` of a new `branch`.
    * @param pk - `Task` unique identifier.
    * @param branch - `Task` branch.
    * @param item - `Task` item to be stored.
    */
-  private async putFirst(pk: string, branch: string, item: TaskDocumentClientBody): Promise<boolean> {
-    const putHeadPromise: Promise<PutCommandOutput> = this.client.send(new PutCommand({
+  private async putFirst(pk: string, branch: string, item: TasksDynamoDriverBody): Promise<boolean> {
+    const putHeadPromise: Promise<PutCommandOutput> = this.db.send(new PutCommand({
       TableName: this.tableName,
       Item: { pk: "#" + branch, _b: branch, _n: pk },
       ConditionExpression: "attribute_not_exists(#pk)",
       ExpressionAttributeNames: { "#pk": "pk" },
     }))
-    const putItemPromise: Promise<PutCommandOutput> = this.client.send(new PutCommand({
+    const putItemPromise: Promise<PutCommandOutput> = this.db.send(new PutCommand({
       TableName: this.tableName,
       Item: { id: item.id, content: item.content, pk, _b: branch, _n: "." },
       ConditionExpression: "attribute_not_exists(#pk)",
@@ -197,8 +141,8 @@ export class TaskDocumentClient {
    * should be set to a dot ("`.`").
    * @param branch - `Tasks` branch on which to search for the `tail`.
    */
-  private async getTail(branch: string): Promise<TaskDocumentClientItem | undefined> {
-    const queryOutput = await this.client.send(new QueryCommand({
+  private async getTail(branch: string): Promise<TasksDynamoDriverItem | undefined> {
+    const queryOutput = await this.db.send(new QueryCommand({
       TableName: this.tableName,
       IndexName: "byNext",
       KeyConditionExpression: "#_b = :_b",
@@ -207,7 +151,7 @@ export class TaskDocumentClient {
       Limit: 1,
     }))
     return queryOutput.Items && queryOutput.Items.length === 1
-      ? queryOutput.Items[0] as TaskDocumentClientItem
+      ? queryOutput.Items[0] as TasksDynamoDriverItem
       : undefined
   }
   /**
@@ -215,9 +159,9 @@ export class TaskDocumentClient {
    * @param pk - `Task` unique identifier.
    * @param patch - `Task` patch to be applied to the `item`.
    */
-  async update(pk: string, patch: TaskDocumentClientPatch): Promise<boolean> {
+  async update(pk: string, patch: TasksDynamoDriverPatch): Promise<boolean> {
     if (patch.content === undefined || patch.content === null) return true
-    const response: UpdateCommandOutput = await this.client.send(new UpdateCommand({
+    const response: UpdateCommandOutput = await this.db.send(new UpdateCommand({
       TableName: this.tableName,
       Key: { pk },
       UpdateExpression: "SET #content = :content",
@@ -231,11 +175,11 @@ export class TaskDocumentClient {
    * @param pk - `Task` unique identifier.
    * @param meta - Meta object to update.
    */
-  async meta(pk: string, meta: TaskDocumentClientMeta, force?: boolean): Promise<boolean> {
+  async meta(pk: string, meta: TasksDynamoDriverMeta, force?: boolean): Promise<boolean> {
     // Check if the object is empty
     if (meta.isOpened === undefined) return true
     try {
-      const response: UpdateCommandOutput = await this.client.send(new UpdateCommand(
+      const response: UpdateCommandOutput = await this.db.send(new UpdateCommand(
         force
           ? {
             TableName: this.tableName,
@@ -271,7 +215,7 @@ export class TaskDocumentClient {
     if (!pointingToTask) return false
     // 1. Update `pointingToTask` to point to the `Task` currently
     //    being pointed by the `Task` to be deleted.
-    const updatePromise: Promise<UpdateCommandOutput> = this.client.send(new UpdateCommand({
+    const updatePromise: Promise<UpdateCommandOutput> = this.db.send(new UpdateCommand({
       TableName: this.tableName,
       Key: { pk: pointingToTask.pk },
       UpdateExpression: "SET #_n = :_new_n",
@@ -280,7 +224,7 @@ export class TaskDocumentClient {
       ExpressionAttributeValues: { ":_new_n": task._n, ":_n": pointingToTask._n },
     }))
     // 2. Delete the task.
-    const deletePromise: Promise<DeleteCommandOutput> = this.client.send(new DeleteCommand({
+    const deletePromise: Promise<DeleteCommandOutput> = this.db.send(new DeleteCommand({
       TableName: this.tableName,
       Key: { pk: task.pk },
       ConditionExpression: "#_n = :_n",
@@ -295,8 +239,8 @@ export class TaskDocumentClient {
    * list returns the list of `Tasks` under a `pk`.
    * @param branch - `Tasks` branch.
    */
-  async list(branch: string): Promise<TaskDocumentClientItem[]> {
-    const queryOutput: QueryCommandOutput = await this.client.send(new QueryCommand({
+  async list(branch: string): Promise<TasksDynamoDriverItem[]> {
+    const queryOutput: QueryCommandOutput = await this.db.send(new QueryCommand({
       TableName: this.tableName,
       IndexName: "byBranch",
       KeyConditionExpression: "#_b = :_b",
@@ -304,7 +248,7 @@ export class TaskDocumentClient {
       ExpressionAttributeValues: { ":_b": branch },
     }))
     if (!queryOutput.Items || queryOutput.Items.length === 0) return []
-    const [head, ...items] = queryOutput.Items as TaskDocumentClientItem[]
+    const [head, ...items] = queryOutput.Items as TasksDynamoDriverItem[]
     return this.follow(head, items)
   }
   /**
@@ -315,14 +259,14 @@ export class TaskDocumentClient {
    * @param head - `HEAD` item from which to get the first item of the list.
    * @param items - List of `Task` items to be ordered.
    */
-  private follow(head: TaskDocumentClientItem, items: TaskDocumentClientItem[]): TaskDocumentClientItem[] {
-    const map = new Map<string, TaskDocumentClientItem>()
-    const result: TaskDocumentClientItem[] = []
-    const remaining: TaskDocumentClientItem[] = []
+  private follow(head: TasksDynamoDriverItem, items: TasksDynamoDriverItem[]): TasksDynamoDriverItem[] {
+    const map = new Map<string, TasksDynamoDriverItem>()
+    const result: TasksDynamoDriverItem[] = []
+    const remaining: TasksDynamoDriverItem[] = []
     if (head._n === ".") return []
     // First pass, we create the `sk` to `item` map, plus start
     // populating the `result` list.
-    items.forEach((item: TaskDocumentClientItem, _: number) => {
+    items.forEach((item: TasksDynamoDriverItem, _: number) => {
       map.set(item.pk, item)
       if (item.pk === head._n) {
         result.push(item)
@@ -334,7 +278,7 @@ export class TaskDocumentClient {
     // Second pass, we iterate over the remaining items until
     // we complete the list.
     remaining.forEach(() => {
-      head = map.get(head._n) as TaskDocumentClientItem
+      head = map.get(head._n) as TasksDynamoDriverItem
       result.push(head)
     })
     return result
@@ -357,7 +301,7 @@ export class TaskDocumentClient {
     if (!from || !after || !$from) return false
     if (after._n === from.pk) return true
     const [updateFromOutput, updateAfterOutput, update$FromOutput] = await Promise.all([
-      this.client.send(new UpdateCommand({
+      this.db.send(new UpdateCommand({
         TableName: this.tableName,
         Key: { pk: from.pk },
         ConditionExpression: "#_n <> :pk",
@@ -365,7 +309,7 @@ export class TaskDocumentClient {
         ExpressionAttributeNames: { "#_n": "_n" },
         ExpressionAttributeValues: { ":_n": after._n, ":pk": from.pk },
       })),
-      this.client.send(new UpdateCommand({
+      this.db.send(new UpdateCommand({
         TableName: this.tableName,
         Key: { pk: after.pk },
         ConditionExpression: "#_n <> :pk",
@@ -373,7 +317,7 @@ export class TaskDocumentClient {
         ExpressionAttributeNames: { "#_n": "_n" },
         ExpressionAttributeValues: { ":_n": from.pk, ":pk": after.pk },
       })),
-      this.client.send(new UpdateCommand({
+      this.db.send(new UpdateCommand({
         TableName: this.tableName,
         Key: { pk: $from.pk },
         ConditionExpression: "#_n <> :pk",
@@ -390,11 +334,6 @@ export class TaskDocumentClient {
   }
 }
 /**
- * driver is a singleton `TaskDocumentClient`
- * connected to a DynamoDB table using the default app
- * `dynamo document client`.
+ * driver is a preconfigured instance of the `TasksDynamoDriver` class.
  */
-export const driver = new TaskDocumentClient({
-  tableName: process.env.TABLE_NAME || "retask",
-  client,
-})
+export const driver = new TasksDynamoDriver()

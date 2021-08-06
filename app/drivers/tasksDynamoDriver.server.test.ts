@@ -2,7 +2,7 @@ import test from "tape"
 import { ulid } from "ulid"
 import type { Test } from "tape"
 
-import { driver, TaskDocumentClientItem } from "./tasksDynamoDriver.server"
+import { driver, TasksDynamoDriverItem } from "./tasksDynamoDriver.server"
 
 /**
  * To simplify this patterns an abstraction must be made
@@ -33,9 +33,9 @@ test("Task Linked List abstraction", async (assert: Test) => {
   /**
    * First, we'll insert three new `Tasks` using the `put` method.
    */
-  assert.equal(await driver.put(pk1, root, { id: id1, content: c1 }), true)
-  assert.equal(await driver.put(pk2, root, { id: id2, content: c2 }), true)
-  assert.equal(await driver.put(pk3, root, { id: id3, content: c3 }), true)
+  assert.equal(await driver.put(pk1, { id: id1, content: c1 }, root), true)
+  assert.equal(await driver.put(pk2, { id: id2, content: c2 }, root), true)
+  assert.equal(await driver.put(pk3, { id: id3, content: c3 }, root), true)
   /**
    * Now we'll run the `list` method to see if the items come back
    * in the correct order.
@@ -49,7 +49,7 @@ test("Task Linked List abstraction", async (assert: Test) => {
   /**
    * Adding more items should append them to the end of the list.
    */
-  assert.equal(await driver.put(pk4, root, { id: id4, content: c4 }), true)
+  assert.equal(await driver.put(pk4, { id: id4, content: c4 }, root), true)
   assert.deepEqual((await driver.list(root)).map(item => item.pk), [pk3, pk1, pk2, pk4])
   /**
    * Let's swap the middle elements and then move the first element
@@ -90,9 +90,9 @@ test("Task Linked List abstraction", async (assert: Test) => {
    * Adding new `Tasks` after it gets empty should return a correctly
    * sorted list.
    */
-  assert.equal(await driver.put(pk1, root, { id: id1, content: c1 }), true)
-  assert.equal(await driver.put(pk2, root, { id: id2, content: c2 }), true)
-  assert.equal(await driver.put(pk3, root, { id: id3, content: c3 }), true)
+  assert.equal(await driver.put(pk1, { id: id1, content: c1 }, root), true)
+  assert.equal(await driver.put(pk2, { id: id2, content: c2 }, root), true)
+  assert.equal(await driver.put(pk3, { id: id3, content: c3 }, root), true)
   assert.deepEqual((await driver.list(root)).map(item => item.pk), [pk1, pk2, pk3])
   /**
    * End
@@ -102,7 +102,7 @@ test("Task Linked List abstraction", async (assert: Test) => {
 
 test("Task create", async (assert: Test) => {
   try {
-    let tasks: TaskDocumentClientItem[]
+    let tasks: TasksDynamoDriverItem[]
     const userId = ulid()
     const branch = userId + "#Tasks"
     const id1 = "001"
@@ -113,14 +113,14 @@ test("Task create", async (assert: Test) => {
     const pk3 = key({ userId, id: id3 })
     const content = Math.random().toLocaleString()
     // Put the first element
-    assert.equal(await driver.put(pk1, branch, { id: id1, content }), true)
+    assert.equal(await driver.put(pk1, { id: id1, content }, branch), true)
     // Put the second element
-    assert.equal(await driver.put(pk2, branch, { id: id2, content }), true)
+    assert.equal(await driver.put(pk2, { id: id2, content }, branch), true)
     // Check both `Task` where created in the correct order
     tasks = await driver.list(branch)
     assert.deepEqual(tasks.map(task => task.id), [id1, id2])
     // Put a new `Task` after `pk1` not the Root.
-    assert.equal(await driver.put(pk3, branch, { id: id3, content }, pk1), true)
+    assert.equal(await driver.put(pk3, { id: id3, content }, branch, pk1), true)
     // Check to see if the new `Task` was correctly added.
     tasks = await driver.list(branch)
     assert.deepEqual(tasks.map(task => task.id), [id1, id3, id2])
@@ -134,14 +134,14 @@ test("Task create", async (assert: Test) => {
 
 test("Task meta object updates", async (assert: Test) => {
   try {
-    let task: TaskDocumentClientItem | undefined
+    let task: TasksDynamoDriverItem | undefined
     const id = "001"
     const userId = ulid()
     const root = userId + "#Tasks"
     const pk = key({ userId, id: id })
     const content = Math.random().toLocaleString()
     // Put the element
-    assert.equal(await driver.put(pk, root, { id, content }), true)
+    assert.equal(await driver.put(pk, { id, content }, root), true)
     // Expect the `meta` object to be empty
     task = await driver.get(pk)
     if (!task) throw new Error("task is undefined")
