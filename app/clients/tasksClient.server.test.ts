@@ -16,7 +16,7 @@ test("tasksClient.createPK()", async (assert: Test) => {
 })
 
 
-test("tasksClient.toTask()", async (assert: Test) => {
+test("tasksClient.toModel()", async (assert: Test) => {
   const id = ulid()
   const branch = ulid()
   const userId = ulid()
@@ -31,7 +31,7 @@ test("tasksClient.toTask()", async (assert: Test) => {
       isOpened: true
     },
   }
-  const actual = client.toTask(item)
+  const actual = client.toModel(item)
   assert.equal(actual.id, id)
   assert.equal(actual.content, content)
   assert.equal(actual.branch, branch)

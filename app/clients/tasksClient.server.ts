@@ -35,20 +35,6 @@ export class TaskDynamoDBClient extends DynamoClient<Task, TasksQueryParams, Tas
     this.driver = driver
   }
   /**
-   * toTask converts a TasksDynamoDriverItem into a Task object.
-   * @param TaskDynamoDBObject - DynamoDB response to convert.
-   */
-  toTask(object: TasksDynamoDriverItem): Task {
-    const [b0, b1, b2] = object._b.split("#")
-    return new Task({
-      id: object.id,
-      content: object.content,
-      userId: b0 === "Tasks" ? undefined : b0,
-      branch: b1 === "Tasks" ? b2 : b1,
-      meta: object._m,
-    })
-  }
-  /**
    * toModel converts a TasksDynamoDriverItem into a Task object.
    * @param TaskDynamoDBObject - DynamoDB response to convert.
    */
