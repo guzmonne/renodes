@@ -1,11 +1,17 @@
-import { DynamoClient } from "./dynamoClient.server"
-import { UsersDynamoDriver, UsersDynamoDriverItem } from "../drivers/usersDynamoDriver.server"
-import { User, UserObject } from "../models/user"
+import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb"
 
-export type UserPatch = Pick<UserObject, "avatarURL" | "name" | "location">
+import { Client } from "./client.server"
+import { driver } from "../drivers/usersDynamoDriver.server"
+import { User, UserBody } from "../models/user"
+import type { UsersDynamoDriver, UserItem } from "../drivers/usersDynamoDriver.server"
 
-export class UsersClient extends DynamoClient<User, undefined, UserObject, UsersDynamoDriverItem, UserPatch> {
-  driver: UsersDynamoDriver
+export type UserPatch = Pick<UserBody, "avatarURL" | "name" | "location">
+
+export class UsersClient extends Client<User, undefined, UserBody, UserItem, UserPatch, DynamoDBDocumentClient> {
+  /**
+   * driver is the interface to be used agains a DynamoDB table.
+   */
+  driver: UsersDynamoDriver = driver
   /**
    * createPK returns a valid Primary Key from the id and the provider
    */
@@ -17,7 +23,7 @@ export class UsersClient extends DynamoClient<User, undefined, UserObject, Users
    * toModel turns an item returned from DynamoDB into a model.
    * @param item - Item returned from the database.
    */
-  toModel(item: UsersDynamoDriverItem): User {
+  toModel(item: UserItem): User {
     const [id, provider] = item.pk.split(".")
     return new User({
       id,
@@ -30,7 +36,7 @@ export class UsersClient extends DynamoClient<User, undefined, UserObject, Users
    * toBody converts a User into a valid body value.
    * @param user - User model to convert
    */
-  toBody = (user: User): UserObject => user
+  toBody = (user: User): UserBody => user
   /**
    * toPatch converts a User into a valid patch value.
    * @param user - User model to convert
@@ -41,3 +47,7 @@ export class UsersClient extends DynamoClient<User, undefined, UserObject, Users
     name: user.name
   })
 }
+/**
+ * client is a preconfigured instance of the UsersClient class.
+ */
+export const client = new UsersClient()

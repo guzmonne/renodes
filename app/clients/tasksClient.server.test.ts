@@ -4,7 +4,7 @@ import type { Test } from "tape"
 
 import { Task } from "../models/task"
 import { client } from "./tasksClient.server"
-import type { TasksDynamoDriverItem } from "../drivers/tasksDynamoDriver.server"
+import type { TaskItem } from "../drivers/tasksDynamoDriver.server"
 
 test("tasksClient.createPK()", async (assert: Test) => {
   const id = ulid()
@@ -21,7 +21,7 @@ test("tasksClient.toModel()", async (assert: Test) => {
   const branch = ulid()
   const userId = ulid()
   const content = ulid()
-  const item: TasksDynamoDriverItem = {
+  const item: TaskItem = {
     id,
     content,
     pk: `${userId}#Tasks#${id}`,

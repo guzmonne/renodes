@@ -1,22 +1,45 @@
 import { ulid } from 'ulid'
 
 /**
- * TaskMetaObject is a plain JavaScript object that contains
+ * TaskMeta is a plain JavaScript object that contains
  * metadata of the current Task.
  */
-export interface TaskMetaObject {
+export interface TaskMeta {
+  /**
+   * isOpened is a flag used to track if the sub-tasks are opened.
+   */
   isOpened?: boolean;
 }
 /**
- * TaskObject is a plain JavaScript object representation of a Task.
+ * TaskBody is a plain JavaScript object representation of a Task.
  */
-export interface TaskObject {
+export interface TaskBody {
+  /**
+   * id is the unique identifier of the Task.
+   */
   id: string;
+  /**
+   * content is the field use to hold the Task's content.
+   */
   content: string;
+  /**
+   * userId is the unique identifier of the user that owns the Task.
+   */
   userId?: string;
+  /**
+   * branch represents the branch that the Task belongs to.
+   */
   branch?: string;
-  meta?: TaskMetaObject;
+  /**
+   * meta is an object that can hold aditional information of the Task.
+   */
+  meta?: TaskMeta;
 }
+/**
+ * TaskPatch is a partial interface of the TaskBody which include
+ * only the attributes that can be patched on a Task.
+ */
+export type TaskPatch = Pick<Partial<TaskBody>, "content">
 /**
  * Task is the model representation of a task.
  * @param body - Object data to create a new Task.
@@ -35,7 +58,7 @@ export class Task {
   /**
    * object stores an _freezed_ object representation of the model.
    */
-  private object: TaskObject
+  private object: TaskBody
   /**
    * collection creates a Task collection from a list of valid object values.
    * @param objects: List of objects to converto to a list of Tasks.
@@ -59,7 +82,7 @@ export class Task {
   /**
    * toJSON returns an object representation of the model.
    */
-  static toJSON = (task: Task): TaskObject => {
+  static toJSON = (task: Task): TaskBody => {
     return { ...task.object }
   }
   /**

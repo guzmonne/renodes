@@ -15,7 +15,7 @@ import Loader from "../components/utils/Loader.css"
 import { NavBar } from "../components/layout/NavBar"
 import { Tasks } from "../components/tasks/Tasks"
 import { Task } from "../models/task"
-import type { TaskObject } from "../models/task"
+import type { TaskBody } from "../models/task"
 
 export const meta: MetaFunction = ({ params }) => {
   return {
@@ -97,7 +97,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 export default function () {
   const { search } = useLocation()
   const { branch } = useParams()
-  const initialData = useRouteData<TaskObject[]>()
+  const initialData = useRouteData<TaskBody[]>()
   const query = new URLSearchParams(search)
   const queryClient = new QueryClient()
 

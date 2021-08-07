@@ -1,7 +1,11 @@
-import type { DBClient, DBClientResponse } from "../types"
-import type { DynamoDriver, DynamoDriverItem } from "../drivers/dynamoDriver.server"
+import type { DBClient, DBDriver, DBClientResponse } from "../types"
 
-export interface DynamoClientModel {
+/**
+ * ClientModel represents the default Model interface accepted by a client.
+ * @param id - Model unique identifier.
+ * @param userId - User unique identifier.
+ */
+export interface ClientModel {
   id: string;
   userId?: string;
 }
@@ -9,18 +13,11 @@ export interface DynamoClientModel {
  * Client handles communication with the DynamoDB table.
  * @param config - Configuration object.
  */
-export abstract class DynamoClient<Model extends DynamoClientModel, QueryParams, Body, Item extends DynamoDriverItem, Patch> implements DBClient<Model, QueryParams> {
+export abstract class Client<Model extends ClientModel, QueryParams, Body, Item, Patch, DB> implements DBClient<Model, QueryParams> {
   /**
    * driver is the interface to be used against a DynamoDB table.
    */
-  driver: DynamoDriver<Body, Item, Patch>
-  /**
-   * constructor creates a new Client instance.
-   * @param driver - Client driver to interact with the database.
-   */
-  constructor(driver: DynamoDriver<Body, Item, Patch>) {
-    this.driver = driver
-  }
+  abstract driver: DBDriver<Body, Item, Patch, DB>
   /**
    * createPK returns a valid Primary key from a set of values.
    * @param id - Unique identifier of the `Item`.

@@ -8,8 +8,8 @@ import type { DeleteCommandOutput } from "@aws-sdk/lib-dynamodb"
 
 import { db } from "./dynamo.server"
 import { driver } from "./usersDynamoDriver.server"
-import type { UserObject } from "../models/user"
-import type { UsersDynamoDriverItem } from "./usersDynamoDriver.server"
+import type { UserBody } from "../models/user"
+import type { UserItem } from "./usersDynamoDriver.server"
 
 const email = ulid() + "@example.test"
 const provider = "github"
@@ -120,7 +120,7 @@ test("driver.delete()", async (assert: Test) => {
 /**
  * Functions
  */
-function createBodyAndPK(username: string = "username"): [UserObject, string] {
+function createBodyAndPK(username: string = "username"): [UserBody, string] {
   const body = {
     id: ulid(),
     username: `${username}.${ulid()}`,
@@ -145,11 +145,11 @@ async function del(pk: string): Promise<Boolean> {
  * get gets an item from the database.
  * @param pk - Item primary key.
  */
-async function get(pk: string): Promise<UsersDynamoDriverItem | undefined> {
+async function get(pk: string): Promise<UserItem | undefined> {
   const getOutput: GetCommandOutput = await db.send(new GetCommand({
     TableName: process.env.TABLE_NAME,
     Key: { pk }
   }))
   if (!getOutput.Item) return undefined
-  return getOutput.Item as UsersDynamoDriverItem
+  return getOutput.Item as UserItem
 }

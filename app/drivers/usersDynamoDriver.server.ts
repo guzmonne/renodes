@@ -4,13 +4,13 @@ import type { QueryCommandOutput, PutCommandOutput, UpdateCommandOutput } from "
 
 import { DynamoDriver } from "./dynamoDriver.server"
 import type { DynamoDriverItem } from "./dynamoDriver.server"
-import type { UserObject } from "../models/user"
+import type { UserBody, UserPatch } from "../models/user"
 
 /**
- * UsersDynamoDriverItem is the interface that represent how the `Users`
+ * UserItem is the interface that represent how the `Users`
  * items are stored in the table.
  */
-export interface UsersDynamoDriverItem extends DynamoDriverItem {
+export interface UserItem extends DynamoDriverItem {
   /**
    * _b holds the value "Profile" to be able to query by the `byBranch` index.
    */
@@ -22,20 +22,16 @@ export interface UsersDynamoDriverItem extends DynamoDriverItem {
   /**
    * _m holds the profile information of a `User`.
    */
-  _m: UsersDynamoDriverProfile;
+  _m: UserPatch;
 }
-/**
- * UsersDynamoDriverProfile is the interface that represents a `User` profile.
- */
-export type UsersDynamoDriverProfile = Omit<UserObject, "id" | "username" | "provider">
 /**
  * UsersDynamoDriver handles the logic of `User` items inside a DynamoDB table.
  */
-export class UsersDynamoDriver extends DynamoDriver<UserObject, UsersDynamoDriverItem, UsersDynamoDriverProfile> {
+export class UsersDynamoDriver extends DynamoDriver<UserBody, UserItem, UserPatch> {
   /**
    * list returns a list of all the `Users` in the table.
    */
-  async list(): Promise<UsersDynamoDriverItem[]> {
+  async list(): Promise<UserItem[]> {
     const queryOutput: QueryCommandOutput = await this.db.send(new QueryCommand({
       TableName: this.tableName,
       IndexName: "byBranch",
@@ -44,12 +40,12 @@ export class UsersDynamoDriver extends DynamoDriver<UserObject, UsersDynamoDrive
       ExpressionAttributeValues: { ":_b": "Profile" },
     }))
     if (!queryOutput.Items) return []
-    return queryOutput.Items as UsersDynamoDriverItem[]
+    return queryOutput.Items as UserItem[]
   }
   /**
    * put inserts a new `User` in the table.
    */
-  async put(pk: string, body: UserObject): Promise<boolean> {
+  async put(pk: string, body: UserBody): Promise<boolean> {
     const putOutput: PutCommandOutput = await this.db.send(new PutCommand({
       TableName: this.tableName,
       Item: {
@@ -66,7 +62,7 @@ export class UsersDynamoDriver extends DynamoDriver<UserObject, UsersDynamoDrive
   /**
    * update updates a `User` profile inside the table.
    */
-  async update(pk: string, patch: UsersDynamoDriverProfile): Promise<boolean> {
+  async update(pk: string, patch: UserPatch): Promise<boolean> {
     const updateOutput: UpdateCommandOutput = await this.db.send(new UpdateCommand({
       TableName: this.tableName,
       Key: { pk },

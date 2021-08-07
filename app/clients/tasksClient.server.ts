@@ -1,8 +1,10 @@
+import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb"
+
+import { Client } from "./client.server"
 import { driver } from "../drivers/tasksDynamoDriver.server"
-import { Task, TaskObject } from "../models/task"
-import { DynamoClient } from "./dynamoClient.server"
+import { Task, TaskBody, TaskPatch, TaskMeta } from "../models/task"
 import type { DBClientResponse } from "../types"
-import type { TasksDynamoDriver, TasksDynamoDriverItem, TasksDynamoDriverPatch, TasksDynamoDriverMeta } from "../drivers/tasksDynamoDriver.server"
+import type { TasksDynamoDriver, TaskItem } from "../drivers/tasksDynamoDriver.server"
 
 /**
  * QueryParams is the configuration interface of a `#TaskDBClient.query()` command.
@@ -18,27 +20,19 @@ export interface TasksQueryParams {
   userId?: string;
 }
 /**
- * TaskDynamoDBClient handles communication with the DynamoDB table.
+ * TasksClient handles communication with the DynamoDB table.
  * @param config - Configuration object.
  */
-export class TaskDynamoDBClient extends DynamoClient<Task, TasksQueryParams, TaskObject, TasksDynamoDriverItem, TasksDynamoDriverPatch> {
+export class TasksClient extends Client<Task, TasksQueryParams, TaskBody, TaskItem, TaskPatch, DynamoDBDocumentClient> {
   /**
    * driver is the interface to be used against a DynamoDB table.
    */
-  driver: TasksDynamoDriver
+  driver: TasksDynamoDriver = driver
   /**
-   * constructor creates a new Client instance.
-   * @param driver - Client driver to interact with the database.
+   * toModel converts a TaskItem into a Task object.
+   * @param TasksObject - DynamoDB response to convert.
    */
-  constructor(driver: TasksDynamoDriver) {
-    super(driver)
-    this.driver = driver
-  }
-  /**
-   * toModel converts a TasksDynamoDriverItem into a Task object.
-   * @param TaskDynamoDBObject - DynamoDB response to convert.
-   */
-  toModel(object: TasksDynamoDriverItem): Task {
+  toModel(object: TaskItem): Task {
     const [b0, b1, b2] = object._b.split("#")
     return new Task({
       id: object.id,
@@ -52,12 +46,12 @@ export class TaskDynamoDBClient extends DynamoClient<Task, TasksQueryParams, Tas
    * toBody converts a Task into a valid body value.
    * @param task - Task model to convert
    */
-  toBody = (task: Task): TaskObject => task
+  toBody = (task: Task): TaskBody => task
   /**
    * toPatch converts a Task into a valid patch value.
    * @param patch - Task model to convert
    */
-  toPatch = (task: Task): TasksDynamoDriverPatch => ({
+  toPatch = (task: Task): TaskPatch => ({
     content: task.content
   })
   /**
@@ -88,7 +82,7 @@ export class TaskDynamoDBClient extends DynamoClient<Task, TasksQueryParams, Tas
    * @param userId - User unique identifier.
    * @param meta - Metadata to be updated.
    */
-  async meta(id: string, userId?: string, meta?: TasksDynamoDriverMeta): Promise<DBClientResponse<TasksDynamoDriverMeta | undefined>> {
+  async meta(id: string, userId?: string, meta?: TaskMeta): Promise<DBClientResponse<TaskMeta | undefined>> {
     try {
       if (!meta) {
         const { data, error } = await this.get(id, userId)
@@ -144,6 +138,6 @@ export class TaskDynamoDBClient extends DynamoClient<Task, TasksQueryParams, Tas
   }
 }
 /**
- * client is a singleton instance of the TaskDynamoDBClient class.
+ * client is a preconfigured instance of the TasksClient class.
  */
-export const client = new TaskDynamoDBClient(driver)
+export const client = new TasksClient()

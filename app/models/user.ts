@@ -1,4 +1,4 @@
-export interface UserObject {
+export interface UserBody {
   /**
    * id is the unprefixed identifier of the `User`.
    */
@@ -28,7 +28,11 @@ export interface UserObject {
    */
   location?: string;
 }
-
+/**
+ * UserPatch is a partial version of the UserBody instance, cotaining only
+ * the attributes that can be updated on a User model.
+ */
+export type UserPatch = Omit<UserBody, "id" | "username" | "provider">
 /**
  * User is the model representation of a user.
  * @param body - Object from which the model will be created.
@@ -37,7 +41,7 @@ export class User {
   /**
    * object stores an _freezed_ object representation of the model.
    */
-  private object: UserObject
+  private object: UserBody
   /**
    * constructor is called when a new User instance is created.
    * @param body - B
@@ -79,7 +83,7 @@ export class User {
   /**
    * toJSON returns an object representation of the model.
    */
-  toJSON = (): UserObject => ({ ...this.object })
+  toJSON = (): UserBody => ({ ...this.object })
   /**
    * toString returns the User serialized as JSON.
    */

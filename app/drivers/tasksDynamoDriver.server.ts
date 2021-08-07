@@ -3,25 +3,13 @@ import type { PutCommandOutput, QueryCommandOutput, UpdateCommandOutput, DeleteC
 
 import { DynamoDriver } from "./dynamoDriver.server"
 import type { DynamoDriverItem } from "./dynamoDriver.server"
+import type { TaskBody, TaskPatch, TaskMeta } from "../models/task"
 
 /**
- * TasksDynamoDriverBody is the body accepted to create a new `Task`.
+ * TaskItem is the interface that represent how a Task is stored
+ * on a DynamoDB table.
  */
-export interface TasksDynamoDriverBody {
-  /**
-   * id is the unprefixed identifier of the `Task`.
-   */
-  id: string;
-  /**
-   * content is the attribute used to store the `Task` content.
-   */
-  content: string;
-}
-/**
- * TasksDynamoDriverItem is the interface that represent how the `Tasks`
- * items are stored in the table.
- */
-export interface TasksDynamoDriverItem extends TasksDynamoDriverBody, DynamoDriverItem {
+export interface TaskItem extends TaskBody, DynamoDriverItem {
   /**
    * _b represents the name of the branch that the item belongs.
    */
@@ -33,35 +21,21 @@ export interface TasksDynamoDriverItem extends TasksDynamoDriverBody, DynamoDriv
    */
   _n: string;
   /**
-   * meta holds the meta information of the TasksDynamoDriverItem.
+   * meta holds the meta information of the TaskItem.
    */
-  _m?: TasksDynamoDriverMeta;
-}
-/**
- * TasksDynamoDriverPatch represent the list of values that
- * can be patched through an `update`.
- */
-export type TasksDynamoDriverPatch = Pick<Partial<TasksDynamoDriverBody>, "content">
-/**
- * TasksDynamoDriverMeta represent the meta status of a `Task`.
- */
-export interface TasksDynamoDriverMeta {
-  /**
-   * isOpened is a flag used to indicate if the `Task sub-tasks` should be shown.
-   */
-  isOpened?: boolean;
+  _m?: TaskMeta;
 }
 /**
  * TasksDynamoDriver handles the logic of `Task` items inside a DynamoDB table.
  */
-export class TasksDynamoDriver extends DynamoDriver<TasksDynamoDriverBody, TasksDynamoDriverItem, TasksDynamoDriverPatch> {
+export class TasksDynamoDriver extends DynamoDriver<TaskBody, TaskItem, TaskPatch> {
   /**
    * getPointingTo returns the `Task` item pointing to the
    * `Task` identified by its `sk` value.
    * @param pk - `Task` unique identifier.
    * @param branch - `Task` branch.
    */
-  private async getPointingTo(pk: string, branch: string): Promise<TasksDynamoDriverItem | undefined> {
+  private async getPointingTo(pk: string, branch: string): Promise<TaskItem | undefined> {
     const response: QueryCommandOutput = await this.db.send(new QueryCommand({
       TableName: this.tableName,
       IndexName: "byNext",
@@ -71,7 +45,7 @@ export class TasksDynamoDriver extends DynamoDriver<TasksDynamoDriverBody, Tasks
       Limit: 1,
     }))
     return response.Items && response.Items.length === 1
-      ? response.Items[0] as TasksDynamoDriverItem
+      ? response.Items[0] as TaskItem
       : undefined
   }
   /**
@@ -84,7 +58,7 @@ export class TasksDynamoDriver extends DynamoDriver<TasksDynamoDriverBody, Tasks
    * @param branch - `Task` branch.
    * @param afterPk - `Task` to set the new `Task` after.
    */
-  async put(pk: string, body: TasksDynamoDriverBody, branch?: string, afterPk?: string): Promise<boolean> {
+  async put(pk: string, body: TaskBody, branch?: string, afterPk?: string): Promise<boolean> {
     if (!branch) return false
     const after = afterPk === undefined
       ? await this.getTail(branch)
@@ -116,7 +90,7 @@ export class TasksDynamoDriver extends DynamoDriver<TasksDynamoDriverBody, Tasks
    * @param branch - `Task` branch.
    * @param item - `Task` item to be stored.
    */
-  private async putFirst(pk: string, branch: string, item: TasksDynamoDriverBody): Promise<boolean> {
+  private async putFirst(pk: string, branch: string, item: TaskBody): Promise<boolean> {
     const putHeadPromise: Promise<PutCommandOutput> = this.db.send(new PutCommand({
       TableName: this.tableName,
       Item: { pk: "#" + branch, _b: branch, _n: pk },
@@ -141,7 +115,7 @@ export class TasksDynamoDriver extends DynamoDriver<TasksDynamoDriverBody, Tasks
    * should be set to a dot ("`.`").
    * @param branch - `Tasks` branch on which to search for the `tail`.
    */
-  private async getTail(branch: string): Promise<TasksDynamoDriverItem | undefined> {
+  private async getTail(branch: string): Promise<TaskItem | undefined> {
     const queryOutput = await this.db.send(new QueryCommand({
       TableName: this.tableName,
       IndexName: "byNext",
@@ -151,7 +125,7 @@ export class TasksDynamoDriver extends DynamoDriver<TasksDynamoDriverBody, Tasks
       Limit: 1,
     }))
     return queryOutput.Items && queryOutput.Items.length === 1
-      ? queryOutput.Items[0] as TasksDynamoDriverItem
+      ? queryOutput.Items[0] as TaskItem
       : undefined
   }
   /**
@@ -159,7 +133,7 @@ export class TasksDynamoDriver extends DynamoDriver<TasksDynamoDriverBody, Tasks
    * @param pk - `Task` unique identifier.
    * @param patch - `Task` patch to be applied to the `item`.
    */
-  async update(pk: string, patch: TasksDynamoDriverPatch): Promise<boolean> {
+  async update(pk: string, patch: TaskPatch): Promise<boolean> {
     if (patch.content === undefined || patch.content === null) return true
     const response: UpdateCommandOutput = await this.db.send(new UpdateCommand({
       TableName: this.tableName,
@@ -175,7 +149,7 @@ export class TasksDynamoDriver extends DynamoDriver<TasksDynamoDriverBody, Tasks
    * @param pk - `Task` unique identifier.
    * @param meta - Meta object to update.
    */
-  async meta(pk: string, meta: TasksDynamoDriverMeta, force?: boolean): Promise<boolean> {
+  async meta(pk: string, meta: TaskMeta, force?: boolean): Promise<boolean> {
     // Check if the object is empty
     if (meta.isOpened === undefined) return true
     try {
@@ -239,7 +213,7 @@ export class TasksDynamoDriver extends DynamoDriver<TasksDynamoDriverBody, Tasks
    * list returns the list of `Tasks` under a `pk`.
    * @param branch - `Tasks` branch.
    */
-  async list(branch: string): Promise<TasksDynamoDriverItem[]> {
+  async list(branch: string): Promise<TaskItem[]> {
     const queryOutput: QueryCommandOutput = await this.db.send(new QueryCommand({
       TableName: this.tableName,
       IndexName: "byBranch",
@@ -248,7 +222,7 @@ export class TasksDynamoDriver extends DynamoDriver<TasksDynamoDriverBody, Tasks
       ExpressionAttributeValues: { ":_b": branch },
     }))
     if (!queryOutput.Items || queryOutput.Items.length === 0) return []
-    const [head, ...items] = queryOutput.Items as TasksDynamoDriverItem[]
+    const [head, ...items] = queryOutput.Items as TaskItem[]
     return this.follow(head, items)
   }
   /**
@@ -259,14 +233,14 @@ export class TasksDynamoDriver extends DynamoDriver<TasksDynamoDriverBody, Tasks
    * @param head - `HEAD` item from which to get the first item of the list.
    * @param items - List of `Task` items to be ordered.
    */
-  private follow(head: TasksDynamoDriverItem, items: TasksDynamoDriverItem[]): TasksDynamoDriverItem[] {
-    const map = new Map<string, TasksDynamoDriverItem>()
-    const result: TasksDynamoDriverItem[] = []
-    const remaining: TasksDynamoDriverItem[] = []
+  private follow(head: TaskItem, items: TaskItem[]): TaskItem[] {
+    const map = new Map<string, TaskItem>()
+    const result: TaskItem[] = []
+    const remaining: TaskItem[] = []
     if (head._n === ".") return []
     // First pass, we create the `sk` to `item` map, plus start
     // populating the `result` list.
-    items.forEach((item: TasksDynamoDriverItem, _: number) => {
+    items.forEach((item: TaskItem, _: number) => {
       map.set(item.pk, item)
       if (item.pk === head._n) {
         result.push(item)
@@ -278,7 +252,7 @@ export class TasksDynamoDriver extends DynamoDriver<TasksDynamoDriverBody, Tasks
     // Second pass, we iterate over the remaining items until
     // we complete the list.
     remaining.forEach(() => {
-      head = map.get(head._n) as TasksDynamoDriverItem
+      head = map.get(head._n) as TaskItem
       result.push(head)
     })
     return result

@@ -1,7 +1,7 @@
 import { Task } from '../models/task'
 import { client } from "../clients/tasksClient.server"
 import { Repository } from "./repository.server"
-import type { TaskMetaObject } from "../models/task"
+import type { TaskMeta } from "../models/task"
 import type { TasksDBClient, TasksQueryParams } from "../types"
 
 /**
@@ -25,7 +25,7 @@ class TasksRepository extends Repository<Task, TasksQueryParams> {
    * @param meta - Metadata object to apply.
    * @param userId - User unique identifier.
    */
-  async meta(id: string, meta: TaskMetaObject, userId?: string): Promise<undefined> {
+  async meta(id: string, meta: TaskMeta, userId?: string): Promise<undefined> {
     const { error } = await this.client.meta(id, userId, meta)
     if (error) throw error
     return undefined

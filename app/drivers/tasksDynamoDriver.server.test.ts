@@ -2,7 +2,7 @@ import test from "tape"
 import { ulid } from "ulid"
 import type { Test } from "tape"
 
-import { driver, TasksDynamoDriverItem } from "./tasksDynamoDriver.server"
+import { driver, TaskItem } from "./tasksDynamoDriver.server"
 
 /**
  * To simplify this patterns an abstraction must be made
@@ -102,7 +102,7 @@ test("Task Linked List abstraction", async (assert: Test) => {
 
 test("Task create", async (assert: Test) => {
   try {
-    let tasks: TasksDynamoDriverItem[]
+    let tasks: TaskItem[]
     const userId = ulid()
     const branch = userId + "#Tasks"
     const id1 = "001"
@@ -134,7 +134,7 @@ test("Task create", async (assert: Test) => {
 
 test("Task meta object updates", async (assert: Test) => {
   try {
-    let task: TasksDynamoDriverItem | undefined
+    let task: TaskItem | undefined
     const id = "001"
     const userId = ulid()
     const root = userId + "#Tasks"

@@ -1,4 +1,4 @@
-import type { Task, TaskMetaObject } from "./models/task"
+import type { Task, TaskMeta } from "./models/task"
 
 export interface DBDriver<Body, Item, Patch, DB> {
   /**

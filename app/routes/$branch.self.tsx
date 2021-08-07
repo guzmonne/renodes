@@ -10,7 +10,7 @@ import { NavBar } from "../components/layout/NavBar"
 import { Tasks } from "../components/tasks/Tasks"
 import { Task } from "../models/task"
 import { repository } from "../repositories/tasks.server"
-import type { TaskObject } from "../models/task"
+import type { TaskBody } from "../models/task"
 
 export const meta: MetaFunction = ({ params }) => {
   return {
@@ -41,8 +41,8 @@ export const loader: LoaderFunction = async ({ params }) => {
 }
 
 export default function () {
-  const initialData = useRouteData<TaskObject>()
-  const { data } = useQuery<TaskObject>("tasks", getSelf, { initialData: initialData })
+  const initialData = useRouteData<TaskBody>()
+  const { data } = useQuery<TaskBody>("tasks", getSelf, { initialData: initialData })
 
   return (
     <ScrollArea.Root className="ScrollArea__Root">
@@ -58,7 +58,7 @@ export default function () {
     </ScrollArea.Root>
   )
 
-  async function getSelf(): Promise<TaskObject> {
+  async function getSelf(): Promise<TaskBody> {
     return { id: "A", content: "EMPTY" }
   }
 }
