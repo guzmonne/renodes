@@ -6,7 +6,7 @@ import { Task } from "../models/task"
 
 export function useTasksQuery(branch: string, initialData?: Task[]) {
   const queryClient = useQueryClient()
-  const { data: tasks, ...query } = useQuery<Task[]>(branch, () => fetch(`/api/tasks/${branch}`).then(response => response.json()).then(Task.collection), { initialData })
+  const { data: tasks, ...query } = useQuery<Task[]>(branch, () => fetch(`/api/tasks/${branch}`).then(response => response.json()).then(Task.collection), { initialData, staleTime: 10000 })
   /**
    * createTaskMutation handles the creation of a new `Task` using
    * an Optimistic UI workflow.

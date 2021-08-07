@@ -94,12 +94,13 @@ export const action: ActionFunction = async ({ request, params }) => {
   return endpoint
 }
 
+const queryClient = new QueryClient()
+
 export default function () {
   const { search } = useLocation()
   const { branch } = useParams()
   const initialData = useRouteData<TaskBody[]>()
   const query = new URLSearchParams(search)
-  const queryClient = new QueryClient()
 
   return (
     <IdProvider>

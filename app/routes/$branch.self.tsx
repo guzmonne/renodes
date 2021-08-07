@@ -1,5 +1,4 @@
 import { useRouteData } from "remix"
-import { useLocation, useParams } from "react-router-dom"
 import { useQuery } from "react-query"
 import * as ScrollArea from '@radix-ui/react-scroll-area';
 import type { MetaFunction, LoaderFunction, LinksFunction } from "remix";
