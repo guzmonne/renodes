@@ -40,7 +40,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     const user = await getUserFromSession(request)
     console.log({ user })
     const tasks = await repository.query({ branch: params.branch === "home" ? undefined : params.branch })
-    const data = tasks.map(Task.toJSON)
+    const data = tasks.map(Task.toObject)
     return json(data, {
       headers: { Etag: etag(JSON.stringify(data)) }
     })

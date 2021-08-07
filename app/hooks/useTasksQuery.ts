@@ -17,7 +17,7 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
     return fetch(`/api/tasks/${branch}`, {
       method: "post",
       headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-      body: toFormBody({ ...Task.toJSON(task), afterId: afterTask ? afterTask.id : undefined })
+      body: toFormBody({ ...Task.toObject(task), afterId: afterTask ? afterTask.id : undefined })
     })
       .then(response => {
         if (response.ok) return task
@@ -50,7 +50,7 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
     fetch(`/api/tasks/${branch}`, {
       method: "put",
       headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-      body: toFormBody(Task.toJSON(task))
+      body: toFormBody(Task.toObject(task))
     })
       .then(response => {
         if (response.ok) return task
@@ -80,7 +80,7 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
     fetch(`/api/tasks/${branch}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-      body: toFormBody(Task.toJSON(task))
+      body: toFormBody(Task.toObject(task))
     })
       .then(response => {
         if (response.ok) return task

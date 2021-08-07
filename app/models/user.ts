@@ -81,13 +81,13 @@ export class User {
   get name() { return this.object.name }
   get location() { return this.object.location }
   /**
-   * toJSON returns an object representation of the model.
+   * toObject returns an object representation of the model.
    */
-  toJSON = (): UserBody => ({ ...this.object })
+  toObject = (): UserBody => ({ ...this.object })
   /**
-   * toString returns the User serialized as JSON.
+   * toJSON returns the User serialized as JSON.
    */
-  toString = (indent = true): string => JSON.stringify(this.object, null, indent ? 2 : 0)
+  toJSON = (indent = true): string => JSON.stringify(this.object, null, indent ? 2 : 0)
   /**
    * set applies new updates to the model.
    * @param body - Update data to be applied.

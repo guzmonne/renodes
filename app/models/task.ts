@@ -80,9 +80,9 @@ export class Task {
   get userId() { return this.object.userId }
   get meta() { return this.object.meta === undefined ? {} : this.object.meta }
   /**
-   * toJSON returns an object representation of the model.
+   * toObject returns an object representation of the model.
    */
-  static toJSON = (task: Task): TaskBody => {
+  static toObject = (task: Task): TaskBody => {
     return { ...task.object }
   }
   /**

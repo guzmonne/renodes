@@ -25,6 +25,7 @@ export class UsersClient extends Client<User, undefined, UserBody, UserItem, Use
    */
   toModel(item: UserItem): User {
     const [id, provider] = item.pk.split(".")
+    if (!id || !provider) throw new Error("unable to create a model from the item")
     return new User({
       id,
       provider,
@@ -36,7 +37,7 @@ export class UsersClient extends Client<User, undefined, UserBody, UserItem, Use
    * toBody converts a User into a valid body value.
    * @param user - User model to convert
    */
-  toBody = (user: User): UserBody => user
+  toBody = (user: User): UserBody => user.toObject()
   /**
    * toPatch converts a User into a valid patch value.
    * @param user - User model to convert
