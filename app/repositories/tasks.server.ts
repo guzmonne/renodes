@@ -2,14 +2,18 @@ import { Task } from '../models/task'
 import { client } from "../clients/tasksClient.server"
 import { Repository } from "./repository.server"
 import type { TaskMeta } from "../models/task"
-import type { TasksDBClient, TasksQueryParams } from "../types"
+import type { TasksClient, TasksQueryParams } from "../clients/tasksClient.server"
 
 /**
  * TasksRepository manages Tasks through a standard interface.
  * @param config - Configuration object.
  */
 class TasksRepository extends Repository<Task, TasksQueryParams> {
-  client: TasksDBClient
+  /**
+   * client is an instance of the TasksClient class used to interact
+   * with the database.
+   */
+  client: TasksClient
   /**
    * put stores a Task in the Repository.
    * @param task - Task to store in the Repository.
@@ -46,5 +50,7 @@ class TasksRepository extends Repository<Task, TasksQueryParams> {
     return undefined
   }
 }
-
+/**
+ * repository is a pre-configured instance of the class TasksRepository.
+ */
 export const repository = new TasksRepository(client)
