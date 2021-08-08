@@ -1,5 +1,6 @@
 import { Request } from "remix"
 import { redirect, createCookieSessionStorage } from "remix"
+import jwt from "jsonwebtoken"
 
 import { User } from "../models/user"
 import { repository } from "../repositories/users.server"
@@ -8,6 +9,8 @@ const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET
 const SESSION_SECRET = process.env.SESSION_SECRET
 const PROTOCOL = process.env.PROTOCOL || (process.env.NODE_NEV !== "production" ? "http://" : "https://")
+const JWT_ISSUER = process.env.JWT_ISSUER || "urn:renodes:issuer"
+const JWT_AUDIENCE = process.env.JWT_AUDIENCE || "urn:renodes:audience"
 
 const sessionIdKey = "__session_id__"
 const sessionExpirationTime = 1000 * 60 * 60 * 24 * 30
@@ -47,46 +50,56 @@ async function authorize(request: Request) {
  * @param request - Fetch API Request object.
  */
 async function callback(request: Request) {
-  const query = new URLSearchParams(request.url.split("?")[1])
-  const code = query.get("code")
-  //const state = query.get("state")
-  const tokensBody = new URLSearchParams()
-  tokensBody.set("client_id", GITHUB_CLIENT_ID)
-  tokensBody.set("client_secret", GITHUB_CLIENT_SECRET)
-  tokensBody.set("code", code)
-  tokensBody.set("redirect_uri", PROTOCOL + request.headers.get("Host") + "/auth/callback")
-  const accessTokenResponse = await fetch("https://github.com/login/oauth/access_token", {
-    method: "POST",
-    headers: {
-      "Accept": "application/json",
-      "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-    },
-    body: tokensBody.toString(),
-  })
-  const tokens = await accessTokenResponse.json()
-  const userResponse = await fetch("https://api.github.com/user", {
-    headers: {
-      "Authorization": `token ${tokens.access_token}`,
-      "Accept": "application/json",
-    }
-  })
-  const json = await userResponse.json()
-  console.log({ json })
-  await repository.put(new User({
-    id: json.id,
-    email: json.email,
-    provider: "github",
-    username: json.login,
-    avatarURL: json.avatar_url,
-    location: json.location,
-    name: json.name,
-  }))
-  const session = await getSession(request)
-  session.unset(sessionIdKey)
-  session.set(sessionIdKey, json.id)
-  return redirect("/home", {
-    headers: { "Set-Cookie": await sessionStorage.commitSession(session) }
-  })
+  try {
+    const query = new URLSearchParams(request.url.split("?")[1])
+    const code = query.get("code")
+    //const state = query.get("state")
+    const tokensBody = new URLSearchParams()
+    tokensBody.set("client_id", GITHUB_CLIENT_ID)
+    tokensBody.set("client_secret", GITHUB_CLIENT_SECRET)
+    tokensBody.set("code", code)
+    tokensBody.set("redirect_uri", PROTOCOL + request.headers.get("Host") + "/auth/callback")
+    const accessTokenResponse = await fetch("https://github.com/login/oauth/access_token", {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      },
+      body: tokensBody.toString(),
+    })
+    const tokens = await accessTokenResponse.json()
+    const userResponse = await fetch("https://api.github.com/user", {
+      headers: {
+        "Authorization": `token ${tokens.access_token}`,
+        "Accept": "application/json",
+      }
+    })
+    const json = await userResponse.json()
+    await repository.put(new User({
+      id: json.id,
+      email: json.email,
+      provider: "github",
+      username: json.login,
+      avatarURL: json.avatar_url,
+      location: json.location,
+      name: json.name,
+    }))
+    const token = jwt.sign({
+      sub: `${json.id}.github`,
+      exp: Math.floor(Date.now() / 1000) + (60 * 60),
+      iss: JWT_ISSUER,
+      aud: JWT_AUDIENCE,
+    }, SESSION_SECRET)
+    const session = await getSession(request)
+    session.unset(sessionIdKey)
+    session.set(sessionIdKey, token)
+    return redirect("/home", {
+      headers: { "Set-Cookie": await sessionStorage.commitSession(session) }
+    })
+  } catch (err) {
+    console.error(err)
+    return redirect("/home")
+  }
 }
 /**
  * getSession is a helper function that extracts a Session instance from
@@ -117,6 +130,26 @@ async function getUserFromSession(request: Request): Promise<User | undefined> {
   }
 }
 /**
+ * hasValidSession checks if the request contains a valid JWT token stored
+ * as a Session.
+ * @param request - Fetch API Request object.
+ */
+async function hasValidSession(request: Request): Promise<boolean> {
+  try {
+    const session = await getSession(request)
+    const token = session.get(sessionIdKey) as string | undefined
+    if (!token) return false
+    const decoded = jwt.verify(token, SESSION_SECRET, {
+      audience: JWT_AUDIENCE,
+      issuer: JWT_ISSUER,
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return undefined
+  }
+}
+/**
  * Exports
  */
 export {
@@ -124,4 +157,5 @@ export {
   getUserFromSession,
   authorize,
   callback,
+  hasValidSession,
 }

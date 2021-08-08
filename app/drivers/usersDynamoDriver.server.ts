@@ -54,8 +54,6 @@ export class UsersDynamoDriver extends DynamoDriver<UserBody, UserItem, UserPatc
         _n: body.username,
         _m: omit(body, "id", "username", "provider")
       },
-      ConditionExpression: "attribute_not_exists(#pk)",
-      ExpressionAttributeNames: { "#pk": "pk" },
     }))
     return putOutput.$metadata.httpStatusCode === 200
   }
