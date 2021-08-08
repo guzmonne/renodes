@@ -46,7 +46,7 @@ export class User {
    * constructor is called when a new User instance is created.
    * @param body - B
    */
-  constructor(body: any) {
+  constructor(body: UserBody) {
     if (typeof body !== "object" || !body.id || !body.username || !body.provider || !body.email) throw new Error("'body' is invalid")
     this.object = {
       id: body.id,
