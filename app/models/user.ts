@@ -105,3 +105,14 @@ export class User {
     })
   }
 }
+/**
+ * Functions
+ */
+/**
+ * isUser is a helper function that verifies if an object is
+ * an instance of user.
+ * @param object - Object to be checked.
+ */
+export function isUser(object: any): object is User {
+  return object instanceof User
+}

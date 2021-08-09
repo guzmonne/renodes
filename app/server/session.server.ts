@@ -5,16 +5,57 @@ import jwt from "jsonwebtoken"
 import { User } from "../models/user"
 import { repository } from "../repositories/users.server"
 
+export interface JWTToken extends jwt.JwtPayload {
+  sub: string;
+  exp: number;
+  iss: string;
+  aud: string;
+  iat: number;
+}
+/**
+ * Constants
+ */
+/**
+ * GITHUB_CLIENT_ID should correspond to the app client ID from
+ * GitHub to support OIDC authentication.
+ */
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID
+/**
+ * GITHUB_CLIENT_SECRET is the secret configured on the GitHub
+ * app to support OIDC authentication.
+ */
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET
+/**
+ * SESSION_SECRET will be the secret used to encript the cookies
+ * and JWT tokens.
+ */
 const SESSION_SECRET = process.env.SESSION_SECRET
+/**
+ * PROTOCOL should match the protocol used to run the App. It can
+ * only be set to `http://` or `https://`.
+ */
 const PROTOCOL = process.env.PROTOCOL || (process.env.NODE_NEV !== "production" ? "http://" : "https://")
+/**
+ * JWT_ISSUER is the string used to fill and check the JWT `iss` claim.
+ */
 const JWT_ISSUER = process.env.JWT_ISSUER || "urn:renodes:issuer"
+/**
+ * JWT_AUDIENCE is the string used to fill and check the JWT `aud` claim.
+ */
 const JWT_AUDIENCE = process.env.JWT_AUDIENCE || "urn:renodes:audience"
-
-const sessionIdKey = "__session_id__"
-const sessionExpirationTime = 1000 * 60 * 60 * 24 * 30
-
+/**
+ * SESSION_ID_KEY is the name of the key to be used to hold the session
+ * id inside a Cookie.
+ */
+const SESSION_ID_KEY = process.env.SESSION_ID_KEY || "__session_id__"
+/**
+ * SESSION_EXPIRATION_TIME represent the expiration time of both the
+ * cookies and JWT tokens.
+ */
+const SESSION_EXPIRATION_TIME = 1000 * 60 * 60 * 24 * 30
+/**
+ * Setup
+ */
 if (
   !GITHUB_CLIENT_ID ||
   !GITHUB_CLIENT_SECRET ||
@@ -30,7 +71,7 @@ const sessionStorage = createCookieSessionStorage({
     secrets: [SESSION_SECRET],
     sameSite: "lax",
     path: "/",
-    maxAge: sessionExpirationTime,
+    maxAge: SESSION_EXPIRATION_TIME,
   }
 })
 /**
@@ -91,8 +132,8 @@ async function callback(request: Request) {
       aud: JWT_AUDIENCE,
     }, SESSION_SECRET)
     const session = await getSession(request)
-    session.unset(sessionIdKey)
-    session.set(sessionIdKey, token)
+    session.unset(SESSION_ID_KEY)
+    session.set(SESSION_ID_KEY, token)
     return redirect("/home", {
       headers: { "Set-Cookie": await sessionStorage.commitSession(session) }
     })
@@ -114,20 +155,33 @@ async function getSession(request: Request) {
  * headers or an error if none can be found.
  * @param request - Fetch API Request object.
  */
-async function getUserFromSession(request: Request): Promise<User | undefined> {
+async function getUserFromSession(request: Request): Promise<User | string> {
   try {
-    const session = await getSession(request)
-    const sessionId = session.get(sessionIdKey) as string | undefined
-    if (!sessionId) {
-      console.error("failure getting the user from session ID")
-      return undefined
-    }
-    const user = await repository.get(sessionId)
+    const token = await getDecodedToken(request)
+    if (!token) return undefined
+    const [id, provider] = token.sub.split(".")
+    if (!id || !provider) return undefined
+    const user = await repository.get(id)
     return user
   } catch (err) {
     console.error(err)
-    return undefined
+    return err.message
   }
+}
+/**
+ * getDecodedToken returns a decoded JWT token stored as a Cookie inside
+ * a request.
+ * @param request - Fetch API Request object.
+ */
+async function getDecodedToken(request: Request): Promise<JWTToken | undefined> {
+  const session = await getSession(request)
+  const token = session.get(SESSION_ID_KEY) as string | undefined
+  if (!token) return undefined
+  const decoded = jwt.verify(token, SESSION_SECRET, {
+    audience: JWT_AUDIENCE,
+    issuer: JWT_ISSUER,
+  }) as JWTToken
+  return decoded
 }
 /**
  * hasValidSession checks if the request contains a valid JWT token stored
@@ -136,14 +190,7 @@ async function getUserFromSession(request: Request): Promise<User | undefined> {
  */
 async function hasValidSession(request: Request): Promise<boolean> {
   try {
-    const session = await getSession(request)
-    const token = session.get(sessionIdKey) as string | undefined
-    if (!token) return false
-    const decoded = jwt.verify(token, SESSION_SECRET, {
-      audience: JWT_AUDIENCE,
-      issuer: JWT_ISSUER,
-    })
-    return true
+    return !!getDecodedToken(request)
   } catch (err) {
     console.error(err)
     return undefined

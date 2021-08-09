@@ -1,0 +1,38 @@
+* {
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}
+
+.APIDocs__Container {
+  background-color: gray;
+  margin: 2rem auto;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.APIDocs__Details {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.APIDocs__Input .APIDocs__Input--label {
+  color: white;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.APIDocs__Input .APIDocs__Input--content {
+  background-color: white;
+  font-family: monospace;
+  padding: 0.5rem 0.5rem;
+  border-radius: 8px;
+  white-space: pre;
+}
+
+.APIDocs__Input .APIDocs__Input--content > pre {
+  font-family: monospace;
+  margin: 0;
+  max-width: 100%;
+}
