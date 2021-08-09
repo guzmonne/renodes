@@ -143,6 +143,17 @@ async function callback(request: Request) {
   }
 }
 /**
+ * signout deletes the session of a user.
+ * @param request - Fetch API Request object.
+ */
+async function signout(request: Request) {
+  const session = await getSession(request)
+  session.unset(SESSION_ID_KEY)
+  return redirect("/home", {
+    headers: { "Set-Cookie": await sessionStorage.commitSession(session) }
+  })
+}
+/**
  * getSession is a helper function that extracts a Session instance from
  * the request Cookies header.
  * @param request - Fetch API Request object.
@@ -204,5 +215,6 @@ export {
   getUserFromSession,
   authorize,
   callback,
+  signout,
   hasValidSession,
 }

@@ -46,7 +46,8 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     const data = tasks.map(Task.toObject)
     if (request.headers.get("Accept") !== "application/json") {
       try {
-        user = (await getUserFromSession(request)).toObject()
+        const sessionUser = await getUserFromSession(request)
+        if (sessionUser) user = sessionUser.toObject()
       } catch (err) {
         if (err.name !== "TokenExpiredError") throw err
       }
@@ -55,9 +56,8 @@ export const loader: LoaderFunction = async ({ request, params }) => {
       headers: { Etag: etag(JSON.stringify(data)) }
     })
   } catch (err) {
-    console.log("error at /$branch")
-    console.log(err)
-    return []
+    console.error(err)
+    return { data: [], error: err.message }
   }
 }
 

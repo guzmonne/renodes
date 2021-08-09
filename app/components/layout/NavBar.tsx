@@ -14,10 +14,15 @@ export function NavBar({ user }: NavBarProps) {
       <h1 className="Title">
         re<span className="Title__gradient">Task</span>
       </h1>
-      {user && <NavBar.User user={user} />}
+      {user
+        ? <NavBar.User user={user} />
+        : <NavBar.SignIn />
+      }
     </div>
   )
 }
+
+NavBar.SignIn = () => <a className="NavBar__SignIn" href="/auth/signin">Sign In</a>
 
 NavBar.User = ({ user }: NavBarProps) => {
   return (
@@ -37,7 +42,7 @@ NavBar.User = ({ user }: NavBarProps) => {
         </DropdownMenu.Item>
         <DropdownMenu.Separator className="DropdownMenu__Separator" />
         <DropdownMenu.Label className="DropdownMenu__Label">Account</DropdownMenu.Label>
-        <DropdownMenu.Item className="DropdownMenu__Item" onSelect={() => { }}>
+        <DropdownMenu.Item className="DropdownMenu__Item" onSelect={() => window.location.href = "/auth/signout"}>
           <div className="DropdownMenu__LeftSlot"><FontAwesomeIcon icon={faSignOutAlt} /></div>
           <div className="DropdownMenu__CenterSlot">Sign Out</div>
           <div className="DropdownMenu__RightSlot"></div>

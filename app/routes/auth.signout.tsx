@@ -1,14 +1,14 @@
 import type { MetaFunction, LoaderFunction } from "remix";
 
-import { authorize } from "../server/session.server";
+import { signout } from "../server/session.server";
 
 export const meta: MetaFunction = () => {
   return {
     title: "ReNodes Sign In",
-    description: "ReNodes sign in page",
+    description: "ReNodes sign out page",
   }
 }
 
 export const loader: LoaderFunction = async ({ request }) => {
-  return authorize(request)
+  return signout(request)
 }

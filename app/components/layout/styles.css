@@ -6,6 +6,18 @@
   justify-content: space-between;
 }
 
+.NavBar__SignIn {
+  text-decoration: none;
+  background-color: var(--handle);
+  color: white;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.NavBar__SignIn:hover {
+  background-color: var(--text-body);
+}
+
 .NavBar__User--image {
   background-color: #f0f6fc1a;
   border-radius: 50%!important;
