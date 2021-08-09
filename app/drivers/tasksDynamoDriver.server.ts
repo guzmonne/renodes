@@ -21,7 +21,7 @@ export interface TaskItem extends TaskBody, DynamoDriverItem {
    */
   _n: string;
   /**
-   * meta holds the meta information of the TaskItem.
+   * _m holds the meta information of the TaskItem.
    */
   _m?: TaskMeta;
 }

@@ -69,7 +69,7 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
       })
   ), {
     onMutate: async (task: Task): Promise<{ previousTasks: Task[] }> => {
-      await queryClient.cancelQueries(branch)
+      await queryClient.cancelQueries(branch, { exact: true })
       const previousTasks: Task[] = queryClient.getQueryData(branch)
       const index = previousTasks.findIndex((t: Task) => t.id === task.id)
       queryClient.setQueryData(branch, (tasks: Task[]): Task[] => [...tasks.slice(0, index), task, ...tasks.slice(index + 1)])
@@ -79,7 +79,7 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
       queryClient.setQueryData(branch, context.previousTasks)
     },
     onSettled: () => {
-      queryClient.invalidateQueries(branch)
+      queryClient.invalidateQueries(branch, { exact: true, refetchActive: false })
     }
   })
   /**
