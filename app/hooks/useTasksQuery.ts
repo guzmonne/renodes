@@ -11,7 +11,7 @@ headers.append("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8"
 export function useTasksQuery(branch: string, initialData?: Task[]) {
   const queryClient = useQueryClient()
   const { data: tasks, ...query } = useQuery<Task[]>(branch, () => (
-    fetch(`/api/tasks/${branch}`, { headers })
+    fetch(`/${branch}`, { headers })
       .then(response => response.json())
       .then(Task.collection)
   ), { initialData, staleTime: 10000 })
@@ -22,7 +22,7 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
    * @param afterTask - `Task` after which the new `Task` should be created.
    */
   const createTaskMutation = useMutation(({ task, afterTask }) => {
-    return fetch(`/api/tasks/${branch}`, {
+    return fetch(`/${branch}`, {
       method: "post",
       headers,
       body: toFormBody({ ...Task.toObject(task), afterId: afterTask ? afterTask.id : undefined })
@@ -55,7 +55,7 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
    * @param task - `Task` to update.
    */
   const updateTaskMutation = useMutation((task) => (
-    fetch(`/api/tasks/${branch}`, {
+    fetch(`/${branch}`, {
       method: "put",
       headers,
       body: toFormBody(Task.toObject(task))
@@ -85,7 +85,7 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
    * @param task - `Task` whose metadata should be updated.
    */
   const metaTaskMutation = useMutation((task) => (
-    fetch(`/api/tasks/${branch}`, {
+    fetch(`/${branch}`, {
       method: "PATCH",
       headers,
       body: toFormBody(Task.toObject(task))
@@ -115,7 +115,7 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
    * @param task - `Task` to delete.
    */
   const deleteTaskMutation = useMutation((task) => {
-    return fetch(`/api/tasks/${task.id}`, {
+    return fetch(`/${task.id}`, {
       method: "delete",
       headers,
     })
@@ -150,7 +150,7 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
       : undefined
     const body: { dragId: string, afterId?: string } = { dragId: task.id }
     if (after) body.afterId = after.id
-    return fetch(`/api/tasks/${branch}`, {
+    return fetch(`/${branch}`, {
       method: "post",
       headers,
       body: toFormBody(body)

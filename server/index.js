@@ -25,16 +25,16 @@ app.use(express.static("public", { maxAge: "1h" }));
 // Remix fingerprints its assets so we can cache forever
 app.use(express.static("public/build", { immutable: true, maxAge: "1y" }));
 
-app.get("/api/nodes/home", remixRoute("api.nodes.home"))
-app.get("/api/users/me", remixRoute("api.users.me"))
+app.get("/nodes/home", remixRoute("nodes.home"))
+app.get("/users/me", remixRoute("users.me"))
 
-app.get("/api/tasks/:branch", remixRoute("$branch", "/api/tasks"))
-app.post("/api/tasks/:branch", remixRoute("$branch", "/api/tasks"))
-app.put("/api/tasks/:branch", remixRoute("$branch", "/api/tasks"))
-app.delete("/api/tasks/:branch", remixRoute("$branch", "/api/tasks"))
-app.patch("/api/tasks/:branch", remixRoute("$branch", "/api/tasks"))
+app.get("/:branch", remixRoute("$branch"))
+app.post("/:branch", remixRoute("$branch"))
+app.put("/:branch", remixRoute("$branch"))
+app.delete("/:branch", remixRoute("$branch"))
+app.patch("/:branch", remixRoute("$branch"))
 
-app.get("/api/tasks/:branch/self", remixRoute("$branch.self", "/api/tasks"))
+app.get("/:branch/self", remixRoute("$branch.self"))
 
 app.all("*", remixHandler);
 
@@ -59,19 +59,16 @@ function purgeRequireCache() {
  * remixRoute will update the value of the `Request` url so that Remix
  * can process it.
  * @param route - Remix route that should match.
- * @param replacePathname - Substring of the URL to replace.
- * @param value - Value to substitute the pathname substring.
  */
-function remixRoute(route, replacePathname, value = "") {
+function remixRoute(route) {
   return function (req, _, next) {
-    console.log(req.headers.accept)
     if (req.headers.accept === "application/json") {
       const query = new URLSearchParams(req.query)
       query.set("_data", `routes/${route}`)
       req.url = [
         "http://",
         req.headers.host,
-        req.originalUrl.replace(replacePathname, value),
+        req.originalUrl,
         "/?",
         query.toString()
       ].join("")
