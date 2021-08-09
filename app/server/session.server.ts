@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken"
 
 import { User } from "../models/user"
 import { repository } from "../repositories/users.server"
+import { InvalidSubClaimError, UndefinedTokenError } from "./errors.server"
 
 export interface JWTToken extends jwt.JwtPayload {
   sub: string;
@@ -54,6 +55,10 @@ const SESSION_ID_KEY = process.env.SESSION_ID_KEY || "__session_id__"
  */
 const SESSION_EXPIRATION_TIME = 1000 * 60 * 60 * 24 * 30
 /**
+ * ONE_HOUR_IN_SECONDS is the representation of an hour counted is seconds.
+ */
+const ONE_HOUR_IN_SECONDS = 60 * 60
+/**
  * Setup
  */
 if (
@@ -75,14 +80,26 @@ const sessionStorage = createCookieSessionStorage({
   }
 })
 /**
+ * signIn starts the flow necessary to authenticate a user.
+ * @param request - Fetch API Request object.
+ * @param originURI - URI where the flow originates from.
+ */
+async function signIn(request: Request, originURI: string = "/home") {
+  const signInURL = new URL(request.url)
+  originURI = signInURL.searchParams.get("origin_uri") || originURI
+  const session = await getSession(request)
+  session.unset(SESSION_ID_KEY)
+  return authorize(request, originURI)
+}
+/**
  * authorize triggers a redirect to the GitHub authorize page so the
  * users can sign in using their GitHub accounts.
  * @param request - Fetch API Request object.
+ * @param originURI - URI where the flow originates from.
  */
-async function authorize(request: Request) {
-  const signinURL = new URL(request.url)
+async function authorize(request: Request, originURI: string) {
   const redirectURL = new URL(PROTOCOL + request.headers.get("Host") + "/auth/callback")
-  redirectURL.searchParams.set("origin_uri", signinURL.searchParams.get("origin_uri"))
+  redirectURL.searchParams.set("origin_uri", originURI)
   const url = new URL("https://github.com/login/oauth/authorize")
   url.searchParams.set("client_id", GITHUB_CLIENT_ID)
   url.searchParams.set("redirect_uri", redirectURL.href)
@@ -131,7 +148,7 @@ async function callback(request: Request) {
     }))
     const token = jwt.sign({
       sub: `${json.id}.github`,
-      exp: Math.floor(Date.now() / 1000) + (60 * 60),
+      exp: Math.floor(Date.now() / 1000) + ONE_HOUR_IN_SECONDS,
       iss: JWT_ISSUER,
       aud: JWT_AUDIENCE,
     }, SESSION_SECRET)
@@ -147,12 +164,12 @@ async function callback(request: Request) {
   }
 }
 /**
- * signout deletes the session of a user.
+ * signOut deletes the session of a user.
  * @param request - Fetch API Request object.
  */
-async function signout(request: Request) {
-  const signoutURL = new URL(request.url)
-  const originURL = signoutURL.searchParams.get("origin_uri") || "/home"
+async function signOut(request: Request) {
+  const signOutURL = new URL(request.url)
+  const originURL = signOutURL.searchParams.get("origin_uri") || "/home"
   const session = await getSession(request)
   session.unset(SESSION_ID_KEY)
   return redirect(originURL, {
@@ -175,13 +192,15 @@ async function getSession(request: Request) {
 async function getUserFromSession(request: Request): Promise<User> {
   try {
     const token = await getDecodedToken(request)
-    if (!token) return undefined
+    if (!token) throw new UndefinedTokenError()
     const [id, provider] = token.sub.split(".")
-    if (!id || !provider) return undefined
+    if (!id || !provider) throw new InvalidSubClaimError()
     const user = await repository.get(id)
     return user
   } catch (err) {
-    if (err.name !== "TokenExpiredError") console.error(err)
+    if (err.name !== "TokenExpiredError" && err.name !== "UndefinedTokenError") {
+      console.error(err)
+    }
     throw err
   }
 }
@@ -217,10 +236,11 @@ async function hasValidSession(request: Request): Promise<boolean> {
  * Exports
  */
 export {
-  getSession,
-  getUserFromSession,
   authorize,
   callback,
-  signout,
+  getSession,
+  getUserFromSession,
   hasValidSession,
+  signIn,
+  signOut,
 }

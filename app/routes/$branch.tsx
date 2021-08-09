@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { useRouteData, json } from "remix"
 import { useLocation, useParams } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "react-query"
@@ -12,7 +11,7 @@ import BaseStyles from "../styles/base.css"
 import LayoutStyles from "../components/Layout/styles.css"
 import LoaderStyles from "../components/Utils/Loader.css"
 import etag from "../server/etag.server"
-import { getUserFromSession } from "../server/session.server"
+import { getUserFromSession, signIn } from "../server/session.server"
 import { repository } from "../repositories/tasks.server"
 import { Task } from "../models/task"
 import { NavBar } from "../components/Layout/NavBar"
@@ -42,16 +41,20 @@ export const links: LinksFunction = () => {
 export const loader: LoaderFunction = async ({ request, params }) => {
   try {
     let user: UserBody | undefined = undefined
-    const tasks = await repository.query({ branch: params.branch === "home" ? undefined : params.branch })
-    const data = tasks.map(Task.toObject)
     if (request.headers.get("Accept") !== "application/json") {
       try {
         const sessionUser = await getUserFromSession(request)
-        if (sessionUser) user = sessionUser.toObject()
+        user = sessionUser.toObject()
       } catch (err) {
         if (err.name !== "TokenExpiredError") throw err
+        // If the token has expired less than a month ago, try to sign the user.
+        if (Date.now() - (new Date(err.expiredAt)).getTime() <= 1000 * 60 * 60 * 24 * 30) {
+          return signIn(request, `/${params.branch}`)
+        }
       }
     }
+    const tasks = await repository.query({ branch: params.branch === "home" ? undefined : params.branch })
+    const data = tasks.map(Task.toObject)
     return json({ data, user }, {
       headers: {
         "Etag": etag(JSON.stringify(data)),
@@ -59,7 +62,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
       }
     })
   } catch (err) {
-    console.error(err)
+    if (err.name !== "UndefinedTokenError") console.error(err)
     return { data: [], error: err.message }
   }
 }

@@ -1,6 +1,6 @@
 import type { MetaFunction, LoaderFunction } from "remix";
 
-import { signout } from "../server/session.server";
+import { signOut } from "../server/session.server";
 
 export const meta: MetaFunction = () => {
   return {
@@ -10,5 +10,5 @@ export const meta: MetaFunction = () => {
 }
 
 export const loader: LoaderFunction = async ({ request }) => {
-  return signout(request)
+  return signOut(request)
 }
