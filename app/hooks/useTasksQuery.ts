@@ -3,18 +3,21 @@ import { useQueryClient, useQuery, useMutation } from "react-query"
 import { ulid } from "ulid"
 
 import { Task } from "../models/task"
+import type { TaskBody } from "../models/task"
 
 const headers = new Headers()
 headers.append("Accept", "application/json")
 headers.append("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
 
-export function useTasksQuery(branch: string, initialData?: Task[]) {
+export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
   const queryClient = useQueryClient()
   const { data: tasks, ...query } = useQuery<Task[]>(branch, () => (
     fetch(`/${branch}`, { headers })
-      .then(response => response.json())
-      .then(Task.collection)
-  ), { initialData, staleTime: 10000 })
+      .then((response) => response.json())
+      .then(({ data }) => Task.collection(data))
+  ), {
+    initialData: Task.collection(initialData),
+  })
   /**
    * createTaskMutation handles the creation of a new `Task` using
    * an Optimistic UI workflow.

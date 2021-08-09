@@ -1,7 +1,7 @@
 import { Meta, Links, Scripts } from "remix";
 import { Outlet } from "react-router-dom";
 
-import { LiveReload } from "./components/utils/LiveReload"
+import { LiveReload } from "./components/Utils/LiveReload"
 
 function Document({ children }: { children: React.ReactNode }) {
   return (

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, ChangeEvent, KeyboardEvent, Fragment, forwardRef } from "react"
+import { useState, useEffect, useCallback, useRef, ChangeEvent, KeyboardEvent, Fragment, forwardRef } from "react"
 import { useDrag, useDrop } from "react-dnd"
 import TextareaAutosize from "react-textarea-autosize";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
@@ -7,10 +7,11 @@ import { faChevronDown, faChevronRight, faEllipsisV, faExternalLinkAlt, faPlus, 
 import cn from "classnames"
 import type { IconDefinition } from "@fortawesome/free-solid-svg-icons"
 
-import { Loader } from "../utils/Loader"
+import { Loader } from "../Utils/Loader"
 import { useDebounce } from "../../hooks/useDebounce"
 import { Task } from "../../models/task"
 import { useTasksQuery } from "../../hooks/useTasksQuery";
+import type { TaskBody } from "../../models/task"
 
 /**
  * TasksProps represent the `props` of the Tasks component.
@@ -24,7 +25,7 @@ export interface TasksProps {
    * initialData is a list of Task that should initialize the
    * React-Query cache.
    */
-  initialData?: Task[];
+  initialData?: TaskBody[];
   /**
    * taskComponent can be used to override the default Task Component.
    */
@@ -177,6 +178,8 @@ Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onToggle, onDrag, onDragEn
   const handleSelectExternalLink = useCallback(() => window.open(window.location.origin + "/" + task.id), [task])
   const handleToggleSubTasks = useCallback(() => onToggle(task.set({ meta: { isOpened: !task.meta.isOpened } })), [task])
 
+  useEffect(() => setContent(task.content), [task.content])
+
   const [{ handlerId }, drop] = useDrop({
     accept: task.branch || "TASK",
     collect: (monitor) => ({ handlerId: monitor.getHandlerId() }),
@@ -204,6 +207,8 @@ Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onToggle, onDrag, onDragEn
   }, 500, [content])
 
   drop(preview(ref))
+
+  console.log(task.content)
 
   return (
     <Fragment>

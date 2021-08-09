@@ -155,7 +155,7 @@ async function getSession(request: Request) {
  * headers or an error if none can be found.
  * @param request - Fetch API Request object.
  */
-async function getUserFromSession(request: Request): Promise<User | string> {
+async function getUserFromSession(request: Request): Promise<User> {
   try {
     const token = await getDecodedToken(request)
     if (!token) return undefined
@@ -164,8 +164,8 @@ async function getUserFromSession(request: Request): Promise<User | string> {
     const user = await repository.get(id)
     return user
   } catch (err) {
-    console.error(err)
-    return err.message
+    if (err.name !== "TokenExpiredError") console.error(err)
+    throw err
   }
 }
 /**

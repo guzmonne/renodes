@@ -45,6 +45,8 @@ h1 {
 /** Title **/
 .Title {
   color: var(--purple);
+  margin: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .Title .Title__gradient {
@@ -182,7 +184,7 @@ form input:focus-visible {
 
 /** DropdownMenu */
 .DropdownMenu__Content {
-  min-width: 15rem;
+  min-width: 5rem;
   background-color: white;
   border-radius: 0.5rem;
   padding: 0.4rem;
@@ -209,22 +211,42 @@ form input:focus-visible {
   background-color: var(--handle);
 }
 
+.DropdownMenu__Label {
+  font-size: 0.65rem;
+  color: var(--handle);
+  text-transform: uppercase;
+}
+
 .DropdownMenu__LeftSlot {
   margin-right: 1rem;
   color: var(--text-body);
 }
 
+.DropdownMenu__LeftSlot > svg {
+  width: 1rem !important;
+}
+
+.DropdownMenu__LeftSlot > svg > path {
+  fill: var(--handle);
+}
+
 .DropdownMenu__Item:focus > .DropdownMenu__LeftSlot {
+  color: var(--text-body);
   background-color: var(--handle);
+}
+
+.DropdownMenu__Item:focus > .DropdownMenu__LeftSlot > svg > path {
+  fill: var(--text-body);
 }
 
 .DropdownMenu__RightSlot {
   margin-left: auto;
   padding-left: 1.3rem;
-  color: var(--text-body);
+  color: var(--handle);
 }
 
 .DropdownMenu__Item:focus > .DropdownMenu__RightSlot {
+  color: var(--text-body);
   background-color: var(--handle);
 }
 
@@ -244,6 +266,14 @@ form input:focus-visible {
 .DropdownMenu__Item.DropdownMenu__Item--red:focus > .DropdownMenu__LeftSlot {
   color: var(--background);
   background-color: var(--highlight);
+}
+
+.DropdownMenu__Item.DropdownMenu__Item--red > .DropdownMenu__LeftSlot > svg > path {
+  fill: var(--highlight);
+}
+
+.DropdownMenu__Item.DropdownMenu__Item--red:focus > .DropdownMenu__LeftSlot > svg > path {
+  fill: white;
 }
 
 .DropdownMenu__Item--red > .DropdownMenu__RightSlot {

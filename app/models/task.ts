@@ -102,3 +102,14 @@ export class Task {
     })
   }
 }
+/**
+ * Functions
+ */
+/**
+ * isTask is a helper function that verifies if an object is
+ * an instance of Task.
+ * @param object - Object to be checked.
+ */
+export function isTask(object: any): object is Task {
+  return object instanceof Task
+}

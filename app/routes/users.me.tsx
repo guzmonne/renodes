@@ -22,14 +22,13 @@ export const links: LinksFunction = () => {
 }
 
 export const loader: LoaderFunction = async ({ request }) => {
-  const data = await getUserFromSession(request)
-  if (!data || typeof data === "string") {
-    return json({ error: data ? data : "invalid jwt", statusCode: 400 }, {
-      status: 400,
-      statusText: "Error"
-    })
+  try {
+    const user = await getUserFromSession(request)
+    return { data: user.toObject() }
+  } catch (err) {
+    if (err.name !== "TokenExpiredError") console.error(err)
+    return { error: err.message, name: err.name, statusCode: 400 }
   }
-  return { data: data.toObject() }
 }
 
 export default function UsersMe() {

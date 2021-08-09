@@ -4,9 +4,9 @@ import * as ScrollArea from '@radix-ui/react-scroll-area';
 import type { MetaFunction, LoaderFunction, LinksFunction } from "remix";
 
 import base from "../styles/base.css"
-import Loader from "../components/utils/Loader.css"
-import { NavBar } from "../components/layout/NavBar"
-import { Tasks } from "../components/tasks/Tasks"
+import Loader from "../components/Utils/Loader.css"
+import { NavBar } from "../components/Layout/NavBar"
+import { Tasks } from "../components/Tasks"
 import { Task } from "../models/task"
 import { repository } from "../repositories/tasks.server"
 import type { TaskBody } from "../models/task"

@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { useRouteData, json } from "remix"
 import { useLocation, useParams } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "react-query"
@@ -7,14 +8,17 @@ import HTML5toTouch from "react-dnd-multi-backend/dist/cjs/HTML5toTouch"
 import * as ScrollArea from "@radix-ui/react-scroll-area"
 import type { HeadersFunction, MetaFunction, LoaderFunction, ActionFunction, LinksFunction } from "remix"
 
+import BaseStyles from "../styles/base.css"
+import LayoutStyles from "../components/Layout/styles.css"
+import LoaderStyles from "../components/Utils/Loader.css"
 import etag from "../server/etag.server"
+import { getUserFromSession } from "../server/session.server"
 import { repository } from "../repositories/tasks.server"
-import base from "../styles/base.css"
-import Loader from "../components/utils/Loader.css"
-import { NavBar } from "../components/layout/NavBar"
-import { Tasks } from "../components/tasks/Tasks"
 import { Task } from "../models/task"
+import { NavBar } from "../components/Layout/NavBar"
+import { Tasks } from "../components/Tasks"
 import type { TaskBody } from "../models/task"
+import type { UserBody } from "../models/user"
 
 export const meta: MetaFunction = ({ params }) => {
   return {
@@ -29,16 +33,25 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
 
 export const links: LinksFunction = () => {
   return [
-    { rel: "stylesheet", href: base },
-    { rel: "stylesheet", href: Loader },
+    { rel: "stylesheet", href: BaseStyles },
+    { rel: "stylesheet", href: LayoutStyles },
+    { rel: "stylesheet", href: LoaderStyles },
   ]
 }
 
 export const loader: LoaderFunction = async ({ request, params }) => {
   try {
+    let user: UserBody | undefined = undefined
     const tasks = await repository.query({ branch: params.branch === "home" ? undefined : params.branch })
     const data = tasks.map(Task.toObject)
-    return json(data, {
+    if (request.headers.get("Accept") !== "application/json") {
+      try {
+        user = (await getUserFromSession(request)).toObject()
+      } catch (err) {
+        if (err.name !== "TokenExpiredError") throw err
+      }
+    }
+    return json({ data, user }, {
       headers: { Etag: etag(JSON.stringify(data)) }
     })
   } catch (err) {
@@ -96,7 +109,7 @@ const queryClient = new QueryClient()
 export default function () {
   const { search } = useLocation()
   const { branch } = useParams()
-  const initialData = useRouteData<TaskBody[]>()
+  const { data, user } = useRouteData<{ data: TaskBody[], user: UserBody | undefined }>()
   const query = new URLSearchParams(search)
 
   return (
@@ -105,9 +118,9 @@ export default function () {
         <ScrollArea.Viewport className="ScrollArea__Viewport">
           <QueryClientProvider client={queryClient}>
             <main>
-              {query.get("navbar") !== "none" && <NavBar />}
+              {query.get("navbar") !== "none" && <NavBar user={user} />}
               <DndProvider options={HTML5toTouch}>
-                <Tasks branch={branch} initialData={Task.collection(initialData)} />
+                <Tasks branch={branch} initialData={data} />
               </DndProvider>
             </main>
           </QueryClientProvider>

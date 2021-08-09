@@ -1,0 +1,22 @@
+.NavBar,
+.NavBar__User {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.NavBar__User--image {
+  background-color: #f0f6fc1a;
+  border-radius: 50%!important;
+  box-shadow: 0 0 0 1px #f0f6fc1a;
+  display: inline-block;
+  flex-shrink: 0;
+  line-height: 1;
+  overflow: hidden;
+  vertical-align: middle;
+  height: 2rem;
+  aspect-ratio: auto 20 / 20;
+  width: 2rem;
+  margin-right: 3px;
+}
