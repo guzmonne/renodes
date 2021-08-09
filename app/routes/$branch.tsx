@@ -53,7 +53,10 @@ export const loader: LoaderFunction = async ({ request, params }) => {
       }
     }
     return json({ data, user }, {
-      headers: { Etag: etag(JSON.stringify(data)) }
+      headers: {
+        "Etag": etag(JSON.stringify(data)),
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      }
     })
   } catch (err) {
     console.error(err)

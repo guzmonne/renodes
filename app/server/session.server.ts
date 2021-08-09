@@ -80,9 +80,12 @@ const sessionStorage = createCookieSessionStorage({
  * @param request - Fetch API Request object.
  */
 async function authorize(request: Request) {
+  const signinURL = new URL(request.url)
+  const redirectURL = new URL(PROTOCOL + request.headers.get("Host") + "/auth/callback")
+  redirectURL.searchParams.set("origin_uri", signinURL.searchParams.get("origin_uri"))
   const url = new URL("https://github.com/login/oauth/authorize")
   url.searchParams.set("client_id", GITHUB_CLIENT_ID)
-  url.searchParams.set("redirect_uri", PROTOCOL + request.headers.get("Host") + "/auth/callback")
+  url.searchParams.set("redirect_uri", redirectURL.href)
   return redirect(url.href)
 }
 /**
@@ -91,10 +94,11 @@ async function authorize(request: Request) {
  * @param request - Fetch API Request object.
  */
 async function callback(request: Request) {
+  const callbackURL = new URL(request.url)
+  const code = callbackURL.searchParams.get("code")
+  const originURL = callbackURL.searchParams.get("origin_uri") || "/home"
+  //const state = query.get("state")
   try {
-    const query = new URLSearchParams(request.url.split("?")[1])
-    const code = query.get("code")
-    //const state = query.get("state")
     const tokensBody = new URLSearchParams()
     tokensBody.set("client_id", GITHUB_CLIENT_ID)
     tokensBody.set("client_secret", GITHUB_CLIENT_SECRET)
@@ -134,12 +138,12 @@ async function callback(request: Request) {
     const session = await getSession(request)
     session.unset(SESSION_ID_KEY)
     session.set(SESSION_ID_KEY, token)
-    return redirect("/home", {
+    return redirect(originURL, {
       headers: { "Set-Cookie": await sessionStorage.commitSession(session) }
     })
   } catch (err) {
     console.error(err)
-    return redirect("/home")
+    return redirect(originURL)
   }
 }
 /**
@@ -147,9 +151,11 @@ async function callback(request: Request) {
  * @param request - Fetch API Request object.
  */
 async function signout(request: Request) {
+  const signoutURL = new URL(request.url)
+  const originURL = signoutURL.searchParams.get("origin_uri") || "/home"
   const session = await getSession(request)
   session.unset(SESSION_ID_KEY)
-  return redirect("/home", {
+  return redirect(originURL, {
     headers: { "Set-Cookie": await sessionStorage.commitSession(session) }
   })
 }

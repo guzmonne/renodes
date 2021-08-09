@@ -65,6 +65,7 @@ export class Task {
    */
   static collection(objects: any[]): Task[] {
     try {
+      if (!objects) return []
       return objects.map((object: any) => new Task(object))
     } catch (err) {
       console.error(err)

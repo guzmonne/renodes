@@ -2,6 +2,8 @@ import { forwardRef } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCaretDown, faSignOutAlt, faUser, faHome } from "@fortawesome/free-solid-svg-icons"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
+
+import { useHasMounted } from "../../hooks/useHasMounted"
 import type { UserBody } from "../../models/user"
 
 export interface NavBarProps {
@@ -22,7 +24,15 @@ export function NavBar({ user }: NavBarProps) {
   )
 }
 
-NavBar.SignIn = () => <a className="NavBar__SignIn" href="/auth/signin">Sign In</a>
+NavBar.SignIn = () => {
+  const hasMounted = useHasMounted()
+
+  if (!hasMounted) return null
+
+  return (
+    <a className="NavBar__SignIn" href={"/auth/signin?origin_uri=" + location.href}>Sign In</a>
+  )
+}
 
 NavBar.User = ({ user }: NavBarProps) => {
   return (
@@ -42,7 +52,7 @@ NavBar.User = ({ user }: NavBarProps) => {
         </DropdownMenu.Item>
         <DropdownMenu.Separator className="DropdownMenu__Separator" />
         <DropdownMenu.Label className="DropdownMenu__Label">Account</DropdownMenu.Label>
-        <DropdownMenu.Item className="DropdownMenu__Item" onSelect={() => window.location.href = "/auth/signout"}>
+        <DropdownMenu.Item className="DropdownMenu__Item" onSelect={() => window.location.href = "/auth/signout?origin_uri=" + location.href}>
           <div className="DropdownMenu__LeftSlot"><FontAwesomeIcon icon={faSignOutAlt} /></div>
           <div className="DropdownMenu__CenterSlot">Sign Out</div>
           <div className="DropdownMenu__RightSlot"></div>
