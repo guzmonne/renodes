@@ -23,10 +23,12 @@ export const links: LinksFunction = () => {
 
 export const loader: LoaderFunction = async ({ request }) => {
   const data = await getUserFromSession(request)
-  if (typeof data === "string") return json({ error: data, statusCode: 404 }, {
-    status: 404,
-    statusText: "Not Found"
-  })
+  if (!data || typeof data === "string") {
+    return json({ error: data ? data : "invalid jwt", statusCode: 400 }, {
+      status: 400,
+      statusText: "Error"
+    })
+  }
   return { data: data.toObject() }
 }
 

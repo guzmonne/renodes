@@ -4,9 +4,17 @@ import { ulid } from "ulid"
 
 import { Task } from "../models/task"
 
+const headers = new Headers()
+headers.append("Accept", "application/json")
+headers.append("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
+
 export function useTasksQuery(branch: string, initialData?: Task[]) {
   const queryClient = useQueryClient()
-  const { data: tasks, ...query } = useQuery<Task[]>(branch, () => fetch(`/api/tasks/${branch}`).then(response => response.json()).then(Task.collection), { initialData, staleTime: 10000 })
+  const { data: tasks, ...query } = useQuery<Task[]>(branch, () => (
+    fetch(`/api/tasks/${branch}`, { headers })
+      .then(response => response.json())
+      .then(Task.collection)
+  ), { initialData, staleTime: 10000 })
   /**
    * createTaskMutation handles the creation of a new `Task` using
    * an Optimistic UI workflow.
@@ -16,7 +24,7 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
   const createTaskMutation = useMutation(({ task, afterTask }) => {
     return fetch(`/api/tasks/${branch}`, {
       method: "post",
-      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+      headers,
       body: toFormBody({ ...Task.toObject(task), afterId: afterTask ? afterTask.id : undefined })
     })
       .then(response => {
@@ -49,7 +57,7 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
   const updateTaskMutation = useMutation((task) => (
     fetch(`/api/tasks/${branch}`, {
       method: "put",
-      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+      headers,
       body: toFormBody(Task.toObject(task))
     })
       .then(response => {
@@ -79,7 +87,7 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
   const metaTaskMutation = useMutation((task) => (
     fetch(`/api/tasks/${branch}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+      headers,
       body: toFormBody(Task.toObject(task))
     })
       .then(response => {
@@ -109,7 +117,7 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
   const deleteTaskMutation = useMutation((task) => {
     return fetch(`/api/tasks/${task.id}`, {
       method: "delete",
-      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+      headers,
     })
       .then(response => {
         if (response.ok) return task
@@ -144,6 +152,7 @@ export function useTasksQuery(branch: string, initialData?: Task[]) {
     if (after) body.afterId = after.id
     return fetch(`/api/tasks/${branch}`, {
       method: "post",
+      headers,
       body: toFormBody(body)
     })
       .then(response => {

@@ -17,7 +17,7 @@ export function APIDocs({ endpoint, statusCode, children }: APIDocsProps) {
           <APIDocs.Input label="Endpoint">{endpoint}</APIDocs.Input>
           <APIDocs.Input label="Status Code">{statusCode}</APIDocs.Input>
         </APIDocs.Details>
-        <APIDocs.Input label="Content">
+        <APIDocs.Input label="Body">
           {children}
         </APIDocs.Input>
       </APIDocs.Container>

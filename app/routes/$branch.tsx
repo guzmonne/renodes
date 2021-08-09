@@ -8,7 +8,6 @@ import * as ScrollArea from "@radix-ui/react-scroll-area"
 import type { HeadersFunction, MetaFunction, LoaderFunction, ActionFunction, LinksFunction } from "remix"
 
 import etag from "../server/etag.server"
-import { hasValidSession } from "../server/session.server"
 import { repository } from "../repositories/tasks.server"
 import base from "../styles/base.css"
 import Loader from "../components/utils/Loader.css"
@@ -37,7 +36,6 @@ export const links: LinksFunction = () => {
 
 export const loader: LoaderFunction = async ({ request, params }) => {
   try {
-    const ok = await hasValidSession(request)
     const tasks = await repository.query({ branch: params.branch === "home" ? undefined : params.branch })
     const data = tasks.map(Task.toObject)
     return json(data, {

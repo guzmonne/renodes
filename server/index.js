@@ -25,6 +25,9 @@ app.use(express.static("public", { maxAge: "1h" }));
 // Remix fingerprints its assets so we can cache forever
 app.use(express.static("public/build", { immutable: true, maxAge: "1y" }));
 
+app.get("/api/nodes/home", remixRoute("api.nodes.home"))
+app.get("/api/users/me", remixRoute("api.users.me"))
+
 app.get("/api/tasks/:branch", remixRoute("$branch", "/api/tasks"))
 app.post("/api/tasks/:branch", remixRoute("$branch", "/api/tasks"))
 app.put("/api/tasks/:branch", remixRoute("$branch", "/api/tasks"))
@@ -61,15 +64,18 @@ function purgeRequireCache() {
  */
 function remixRoute(route, replacePathname, value = "") {
   return function (req, _, next) {
-    const query = new URLSearchParams(req.query)
-    query.set("_data", `routes/${route}`)
-    req.url = [
-      "http://",
-      req.headers.host,
-      req.originalUrl.replace(replacePathname, value),
-      "/?",
-      query.toString()
-    ].join("")
+    console.log(req.headers.accept)
+    if (req.headers.accept === "application/json") {
+      const query = new URLSearchParams(req.query)
+      query.set("_data", `routes/${route}`)
+      req.url = [
+        "http://",
+        req.headers.host,
+        req.originalUrl.replace(replacePathname, value),
+        "/?",
+        query.toString()
+      ].join("")
+    }
     next()
   }
 }
