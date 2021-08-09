@@ -208,8 +208,6 @@ Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onToggle, onDrag, onDragEn
 
   drop(preview(ref))
 
-  console.log(task.content)
-
   return (
     <Fragment>
       <div className="Task" ref={ref}>
