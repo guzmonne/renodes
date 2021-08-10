@@ -1,10 +1,7 @@
-import { useRef, useState, useCallback, useEffect } from "react"
+import { useRef, useCallback } from "react"
 import { useDrag, useDrop } from "react-dnd"
-import cn from "classnames"
-import type { ChangeEvent, KeyboardEvent } from "react"
 
 import { useNodesContext } from "./useNodesContext"
-import { useDebounce } from "./useDebounce"
 import { Task } from "../models/task";
 
 /**
@@ -31,10 +28,8 @@ export interface TaskDrag {
 
 export function useNode(node: Task, index: number) {
   const ref = useRef<any>(null)
-  const [content, setContent] = useState(node.content)
   const {
     handleAdd,
-    handleEdit,
     handleDelete,
     handleMeta,
     handleDrag,
@@ -42,27 +37,10 @@ export function useNode(node: Task, index: number) {
     hoverIndex,
     dragIndex,
   } = useNodesContext()
-  const handleSubmit = useCallback((e) => e.preventDefault(), [])
   const handleSelectAdd = useCallback(() => handleAdd(node), [handleAdd, node])
   const handleSelectDelete = useCallback(() => handleDelete(node), [handleDelete, node])
   const handleSelectExternalLink = useCallback(() => window.open(window.location.origin + "/" + node.id), [node])
   const handleToggleSubTasks = useCallback(() => handleMeta(node.set({ meta: { isOpened: !node.meta.isOpened } })), [node])
-  const handleContentChange = useCallback((e: ChangeEvent<HTMLTextAreaElement>) => setContent(e.currentTarget.value), [setContent])
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (!e.shiftKey) return
-    switch (e.key) {
-      case "Enter": { e.preventDefault(); handleSelectAdd(); break }
-      case "Delete": { e.preventDefault(); handleSelectDelete(); break }
-    }
-  }, [handleSelectAdd, handleSelectDelete])
-  const [textAreaClasses, setTextAreaClasses] = useState("")
-
-  useEffect(() => setContent(node.content), [node.content])
-
-  useEffect(() => setTextAreaClasses(cn({
-    hoverTop: hoverIndex === index && dragIndex > index,
-    hoverBottom: hoverIndex === index && dragIndex < index
-  })), [index, hoverIndex, dragIndex])
 
   const [{ handlerId }, drop] = useDrop({
     accept: node.branch || "TASK",
@@ -83,28 +61,17 @@ export function useNode(node: Task, index: number) {
     end: (item: any, _: any) => handleDragEnd(item.dragIndex, item.hoverIndex)
   })
 
-  useDebounce(() => {
-    if (content === node.content) return
-    const updatedTask = node.set({ content })
-    handleEdit(updatedTask)
-  }, 1000, [content])
-
   drop(preview(ref))
 
   return {
     ref,
-    content,
-    handleSubmit,
     handleSelectAdd,
     handleSelectDelete,
     handleSelectExternalLink,
     handleToggleSubTasks,
-    handleContentChange,
-    handleKeyDown,
     handlerId,
     drop,
     drag,
     preview,
-    textAreaClasses,
   }
 }
