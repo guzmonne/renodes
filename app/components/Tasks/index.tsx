@@ -206,6 +206,13 @@ Tasks.Dropdown = function ({ task, index }: TaskProps) {
                 <div className="DropdownMenu__CenterSlot">Task</div>
                 <div className="DropdownMenu__RightSlot"></div>
               </DropdownMenu.RadioItem>
+              <DropdownMenu.RadioItem className="DropdownMenu__Item" value="code">
+                <DropdownMenu.DropdownMenuItemIndicator className="DropdownMenu__LeftSlot">
+                  <FontAwesomeIcon icon={faDotCircle} />
+                </DropdownMenu.DropdownMenuItemIndicator>
+                <div className="DropdownMenu__CenterSlot">Code</div>
+                <div className="DropdownMenu__RightSlot"></div>
+              </DropdownMenu.RadioItem>
             </DropdownMenu.RadioGroup>
           </DropdownMenu.Content>
         </DropdownMenu.Root>
