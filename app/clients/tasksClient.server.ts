@@ -32,14 +32,15 @@ export class TasksClient extends Client<Task, TasksQueryParams, TaskBody, TaskIt
    * toModel converts a TaskItem into a Task object.
    * @param TasksObject - DynamoDB response to convert.
    */
-  toModel(object: TaskItem): Task {
-    const [b0, b1, b2] = object._b.split("#")
+  toModel(item: TaskItem): Task {
+    const [b0, b1, b2] = item._b.split("#")
     return new Task({
-      id: object.id,
-      content: object.content,
+      id: item.id,
+      content: item.content,
       userId: b0 === "Tasks" ? undefined : b0,
       branch: b1 === "Tasks" ? b2 : b1,
-      meta: object._m,
+      interpreter: item._t,
+      meta: item._m,
     })
   }
   /**

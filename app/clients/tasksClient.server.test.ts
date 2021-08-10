@@ -17,11 +17,11 @@ test("tasksClient.createPK()", async (assert: Test) => {
 
 
 test("tasksClient.toModel()", async (assert: Test) => {
-  const id = ulid()
-  const branch = ulid()
-  const userId = ulid()
-  const content = ulid()
-  const item: TaskItem = {
+  let id = ulid()
+  let branch = ulid()
+  let userId = ulid()
+  let content = ulid()
+  let item: TaskItem = {
     id,
     content,
     pk: `${userId}#Tasks#${id}`,
@@ -31,11 +31,35 @@ test("tasksClient.toModel()", async (assert: Test) => {
       isOpened: true
     },
   }
-  const actual = client.toModel(item)
+  let actual = client.toModel(item)
   assert.equal(actual.id, id)
   assert.equal(actual.content, content)
   assert.equal(actual.branch, branch)
   assert.equal(actual.userId, userId)
+  assert.equal(actual.interpreter, undefined)
+  // Same test but configuring an interpreter
+  id = ulid()
+  branch = ulid()
+  userId = ulid()
+  content = ulid()
+  let interpreter = ulid()
+  item = {
+    id,
+    content,
+    pk: `${userId}#Tasks#${id}`,
+    _b: `${userId}#Tasks#${branch}`,
+    _n: ".",
+    _t: interpreter,
+    _m: {
+      isOpened: true
+    },
+  }
+  actual = client.toModel(item)
+  assert.equal(actual.id, id)
+  assert.equal(actual.content, content)
+  assert.equal(actual.branch, branch)
+  assert.equal(actual.userId, userId)
+  assert.equal(actual.interpreter, interpreter)
   assert.end()
 })
 

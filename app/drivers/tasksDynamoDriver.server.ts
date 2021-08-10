@@ -21,6 +21,10 @@ export interface TaskItem extends TaskBody, DynamoDriverItem {
    */
   _n: string;
   /**
+   * _t contains the interpreter value of the task.
+   */
+  _t?: string;
+  /**
    * _m holds the meta information of the TaskItem.
    */
   _m?: TaskMeta;
@@ -72,9 +76,11 @@ export class TasksDynamoDriver extends DynamoDriver<TaskBody, TaskItem, TaskPatc
       ExpressionAttributeNames: { "#_n": "_n" },
       ExpressionAttributeValues: { ":_n": after._n, ":new_n": pk },
     }))
+    const item: TaskItem = { id: body.id, content: body.content, pk, _b: branch, _n: after === undefined ? "." : after._n }
+    if (body.interpreter) item._t = body.interpreter
     const putPromise: Promise<PutCommandOutput> = this.db.send(new PutCommand({
       TableName: this.tableName,
-      Item: { id: body.id, content: body.content, pk, _b: branch, _n: after === undefined ? "." : after._n },
+      Item: item,
       ConditionExpression: "attribute_not_exists(#pk)",
       ExpressionAttributeNames: { "#pk": "pk" },
     }))
@@ -90,16 +96,18 @@ export class TasksDynamoDriver extends DynamoDriver<TaskBody, TaskItem, TaskPatc
    * @param branch - `Task` branch.
    * @param item - `Task` item to be stored.
    */
-  private async putFirst(pk: string, branch: string, item: TaskBody): Promise<boolean> {
+  private async putFirst(pk: string, branch: string, body: TaskBody): Promise<boolean> {
     const putHeadPromise: Promise<PutCommandOutput> = this.db.send(new PutCommand({
       TableName: this.tableName,
       Item: { pk: "#" + branch, _b: branch, _n: pk },
       ConditionExpression: "attribute_not_exists(#pk)",
       ExpressionAttributeNames: { "#pk": "pk" },
     }))
+    const item: TaskItem = { id: body.id, content: body.content, pk, _b: branch, _n: "." }
+    if (body.interpreter) item._t = body.interpreter
     const putItemPromise: Promise<PutCommandOutput> = this.db.send(new PutCommand({
       TableName: this.tableName,
-      Item: { id: item.id, content: item.content, pk, _b: branch, _n: "." },
+      Item: item,
       ConditionExpression: "attribute_not_exists(#pk)",
       ExpressionAttributeNames: { "#pk": "pk" },
     }))
@@ -134,13 +142,26 @@ export class TasksDynamoDriver extends DynamoDriver<TaskBody, TaskItem, TaskPatc
    * @param patch - `Task` patch to be applied to the `item`.
    */
   async update(pk: string, patch: TaskPatch): Promise<boolean> {
-    if (patch.content === undefined || patch.content === null) return true
+    const updateExpression: string[] = []
+    const expressionAttributeNames: { [key: string]: string } = {}
+    const expressionAttributeValues: { [key: string]: string } = {}
+    if (patch.content) {
+      updateExpression.push("#content = :content")
+      expressionAttributeNames["#content"] = "content"
+      expressionAttributeValues[":content"] = patch.content
+    }
+    if (patch.interpreter) {
+      updateExpression.push("#_t = :_t")
+      expressionAttributeNames["#_t"] = "_t"
+      expressionAttributeValues[":_t"] = patch.interpreter
+    }
+    if (updateExpression.length === 0) return true
     const response: UpdateCommandOutput = await this.db.send(new UpdateCommand({
       TableName: this.tableName,
       Key: { pk },
-      UpdateExpression: "SET #content = :content",
-      ExpressionAttributeNames: { "#content": "content" },
-      ExpressionAttributeValues: { ":content": patch.content }
+      UpdateExpression: `SET ${updateExpression.join(",")}`,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
     }))
     return response.$metadata.httpStatusCode === 200
   }

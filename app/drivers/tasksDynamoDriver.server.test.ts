@@ -100,7 +100,7 @@ test("Task Linked List abstraction", async (assert: Test) => {
   assert.end()
 })
 
-test("Task create", async (assert: Test) => {
+test("taskDynamoDriver.put()", async (assert: Test) => {
   try {
     let tasks: TaskItem[]
     const userId = ulid()
@@ -132,7 +132,47 @@ test("Task create", async (assert: Test) => {
   }
 })
 
-test("Task meta object updates", async (assert: Test) => {
+test("taskDynamoDriver.update()", async (assert: Test) => {
+  let task: TaskItem | undefined
+  let id = ulid()
+  let userId = ulid()
+  let root = userId + "#Tasks"
+  let pk = key({ userId, id })
+  let content = ulid()
+  // Put a new element on the table
+  assert.equal(await driver.put(pk, { id, content }, root), true)
+  // Check that the element was correctly stored.
+  assert.deepEqual(await driver.get(pk), { pk, _b: root, _n: ".", id, content })
+  // Upate the content value
+  let newContent = ulid()
+  assert.equal(await driver.update(pk, { content: newContent }), true)
+  // Check that the content was updated
+  assert.deepEqual(await driver.get(pk), { pk, _b: root, _n: ".", id, content: newContent })
+  // Update the interpreter value
+  let interpreter = ulid()
+  assert.equal(await driver.update(pk, { interpreter }), true)
+  // Check that the interpreter was added to the item
+  assert.deepEqual(await driver.get(pk), { pk, _b: root, _n: ".", id, content: newContent, _t: interpreter })
+  // Update both the interpreter and the content
+  let newInterpreter = ulid()
+  assert.equal(await driver.update(pk, { content, interpreter: newInterpreter }), true)
+  // Check that both the content and the interpreter was updated correctly
+  assert.deepEqual(await driver.get(pk), { pk, _b: root, _n: ".", id, content, _t: newInterpreter })
+  // Put a new task with an interpreter
+  id = ulid()
+  userId = ulid()
+  root = userId + "#Tasks"
+  pk = key({ userId, id })
+  content = ulid()
+  interpreter = ulid()
+  assert.equal(await driver.put(pk, { id, content, interpreter }, root), true)
+  // Check that the task was correctly stored
+  assert.deepEqual(await driver.get(pk), { pk, _b: root, _n: ".", id, content, _t: interpreter })
+  // End tests
+  assert.end()
+})
+
+test("taskDynamoDriver.meta()", async (assert: Test) => {
   try {
     let task: TaskItem | undefined
     const id = "001"
