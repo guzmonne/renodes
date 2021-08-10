@@ -8,8 +8,10 @@ import type { IconDefinition } from "@fortawesome/free-solid-svg-icons"
 
 import { Loader } from "../Utils/Loader"
 import { Task } from "../../models/task"
+import { useDebounce } from "../../hooks/useDebounce"
 import { NodesProvider, useNodesContext } from "../../hooks/useNodesContext"
 import { useNode } from "../../hooks/useNode"
+import { useInterpreter } from "../../hooks/useInterpreter"
 
 /**
  * Tasks renders a list of Tasks and tracks its visual mode.
@@ -54,16 +56,11 @@ export interface TaskProps {
 Tasks.Task = ({ task, index }: TaskProps) => {
   const {
     ref,
-    content,
-    handleSubmit,
     handleSelectAdd,
     handleSelectDelete,
     handleSelectExternalLink,
     handleToggleSubTasks,
-    handleContentChange,
-    handleKeyDown,
     handlerId,
-    textAreaClasses,
     drag,
   } = useNode(task, index)
 
@@ -92,15 +89,7 @@ Tasks.Task = ({ task, index }: TaskProps) => {
             </DropdownMenu.Item>
           </DropdownMenu.Content>
         </DropdownMenu.Root>
-        <form onSubmit={handleSubmit}>
-          <TextareaAutosize name="content"
-            className={textAreaClasses}
-            value={content}
-            onChange={handleContentChange}
-            onKeyDown={handleKeyDown}
-            autoFocus={true}
-          />
-        </form>
+        <Tasks.Interpreter task={task} index={index} />
       </div>
       {task.meta.isOpened &&
         <NodesProvider branch={task.id}>
@@ -154,3 +143,45 @@ Tasks.TaskControl = forwardRef<HTMLDivElement, TaskControlProps>(({ onClick, ico
     </div>
   )
 })
+
+export interface InterpreterProps {
+  task: Task;
+  index: number;
+}
+
+Tasks.Interpreter = function ({ task, ...props }: InterpreterProps) {
+  switch (task.interpreter) {
+    case "text":
+    default:
+      return <Tasks.TextInterpreter task={task} {...props} />
+  }
+}
+
+Tasks.TextInterpreter = function ({ task, index }: InterpreterProps) {
+  const {
+    content,
+    hoverClasses,
+    handleSubmit,
+    handleContentChange,
+    handleKeyDown,
+    handleEdit,
+  } = useInterpreter(task, index)
+
+  useDebounce(() => {
+    if (content === task.content) return
+    const updatedTask = task.set({ content })
+    handleEdit(updatedTask)
+  }, 1000, [content])
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <TextareaAutosize name="content"
+        className={hoverClasses}
+        value={content}
+        onChange={handleContentChange}
+        onKeyDown={handleKeyDown}
+        autoFocus={true}
+      />
+    </form>
+  )
+}

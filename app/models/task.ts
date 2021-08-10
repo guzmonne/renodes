@@ -31,6 +31,10 @@ export interface TaskBody {
    */
   branch?: string;
   /**
+   * interpreter is the name of the interpreter that should render the Task
+   */
+  interpreter?: string;
+  /**
    * meta is an object that can hold aditional information of the Task.
    */
   meta?: TaskMeta;
@@ -39,7 +43,7 @@ export interface TaskBody {
  * TaskPatch is a partial interface of the TaskBody which include
  * only the attributes that can be patched on a Task.
  */
-export type TaskPatch = Pick<Partial<TaskBody>, "content">
+export type TaskPatch = Pick<Partial<TaskBody>, "content" | "interpreter">
 /**
  * Task is the model representation of a task.
  * @param body - Object data to create a new Task.
@@ -47,13 +51,14 @@ export type TaskPatch = Pick<Partial<TaskBody>, "content">
 export class Task {
   constructor(body: any) {
     if (typeof body !== "object") throw new Error("'body' is invalid")
-    this.object = {
+    this.object = Object.freeze({
       id: body.id || ulid(),
       content: body.content || "",
       branch: body.branch,
       userId: body.userId,
+      interpreter: body.interpreter,
       meta: body.meta,
-    }
+    })
   }
   /**
    * object stores an _freezed_ object representation of the model.
@@ -79,6 +84,7 @@ export class Task {
   get content() { return this.object.content }
   get branch() { return this.object.branch }
   get userId() { return this.object.userId }
+  get interpreter() { return this.object.interpreter }
   get meta() { return this.object.meta === undefined ? {} : this.object.meta }
   /**
    * toObject returns an object representation of the model.
@@ -97,6 +103,7 @@ export class Task {
       content: body.content !== undefined ? body.content : this.content,
       branch: this.branch,
       userId: this.userId,
+      interpreter: body.interpreter || this.interpreter,
       meta: body.meta !== undefined
         ? { ...this.meta, ...body.meta }
         : this.object.meta,

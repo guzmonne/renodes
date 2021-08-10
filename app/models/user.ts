@@ -48,7 +48,7 @@ export class User {
    */
   constructor(body: UserBody) {
     if (typeof body !== "object" || !body.id || !body.username || !body.provider || !body.email) throw new Error("'body' is invalid")
-    this.object = {
+    this.object = Object.freeze({
       id: body.id,
       username: body.username,
       provider: body.provider,
@@ -56,7 +56,7 @@ export class User {
       avatarURL: body.avatarURL,
       name: body.name,
       location: body.location,
-    }
+    })
   }
   /**
    * collection creates a User collection from a list of valid object values.
