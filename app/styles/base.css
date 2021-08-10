@@ -70,10 +70,10 @@ form fieldset {
   background: transparent;
 }
 
-form input[type="text"],
 form textarea {
   width: 100%;
-  border: 2px solid var(--background);
+  border: none;
+  border-left: 2px solid var(--handle);
   border-radius: 0;
   padding: 0.5rem;
   outline: none;
@@ -87,6 +87,7 @@ form textarea {
   color: var(--text-body);
   resize: none;
   transition: background 0.5s, border 0.5s;
+  text-align: justify;
 }
 
 form textarea {
@@ -99,17 +100,6 @@ form textarea.hoverTop {
 
 form textarea.hoverBottom {
   border-bottom: 2px solid var(--primary);
-}
-
-form input[type="text"].animated,
-form textarea.animated {
-  background: var(--handle);
-  border: 2px solid var(--handle);
-  transition: background 0.5s, border 0.5s;
-}
-
-form input:focus-visible {
-  border: 2px solid var(--primary);
 }
 
 /** Tasks **/

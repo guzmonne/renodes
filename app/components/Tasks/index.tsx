@@ -204,7 +204,7 @@ Tasks.Task = ({ task, index, onAdd, onEdit, onDelete, onToggle, onDrag, onDragEn
     if (content === task.content) return
     const updatedTask = task.set({ content })
     onEdit(updatedTask)
-  }, 500, [content])
+  }, 1000, [content])
 
   drop(preview(ref))
 

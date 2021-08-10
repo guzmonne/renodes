@@ -51,7 +51,6 @@ NavBar.User = ({ user }: NavBarProps) => {
           <div className="DropdownMenu__RightSlot"></div>
         </DropdownMenu.Item>
         <DropdownMenu.Separator className="DropdownMenu__Separator" />
-        <DropdownMenu.Label className="DropdownMenu__Label">Account</DropdownMenu.Label>
         <DropdownMenu.Item className="DropdownMenu__Item" onSelect={() => window.location.href = "/auth/signout?origin_uri=" + location.href}>
           <div className="DropdownMenu__LeftSlot"><FontAwesomeIcon icon={faSignOutAlt} /></div>
           <div className="DropdownMenu__CenterSlot">Sign Out</div>
