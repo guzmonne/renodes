@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCaretDown, faSignOutAlt, faUser, faHome } from "@fortawesome/free-solid-svg-icons"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 
+import { UserProvider, useUserContext } from "../../hooks/useUserContext"
 import { useHasMounted } from "../../hooks/useHasMounted"
 import type { UserBody } from "../../models/user"
 
@@ -12,15 +13,17 @@ export interface NavBarProps {
 
 export function NavBar({ user }: NavBarProps) {
   return (
-    <div className="NavBar">
-      <h1 className="Title">
-        re<span className="Title__gradient">Task</span>
-      </h1>
-      {user
-        ? <NavBar.User user={user} />
-        : <NavBar.SignIn />
-      }
-    </div>
+    <UserProvider userBody={user}>
+      <div className="NavBar">
+        <h1 className="Title">
+          re<span className="Title__gradient">Task</span>
+        </h1>
+        {user
+          ? <NavBar.User />
+          : <NavBar.SignIn />
+        }
+      </div>
+    </UserProvider >
   )
 }
 
@@ -34,10 +37,11 @@ NavBar.SignIn = () => {
   )
 }
 
-NavBar.User = ({ user }: NavBarProps) => {
+NavBar.User = () => {
+  const { user } = useUserContext()
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger as={NavBar.UserAvatar} user={user} />
+      <DropdownMenu.Trigger as={NavBar.UserAvatar} />
       <DropdownMenu.Content className="DropdownMenu__Content">
         <DropdownMenu.Label className="DropdownMenu__Label">{user.username}</DropdownMenu.Label>
         <DropdownMenu.Item className="DropdownMenu__Item" onSelect={() => { }}>
@@ -61,7 +65,8 @@ NavBar.User = ({ user }: NavBarProps) => {
   )
 }
 
-NavBar.UserAvatar = forwardRef<HTMLDivElement, NavBarProps>(({ user, ...props }, ref) => {
+NavBar.UserAvatar = forwardRef<HTMLDivElement, {}>(({ ...props }, ref) => {
+  const { user } = useUserContext()
   return (
     <div className="NavBar__User" ref={ref} {...props}>
       <img alt="User avatar" src={user.avatarURL} className="NavBar__User--image" />

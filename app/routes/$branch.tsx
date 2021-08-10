@@ -14,6 +14,7 @@ import etag from "../server/etag.server"
 import { getUserFromSession, signIn } from "../server/session.server"
 import { repository } from "../repositories/tasks.server"
 import { Task } from "../models/task"
+import { NodesProvider } from "../hooks/useNodesContext"
 import { NavBar } from "../components/Layout/NavBar"
 import { Tasks } from "../components/Tasks"
 import type { TaskBody } from "../models/task"
@@ -126,7 +127,9 @@ export default function () {
             <main>
               {query.get("navbar") !== "none" && <NavBar user={user} />}
               <DndProvider options={HTML5toTouch}>
-                <Tasks branch={branch} initialData={data} />
+                <NodesProvider branch={branch} initialData={data}>
+                  <Tasks />
+                </NodesProvider>
               </DndProvider>
             </main>
           </QueryClientProvider>

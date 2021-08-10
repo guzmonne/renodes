@@ -187,43 +187,38 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
    * @param task - Task to add to the list.
    */
   const handleAddEmpty = useCallback(() => {
-    if (createTaskMutation.isLoading) return
     const task = new Task({ id: ulid(), branch, content: "" })
     createTaskMutation.mutate({ task })
-  }, [])
+  }, [createTaskMutation, branch])
   /**
    * handleAdd handles the creation of new `Tasks`.
    * @param task - Task to add to the list.
    */
   const handleAdd = useCallback((task: Task) => {
-    if (createTaskMutation.isLoading) return
     const newTask = new Task({ id: ulid(), branch, content: "" })
     createTaskMutation.mutate({ task: newTask, afterTask: task })
-  }, [])
+  }, [createTaskMutation, branch])
   /**
    * handleDelete allows a Child component to remove a task from the list.\
    * @param task - Task to be deleted.
    */
   const handleDelete = useCallback((task: Task) => {
-    if (deleteTaskMutation.isLoading) return
     confirm("Are you sure you want to delete this Task?") && deleteTaskMutation.mutate(task)
-  }, [])
+  }, [deleteTaskMutation])
   /**
    * handleEdit handles `Task` updated.
    * @param task - Task to be updated.
    */
   const handleEdit = useCallback((task: Task) => {
-    if (updateTaskMutation.isLoading) return
     updateTaskMutation.mutate(task)
-  }, [])
+  }, [updateTaskMutation])
   /**
    * handleMeta handles a `Task` metadata updates.
    * @param task - Task whose metadata should be updated.
    */
   const handleMeta = useCallback((task: Task) => {
-    if (metaTaskMutation.isLoading) return
     metaTaskMutation.mutate(task)
-  }, [])
+  }, [metaTaskMutation])
   /**
    * Export
    */
