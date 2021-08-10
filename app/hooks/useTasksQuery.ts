@@ -49,7 +49,7 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
       queryClient.setQueryData(branch, context.previousTasks)
     },
     onSettled: () => {
-      queryClient.invalidateQueries(branch)
+      queryClient.invalidateQueries(branch, { exact: true, refetchActive: false })
     }
   })
   /**
@@ -109,7 +109,7 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
       queryClient.setQueryData(branch, context.previousTasks)
     },
     onSettled: () => {
-      queryClient.invalidateQueries(branch)
+      queryClient.invalidateQueries(branch, { exact: true, refetchActive: false })
     }
   })
   /**
@@ -137,7 +137,7 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
       queryClient.setQueryData(branch, context.previousTasks)
     },
     onSettled: () => {
-      queryClient.invalidateQueries(branch)
+      queryClient.invalidateQueries(branch, { exact: true, refetchActive: false })
     }
   })
   /**
@@ -179,7 +179,7 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
       queryClient.setQueryData(branch, context.previousTasks)
     },
     onSettled: () => {
-      queryClient.invalidateQueries(branch)
+      queryClient.invalidateQueries(branch, { exact: true, refetchActive: false })
     }
   })
   /**
