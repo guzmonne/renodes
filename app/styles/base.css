@@ -210,6 +210,7 @@ form textarea.hoverBottom {
 .DropdownMenu__LeftSlot {
   margin-right: 1rem;
   color: var(--text-body);
+  min-width: 1rem;
 }
 
 .DropdownMenu__LeftSlot > svg {
@@ -227,6 +228,14 @@ form textarea.hoverBottom {
 
 .DropdownMenu__Item:focus > .DropdownMenu__LeftSlot > svg > path {
   fill: var(--text-body);
+}
+
+.DropdownMenu__CenterSlot {
+  margin-left: 2rem;
+}
+
+.DropdownMenu__LeftSlot + .DropdownMenu__CenterSlot {
+  margin-left: 0;
 }
 
 .DropdownMenu__RightSlot {

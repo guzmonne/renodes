@@ -1,7 +1,7 @@
 import { useCallback, Fragment, forwardRef } from "react"
 import TextareaAutosize from "react-textarea-autosize";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faChevronDown, faChevronRight, faEllipsisV, faExternalLinkAlt, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons"
+import { faChevronDown, faChevronRight, faDotCircle, faEllipsisV, faExternalLinkAlt, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons"
 import cn from "classnames"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import type { IconDefinition } from "@fortawesome/free-solid-svg-icons"
@@ -56,9 +56,6 @@ export interface TaskProps {
 Tasks.Task = ({ task, index }: TaskProps) => {
   const {
     ref,
-    handleSelectAdd,
-    handleSelectDelete,
-    handleSelectExternalLink,
     handleToggleSubTasks,
     handlerId,
     drag,
@@ -68,27 +65,7 @@ Tasks.Task = ({ task, index }: TaskProps) => {
     <Fragment>
       <div className="Task" ref={ref}>
         <Tasks.TaskControl icon={task.meta.isOpened ? faChevronDown : faChevronRight} onClick={handleToggleSubTasks} ref={drag} data-handler-id={handlerId} />
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger as={Tasks.TaskControl} icon={faEllipsisV} />
-          <DropdownMenu.Content className="DropdownMenu__Content">
-            <DropdownMenu.Item className="DropdownMenu__Item" onSelect={handleSelectExternalLink}>
-              <div className="DropdownMenu__LeftSlot"><FontAwesomeIcon icon={faExternalLinkAlt} /></div>
-              <div className="DropdownMenu__CenterSlot">Open in new page</div>
-              <div className="DropdownMenu__RightSlot"></div>
-            </DropdownMenu.Item>
-            <DropdownMenu.Separator className="DropdownMenu__Separator" />
-            <DropdownMenu.Item className="DropdownMenu__Item" onSelect={handleSelectAdd}>
-              <div className="DropdownMenu__LeftSlot"><FontAwesomeIcon icon={faPlus} /></div>
-              <div className="DropdownMenu__CenterSlot">Add Task</div>
-              <div className="DropdownMenu__RightSlot">⇧+Enter</div>
-            </DropdownMenu.Item>
-            <DropdownMenu.Item className="DropdownMenu__Item DropdownMenu__Item--red" onSelect={handleSelectDelete}>
-              <div className="DropdownMenu__LeftSlot"><FontAwesomeIcon icon={faTrash} /></div>
-              <div className="DropdownMenu__CenterSlot">Delete Task</div>
-              <div className="DropdownMenu__RightSlot">⇧+Del</div>
-            </DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
+        <Tasks.Dropdown task={task} index={index} />
         <Tasks.Interpreter task={task} index={index} />
       </div>
       {task.meta.isOpened &&
@@ -144,12 +121,7 @@ Tasks.TaskControl = forwardRef<HTMLDivElement, TaskControlProps>(({ onClick, ico
   )
 })
 
-export interface InterpreterProps {
-  task: Task;
-  index: number;
-}
-
-Tasks.Interpreter = function ({ task, ...props }: InterpreterProps) {
+Tasks.Interpreter = function ({ task, ...props }: TaskProps) {
   switch (task.interpreter) {
     case "text":
     default:
@@ -157,7 +129,7 @@ Tasks.Interpreter = function ({ task, ...props }: InterpreterProps) {
   }
 }
 
-Tasks.TextInterpreter = function ({ task, index }: InterpreterProps) {
+Tasks.TextInterpreter = function ({ task, index }: TaskProps) {
   const {
     content,
     hoverClasses,
@@ -183,5 +155,72 @@ Tasks.TextInterpreter = function ({ task, index }: InterpreterProps) {
         autoFocus={true}
       />
     </form>
+  )
+}
+
+Tasks.Dropdown = function ({ task, index }: TaskProps) {
+  const {
+    handleSelectAdd,
+    handleSelectDelete,
+    handleSelectExternalLink,
+  } = useNode(task, index)
+
+  const handleSetInterpeter = useCallback((interpreter: string) => { }, [])
+
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger as={Tasks.TaskControl} icon={faEllipsisV} />
+      <DropdownMenu.Content className="DropdownMenu__Content" sideOffset={5}>
+        <DropdownMenu.Item className="DropdownMenu__Item" onSelect={handleSelectExternalLink}>
+          <div className="DropdownMenu__LeftSlot"><FontAwesomeIcon icon={faExternalLinkAlt} /></div>
+          <div className="DropdownMenu__CenterSlot">Open in new page</div>
+          <div className="DropdownMenu__RightSlot"></div>
+        </DropdownMenu.Item>
+        <DropdownMenu.Root>
+          <DropdownMenu.TriggerItem className="DropdownMenu__Item">
+            <div className="DropdownMenu__LeftSlot"></div>
+            <div className="DropdownMenu__CenterSlot">Interpreter</div>
+            <div className="DropdownMenu__RightSlot"><FontAwesomeIcon icon={faChevronRight} /></div>
+          </DropdownMenu.TriggerItem>
+          <DropdownMenu.Content className="DropdownMenu__Content" sideOffset={2} alignOffset={-5}>
+            <DropdownMenu.Label className="DropdownMenu__Label">Interpreter</DropdownMenu.Label>
+            <DropdownMenu.RadioGroup className="DropdownMenu__RadioGroup" value={task.interpreter || "text"} onValueChange={handleSetInterpeter}>
+              <DropdownMenu.RadioItem className="DropdownMenu__Item" value="text">
+                <DropdownMenu.DropdownMenuItemIndicator className="DropdownMenu__LeftSlot">
+                  <FontAwesomeIcon icon={faDotCircle} />
+                </DropdownMenu.DropdownMenuItemIndicator>
+                <div className="DropdownMenu__CenterSlot">Text</div>
+                <div className="DropdownMenu__RightSlot"></div>
+              </DropdownMenu.RadioItem>
+              <DropdownMenu.RadioItem className="DropdownMenu__Item" value="markdown">
+                <DropdownMenu.DropdownMenuItemIndicator className="DropdownMenu__LeftSlot">
+                  <FontAwesomeIcon icon={faDotCircle} />
+                </DropdownMenu.DropdownMenuItemIndicator>
+                <div className="DropdownMenu__CenterSlot">Markdown</div>
+                <div className="DropdownMenu__RightSlot"></div>
+              </DropdownMenu.RadioItem>
+              <DropdownMenu.RadioItem className="DropdownMenu__Item" value="task">
+                <DropdownMenu.DropdownMenuItemIndicator className="DropdownMenu__LeftSlot">
+                  <FontAwesomeIcon icon={faDotCircle} />
+                </DropdownMenu.DropdownMenuItemIndicator>
+                <div className="DropdownMenu__CenterSlot">Task</div>
+                <div className="DropdownMenu__RightSlot"></div>
+              </DropdownMenu.RadioItem>
+            </DropdownMenu.RadioGroup>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+        <DropdownMenu.Separator className="DropdownMenu__Separator" />
+        <DropdownMenu.Item className="DropdownMenu__Item" onSelect={handleSelectAdd}>
+          <div className="DropdownMenu__LeftSlot"><FontAwesomeIcon icon={faPlus} /></div>
+          <div className="DropdownMenu__CenterSlot">Add Task</div>
+          <div className="DropdownMenu__RightSlot">⇧+Enter</div>
+        </DropdownMenu.Item>
+        <DropdownMenu.Item className="DropdownMenu__Item DropdownMenu__Item--red" onSelect={handleSelectDelete}>
+          <div className="DropdownMenu__LeftSlot"><FontAwesomeIcon icon={faTrash} /></div>
+          <div className="DropdownMenu__CenterSlot">Delete Task</div>
+          <div className="DropdownMenu__RightSlot">⇧+Del</div>
+        </DropdownMenu.Item>
+      </DropdownMenu.Content>
+    </DropdownMenu.Root>
   )
 }
