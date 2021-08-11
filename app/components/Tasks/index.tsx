@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faChevronDown, faChevronRight, faDotCircle, faEllipsisV, faExternalLinkAlt, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons"
 import cn from "classnames"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
+import ReactMarkdown from "react-markdown"
 import type { IconDefinition } from "@fortawesome/free-solid-svg-icons"
 
 import { Loader } from "../Utils/Loader"
@@ -120,15 +121,22 @@ Tasks.TaskControl = forwardRef<HTMLDivElement, TaskControlProps>(({ onClick, ico
     </div>
   )
 })
-
+/**
+ * Interpreter is the component used to show the appropiate node
+ * interpreter component.
+ */
 Tasks.Interpreter = function ({ task, ...props }: TaskProps) {
   switch (task.interpreter) {
+    case "markdown":
+      return <Tasks.MarkdownInterpreter task={task} {...props} />
     case "text":
     default:
       return <Tasks.TextInterpreter task={task} {...props} />
   }
 }
-
+/**
+ * TextInterpreter is the component used to display nodes as text.
+ */
 Tasks.TextInterpreter = function ({ task, index }: TaskProps) {
   const {
     content,
@@ -146,9 +154,9 @@ Tasks.TextInterpreter = function ({ task, index }: TaskProps) {
   }, 1000, [content])
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="Interpreter Interpreter__Text">
       <TextareaAutosize name="content"
-        className={hoverClasses}
+        className={cn("Interpreter__Text--textarea", hoverClasses)}
         value={content}
         onChange={handleContentChange}
         onKeyDown={handleKeyDown}
@@ -157,7 +165,21 @@ Tasks.TextInterpreter = function ({ task, index }: TaskProps) {
     </form>
   )
 }
+/**
+ * MarkdownInterpreter is the component used to display nodes as markdown.
+ */
+Tasks.MarkdownInterpreter = function ({ task, index }: TaskProps) {
+  const { content } = useInterpreter(task, index)
 
+  return (
+    <div className="Interpreter Interpreter__Markdown">
+      <ReactMarkdown>{content}</ReactMarkdown>
+    </div>
+  )
+}
+/**
+ * Dropdown is the component used to render the Node dropdown menu
+ */
 Tasks.Dropdown = function ({ task, index }: TaskProps) {
   const {
     handleEdit,
@@ -167,7 +189,6 @@ Tasks.Dropdown = function ({ task, index }: TaskProps) {
   } = useNode(task, index)
 
   const handleSetInterpeter = useCallback((interpreter: string) => {
-    const _task = task.set({ interpreter })
     handleEdit(task.set({ interpreter }))
   }, [task, handleEdit])
 

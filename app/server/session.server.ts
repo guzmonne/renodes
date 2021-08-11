@@ -168,7 +168,7 @@ async function callback(request: Request) {
 async function signOut(request: Request) {
   const signOutURL = new URL(request.url)
   const originURL = signOutURL.searchParams.get("origin_uri") || "/home"
-  const session = await getSession(request)
+  const session = await unsetSessionId(request)
   return redirect(originURL, {
     headers: { "Set-Cookie": await sessionStorage.commitSession(session) }
   })
@@ -180,6 +180,22 @@ async function signOut(request: Request) {
  */
 async function getSession(request: Request) {
   const session = await sessionStorage.getSession(request.headers.get("Cookie"))
+  return session
+}
+/**
+ * getSessionId returns the token stored on the session.
+ * @param request - Fetch API Request object.
+ */
+async function getSessionId(request: Request) {
+  const session = await getSession(request)
+  return session.get(SESSION_ID_KEY) as string | undefined
+}
+/**
+ * unsetSessionId unsets the current session.
+ * @param request - Fetch API Request object.
+ */
+async function unsetSessionId(request: Request) {
+  const session = await getSession(request)
   session.unset(SESSION_ID_KEY)
   return session
 }
@@ -191,12 +207,12 @@ async function getSession(request: Request) {
 async function getUserFromSession(request: Request): Promise<User> {
   try {
     const token = await getDecodedToken(request)
-    if (!token) throw new UndefinedTokenError()
     const [id, provider] = token.sub.split(".")
     if (!id || !provider) throw new InvalidSubClaimError()
     const user = await repository.get(id)
     return user
   } catch (err) {
+    await unsetSessionId(request)
     throw err
   }
 }
@@ -205,10 +221,9 @@ async function getUserFromSession(request: Request): Promise<User> {
  * a request.
  * @param request - Fetch API Request object.
  */
-async function getDecodedToken(request: Request): Promise<JWTToken | undefined> {
-  const session = await getSession(request)
-  const token = session.get(SESSION_ID_KEY) as string | undefined
-  if (!token) return undefined
+async function getDecodedToken(request: Request): Promise<JWTToken> {
+  const token = await getSessionId(request)
+  if (!token) throw new UndefinedTokenError()
   const decoded = jwt.verify(token, SESSION_SECRET, {
     audience: JWT_AUDIENCE,
     issuer: JWT_ISSUER,

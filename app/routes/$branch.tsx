@@ -65,7 +65,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     })
   } catch (err) {
     if (err.name !== "UndefinedTokenError") console.error(err)
-    return { data: [], error: err.message }
+    return json({ data: [], error: err.message })
   }
 }
 

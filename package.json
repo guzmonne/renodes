@@ -47,9 +47,11 @@
     "react-dnd-multi-backend": "^6.0.2",
     "react-dnd-touch-backend": "^14.0.0",
     "react-dom": "^17.0.1",
+    "react-markdown": "^6.0.3",
     "react-query": "^3.19.0",
     "react-router-dom": "^6.0.0-beta.0",
     "react-textarea-autosize": "^8.3.3",
+    "remark-gfm": "^2.0.0",
     "remix": "^0.17.5",
     "ulid": "^2.3.0",
     "winston": "^3.3.3"
