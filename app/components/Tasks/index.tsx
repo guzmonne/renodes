@@ -1,4 +1,4 @@
-import { useCallback, Fragment, forwardRef } from "react"
+import { useCallback, Fragment, forwardRef, createElement } from "react"
 import TextareaAutosize from "react-textarea-autosize";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faChevronDown, faChevronRight, faDotCircle, faEllipsisV, faExternalLinkAlt, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons"
@@ -8,12 +8,16 @@ import ReactMarkdown from "react-markdown"
 import type { IconDefinition } from "@fortawesome/free-solid-svg-icons"
 
 import { Loader } from "../Utils/Loader"
-import { Task } from "../../models/task"
+import { useHasMounted } from "../../hooks/useHasMounted"
 import { useDebounce } from "../../hooks/useDebounce"
 import { NodesProvider, useNodesContext } from "../../hooks/useNodesContext"
 import { useNode } from "../../hooks/useNode"
 import { useInterpreter } from "../../hooks/useInterpreter"
+import type { Task } from "../../models/task"
 
+declare global {
+  interface Window { Prism?: { highlightAll: () => void }; }
+}
 /**
  * Tasks renders a list of Tasks and tracks its visual mode.
  */
@@ -65,8 +69,10 @@ Tasks.Task = ({ task, index }: TaskProps) => {
   return (
     <Fragment>
       <div className="Task" ref={ref}>
-        <Tasks.TaskControl icon={task.meta.isOpened ? faChevronDown : faChevronRight} onClick={handleToggleSubTasks} ref={drag} data-handler-id={handlerId} />
-        <Tasks.Dropdown task={task} index={index} />
+        <div className="Task__Controls">
+          <Tasks.TaskControl icon={task.meta.isOpened ? faChevronDown : faChevronRight} onClick={handleToggleSubTasks} ref={drag} data-handler-id={handlerId} />
+          <Tasks.Dropdown task={task} index={index} />
+        </div>
         <Tasks.Interpreter task={task} index={index} />
       </div>
       {task.meta.isOpened &&
@@ -84,22 +90,20 @@ Tasks.Task = ({ task, index }: TaskProps) => {
 Tasks.Empty = () => {
   const { handleAddEmpty } = useNodesContext()
   const handleAdd = useCallback(() => handleAddEmpty(), [handleAddEmpty])
-  const handleSubmit = useCallback((e) => e.preventDefault(), [])
 
   return (
     <div className="Task">
-      <div className="Task__Control Task__Control--transparent">
-        <i className="fa fa-chevron-right" aria-hidden="true" />
+      <div className="Task__Controls">
+        <div className="Task__Control" onClick={handleAdd}>
+          <i className="fa fa-plus" aria-hidden="true" />
+        </div>
       </div>
-      <div className="Task__Control" onClick={handleAdd}>
-        <i className="fa fa-plus" aria-hidden="true" />
-      </div>
-      <form onSubmit={handleSubmit}>
-        <TextareaAutosize name="content"
-          defaultValue=""
-          onFocusCapture={handleAdd}
-        />
-      </form>
+      <TextareaAutosize
+        className="Interpreter Interpreter__Text"
+        name="content"
+        defaultValue=""
+        onFocusCapture={handleAdd}
+      />
     </div>
   )
 }
@@ -129,6 +133,8 @@ Tasks.Interpreter = function ({ task, ...props }: TaskProps) {
   switch (task.interpreter) {
     case "markdown":
       return <Tasks.MarkdownInterpreter task={task} {...props} />
+    case "code":
+      return <Tasks.CodeInterpreter task={task} {...props} />
     case "text":
     default:
       return <Tasks.TextInterpreter task={task} {...props} />
@@ -141,7 +147,6 @@ Tasks.TextInterpreter = function ({ task, index }: TaskProps) {
   const {
     content,
     hoverClasses,
-    handleSubmit,
     handleContentChange,
     handleKeyDown,
     handleEdit,
@@ -159,7 +164,6 @@ Tasks.TextInterpreter = function ({ task, index }: TaskProps) {
       value={content}
       onChange={handleContentChange}
       onKeyDown={handleKeyDown}
-      autoFocus={true}
     />
   )
 }
@@ -168,13 +172,29 @@ Tasks.TextInterpreter = function ({ task, index }: TaskProps) {
  */
 Tasks.MarkdownInterpreter = function ({ task, index }: TaskProps) {
   const { content, hoverClasses } = useInterpreter(task, index)
+  const hasMounted = useHasMounted()
+
+  if (hasMounted && window.Prism) window.Prism.highlightAll()
 
   return (
     <div className={cn("Interpreter Interpreter__Markdown", hoverClasses)}>
-      <ReactMarkdown
-        children={content}
-      />
+      <ReactMarkdown children={content} />
     </div>
+  )
+}
+/**
+ * CodeInterpreter is the component used to display nodes as code.
+ */
+Tasks.CodeInterpreter = function ({ task, index }: TaskProps) {
+  const { content, hoverClasses } = useInterpreter(task, index)
+  const hasMounted = useHasMounted()
+
+  if (hasMounted && window.Prism) window.Prism.highlightAll()
+
+  return (
+    <pre className={cn("Interpreter Interpreter__Markdown", hoverClasses)}>
+      <code className="language-js" children={content} />
+    </pre>
   )
 }
 /**
@@ -244,12 +264,12 @@ Tasks.Dropdown = function ({ task, index }: TaskProps) {
         <DropdownMenu.Separator className="DropdownMenu__Separator" />
         <DropdownMenu.Item className="DropdownMenu__Item" onSelect={handleSelectAdd}>
           <div className="DropdownMenu__LeftSlot"><FontAwesomeIcon icon={faPlus} /></div>
-          <div className="DropdownMenu__CenterSlot">Add Task</div>
+          <div className="DropdownMenu__CenterSlot">Add Node</div>
           <div className="DropdownMenu__RightSlot">⇧+Enter</div>
         </DropdownMenu.Item>
         <DropdownMenu.Item className="DropdownMenu__Item DropdownMenu__Item--red" onSelect={handleSelectDelete}>
           <div className="DropdownMenu__LeftSlot"><FontAwesomeIcon icon={faTrash} /></div>
-          <div className="DropdownMenu__CenterSlot">Delete Task</div>
+          <div className="DropdownMenu__CenterSlot">Delete Node</div>
           <div className="DropdownMenu__RightSlot">⇧+Del</div>
         </DropdownMenu.Item>
       </DropdownMenu.Content>

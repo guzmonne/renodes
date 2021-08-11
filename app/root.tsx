@@ -10,6 +10,7 @@ function Document({ children }: { children: React.ReactNode }) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1"></meta>
         <link rel="icon" href="/favicon.png" type="image/png" />
+        <link href="https://unpkg.com/prismjs@1.24.1/themes/prism.css" rel="stylesheet" />
         <Meta />
         <Links />
       </head>
@@ -17,6 +18,8 @@ function Document({ children }: { children: React.ReactNode }) {
         {children}
         <Scripts />
         {process.env.NODE_ENV === "development" && <LiveReload />}
+        <script src="https://unpkg.com/prismjs@1.24.1/components/prism-core.min.js"></script>
+        <script src="https://unpkg.com/prismjs@1.24.1/plugins/autoloader/prism-autoloader.min.js"></script>
         <script src="https://kit.fontawesome.com/488f974bd7.js" crossOrigin="anonymous"></script>
       </body>
     </html>

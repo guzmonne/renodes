@@ -14,7 +14,6 @@ export function useInterpreter(node: Task, index: number) {
     hoverIndex,
     dragIndex,
   } = useNodesContext()
-  const handleSubmit = useCallback((e) => e.preventDefault(), [])
   const handleContentChange = useCallback((e: ChangeEvent<HTMLTextAreaElement>) => setContent(e.currentTarget.value), [setContent])
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!e.shiftKey) return
@@ -34,7 +33,6 @@ export function useInterpreter(node: Task, index: number) {
 
   return {
     content,
-    handleSubmit,
     handleContentChange,
     handleKeyDown,
     hoverClasses,

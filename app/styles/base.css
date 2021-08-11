@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Lobster&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
 
 :root {
   --background: hsl(0, 0%, 93.0%);
@@ -35,12 +36,18 @@ html {
 main {
   padding: 0.5rem;
   margin: 0 auto;
+  width: 100vw;
   max-width: 960px;
 }
 
-h1 {
-  margin: 0 0.5rem;
-  font-family: 'Lobster', cursive;
+textarea,
+pre,
+code {
+  font-family: 'Roboto Mono', monospace;
+}
+
+pre[class*="language-"] {
+  margin: 0;
 }
 
 /** Title **/
@@ -48,6 +55,7 @@ h1 {
   color: var(--purple);
   margin: 0.5rem;
   margin-bottom: 1rem;
+  font-family: 'Lobster', cursive;
 }
 
 .Title .Title__gradient {
@@ -58,6 +66,10 @@ h1 {
 }
 
 /** Tasks **/
+main > .Tasks {
+  margin-bottom: 10rem;
+}
+
 .Tasks {
   width: 100%;
   display: flex;
@@ -67,7 +79,7 @@ h1 {
 }
 
 .Tasks > .Tasks {
-  padding-left: 0.5rem;
+  padding-left: 1rem;
 }
 
 /** Task **/
@@ -79,20 +91,20 @@ h1 {
   justify-content: space-between;
 }
 
-.Task > .Task__Control + .Task__Control + * {
-  width: 100%;
-  min-height: 2.5rem;
+.Task .Task__Controls {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-around;
+  height: 2rem;
+  min-width: 2.5rem;
+  flex: 0 1 2.5rem;
 }
 
 .Task .Task__Control {
   color: var(--handle);
   min-width: 1rem;
-  display: flex;
-  justify-content: center;
-  padding-top: 0.8rem;
+  max-width: 1rem;
 }
 
 .Task .Task__Control--transparent {
@@ -108,15 +120,12 @@ h1 {
   cursor: grab;
 }
 
-.Task:last-of-type {
-  margin-bottom: 5rem;
-}
-
 /** Interpreter **/
 
 .Interpreter {
+  min-width: 0;
+  flex: 1 1 auto;
   background-color: white;
-  max-width: calc(100vw - 3.5rem);
   border: none;
   border-left: 2px solid var(--handle);
   border-radius: 0;
@@ -136,19 +145,18 @@ h1 {
     border-left: 2px solid var(--highlight);
     border-radius: 0;
     color: var(--text-body);
-    font-family: 'DM Sans', sans-serif;
     font-size: var(--font-size);
     font-style: normal;
     font-weight: normal;
     outline: none;
     overflow: hidden;
     resize: none;
-    text-align: justify;
   }
 
   /** Interpreter Markdown **/
   .Interpreter__Markdown {
     background-color: rgb(254, 254, 254);
+    text-align: justify;
   }
 
   .Interpreter__Markdown > * + * {
