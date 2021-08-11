@@ -154,25 +154,23 @@ Tasks.TextInterpreter = function ({ task, index }: TaskProps) {
   }, 1000, [content])
 
   return (
-    <form onSubmit={handleSubmit} className="Interpreter Interpreter__Text">
-      <TextareaAutosize name="content"
-        className={cn("Interpreter__Text--textarea", hoverClasses)}
-        value={content}
-        onChange={handleContentChange}
-        onKeyDown={handleKeyDown}
-        autoFocus={true}
-      />
-    </form>
+    <TextareaAutosize name="content"
+      className={cn("Interpreter Interpreter__Text", hoverClasses)}
+      value={content}
+      onChange={handleContentChange}
+      onKeyDown={handleKeyDown}
+      autoFocus={true}
+    />
   )
 }
 /**
  * MarkdownInterpreter is the component used to display nodes as markdown.
  */
 Tasks.MarkdownInterpreter = function ({ task, index }: TaskProps) {
-  const { content } = useInterpreter(task, index)
+  const { content, hoverClasses } = useInterpreter(task, index)
 
   return (
-    <div className="Interpreter Interpreter__Markdown">
+    <div className={cn("Interpreter Interpreter__Markdown", hoverClasses)}>
       <ReactMarkdown
         children={content}
       />

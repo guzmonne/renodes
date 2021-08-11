@@ -57,47 +57,6 @@ h1 {
   -webkit-text-fill-color: transparent;
 }
 
-/** FORM **/
-form,
-form fieldset {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  outline: 0;
-  border: 0;
-  padding: 0;
-  background: transparent;
-}
-
-form textarea {
-  outline: none;
-}
-
-form textarea {
-  font-size: var(--font-size);
-  font-family: 'DM Sans', sans-serif;
-  font-style: normal;
-  font-weight: normal;
-  color: var(--text-body);
-  resize: none;
-  transition: background 0.5s, border 0.5s;
-  text-align: justify;
-}
-
-form textarea {
-  overflow: hidden;
-}
-
-form textarea.hoverTop {
-  border-top: 2px solid var(--primary);
-}
-
-form textarea.hoverBottom {
-  border-bottom: 2px solid var(--primary);
-}
-
 /** Tasks **/
 .Tasks {
   width: 100%;
@@ -157,7 +116,6 @@ form textarea.hoverBottom {
 
 .Interpreter {
   background-color: white;
-  width: 100%;
   max-width: calc(100vw - 3.5rem);
   border: none;
   border-left: 2px solid var(--handle);
@@ -165,20 +123,32 @@ form textarea.hoverBottom {
   padding: 0.5rem;
 }
 
+.Interpreter.hoverTop {
+  border-top: 2px solid var(--highlight);
+}
+
+.Interpreter.hoverBottom {
+  border-bottom: 2px solid var(--highlight);
+}
+
   /** Interpreter Text **/
   .Interpreter__Text {
     border-left: 2px solid var(--highlight);
-  }
-
-  .Interpreter__Text--textarea {
-    width: 100%;
-    border: none;
     border-radius: 0;
+    color: var(--text-body);
+    font-family: 'DM Sans', sans-serif;
+    font-size: var(--font-size);
+    font-style: normal;
+    font-weight: normal;
+    outline: none;
+    overflow: hidden;
+    resize: none;
+    text-align: justify;
   }
 
   /** Interpreter Markdown **/
   .Interpreter__Markdown {
-    background-color: whitesmoke;
+    background-color: rgb(254, 254, 254);
   }
 
   .Interpreter__Markdown > * + * {
