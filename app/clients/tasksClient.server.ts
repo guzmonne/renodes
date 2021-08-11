@@ -53,7 +53,8 @@ export class TasksClient extends Client<Task, TasksQueryParams, TaskBody, TaskIt
    * @param patch - Task model to convert
    */
   toPatch = (task: Task): TaskPatch => ({
-    content: task.content
+    content: task.content,
+    interpreter: task.interpreter,
   })
   /**
    * createPK creates a valid `pk` for the current schema

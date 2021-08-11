@@ -1,3 +1,4 @@
+import { ModelNotFoundError } from "../server/errors.server"
 import type { DBClient, DBDriver, DBClientResponse } from "../types"
 
 /**
@@ -59,7 +60,7 @@ export abstract class Client<Model extends ClientModel, QueryParams, Body, Item,
     try {
       const pk = this.createPK(id, userId)
       const item = await this.driver.get(pk)
-      if (!item) throw new Error(`get error`)
+      if (!item) throw new ModelNotFoundError()
       return { data: this.toModel(item) }
     } catch (err) {
       return { error: err.message }

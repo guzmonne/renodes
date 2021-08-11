@@ -57,8 +57,8 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
    * an Optimistic UI workflow.
    * @param task - `Task` to update.
    */
-  const updateTaskMutation = useMutation((task) => (
-    fetch(`/${branch}`, {
+  const updateTaskMutation = useMutation((task) => {
+    return fetch(`/${branch}`, {
       method: "put",
       headers,
       body: toFormBody(Task.toObject(task))
@@ -67,7 +67,7 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
         if (response.ok) return task
         throw new Error("couldn't update task")
       })
-  ), {
+  }, {
     onMutate: async (task: Task): Promise<{ previousTasks: Task[] }> => {
       await queryClient.cancelQueries(branch, { exact: true })
       const previousTasks: Task[] = queryClient.getQueryData(branch)

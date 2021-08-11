@@ -47,10 +47,11 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         const sessionUser = await getUserFromSession(request)
         user = sessionUser.toObject()
       } catch (err) {
-        if (err.name !== "TokenExpiredError") throw err
-        // If the token has expired less than a month ago, try to sign the user.
-        if (Date.now() - (new Date(err.expiredAt)).getTime() <= 1000 * 60 * 60 * 24 * 30) {
+        if (err.name === "TokenExpiredError" && Date.now() - (new Date(err.expiredAt)).getTime() <= 1000 * 60 * 60 * 24 * 30) {
           return signIn(request, `/${params.branch}`)
+        }
+        if (err.name !== "ModelNotFoundError") {
+          throw err
         }
       }
     }
@@ -75,6 +76,7 @@ export const action: ActionFunction = async ({ request, params }) => {
     const data = new URLSearchParams(await request.text())
     const id = data.get("id")
     const content = data.get("content")
+    const interpreter = data.get("interpreter")
     const dragId = data.get("dragId")
     const meta = data.get("meta")
     let afterId = data.get("afterId")
@@ -94,7 +96,7 @@ export const action: ActionFunction = async ({ request, params }) => {
       case "PUT":
         if (id === null) return endpoint
         task = await repository.get(id)
-        await repository.update(task.set({ content }))
+        await repository.update(task.set({ content, interpreter }))
         break
       case "PATCH":
         if (id === null || meta === null) return endpoint

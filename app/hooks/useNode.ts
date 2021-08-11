@@ -34,8 +34,7 @@ export function useNode(node: Task, index: number) {
     handleMeta,
     handleDrag,
     handleDragEnd,
-    hoverIndex,
-    dragIndex,
+    handleEdit,
   } = useNodesContext()
   const handleSelectAdd = useCallback(() => handleAdd(node), [handleAdd, node])
   const handleSelectDelete = useCallback(() => handleDelete(node), [handleDelete, node])
@@ -64,14 +63,15 @@ export function useNode(node: Task, index: number) {
   drop(preview(ref))
 
   return {
-    ref,
+    drag,
+    drop,
+    handleEdit,
+    handlerId,
     handleSelectAdd,
     handleSelectDelete,
     handleSelectExternalLink,
     handleToggleSubTasks,
-    handlerId,
-    drop,
-    drag,
     preview,
+    ref,
   }
 }

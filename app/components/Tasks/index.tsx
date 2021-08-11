@@ -160,12 +160,16 @@ Tasks.TextInterpreter = function ({ task, index }: TaskProps) {
 
 Tasks.Dropdown = function ({ task, index }: TaskProps) {
   const {
+    handleEdit,
     handleSelectAdd,
     handleSelectDelete,
     handleSelectExternalLink,
   } = useNode(task, index)
 
-  const handleSetInterpeter = useCallback((interpreter: string) => { }, [])
+  const handleSetInterpeter = useCallback((interpreter: string) => {
+    const _task = task.set({ interpreter })
+    handleEdit(task.set({ interpreter }))
+  }, [task, handleEdit])
 
   return (
     <DropdownMenu.Root>

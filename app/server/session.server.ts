@@ -87,8 +87,7 @@ const sessionStorage = createCookieSessionStorage({
 async function signIn(request: Request, originURI: string = "/home") {
   const signInURL = new URL(request.url)
   originURI = signInURL.searchParams.get("origin_uri") || originURI
-  const session = await getSession(request)
-  session.unset(SESSION_ID_KEY)
+  await getSession(request)
   return authorize(request, originURI)
 }
 /**
@@ -153,7 +152,6 @@ async function callback(request: Request) {
       aud: JWT_AUDIENCE,
     }, SESSION_SECRET)
     const session = await getSession(request)
-    session.unset(SESSION_ID_KEY)
     session.set(SESSION_ID_KEY, token)
     return redirect(originURL, {
       headers: { "Set-Cookie": await sessionStorage.commitSession(session) }
@@ -171,7 +169,6 @@ async function signOut(request: Request) {
   const signOutURL = new URL(request.url)
   const originURL = signOutURL.searchParams.get("origin_uri") || "/home"
   const session = await getSession(request)
-  session.unset(SESSION_ID_KEY)
   return redirect(originURL, {
     headers: { "Set-Cookie": await sessionStorage.commitSession(session) }
   })
@@ -182,7 +179,9 @@ async function signOut(request: Request) {
  * @param request - Fetch API Request object.
  */
 async function getSession(request: Request) {
-  return sessionStorage.getSession(request.headers.get("Cookie"))
+  const session = await sessionStorage.getSession(request.headers.get("Cookie"))
+  session.unset(SESSION_ID_KEY)
+  return session
 }
 /**
  * getUserFromSession returns a User model extracted from the request
@@ -198,9 +197,6 @@ async function getUserFromSession(request: Request): Promise<User> {
     const user = await repository.get(id)
     return user
   } catch (err) {
-    if (err.name !== "TokenExpiredError" && err.name !== "UndefinedTokenError") {
-      console.error(err)
-    }
     throw err
   }
 }
