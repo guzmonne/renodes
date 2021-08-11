@@ -173,7 +173,9 @@ Tasks.MarkdownInterpreter = function ({ task, index }: TaskProps) {
 
   return (
     <div className="Interpreter Interpreter__Markdown">
-      <ReactMarkdown>{content}</ReactMarkdown>
+      <ReactMarkdown
+        children={content}
+      />
     </div>
   )
 }
