@@ -149,6 +149,10 @@ form textarea.hoverBottom {
   cursor: grab;
 }
 
+.Task:last-of-type {
+  margin-bottom: 5rem;
+}
+
 /** Interpreter **/
 
 .Interpreter {
@@ -162,6 +166,10 @@ form textarea.hoverBottom {
 }
 
   /** Interpreter Text **/
+  .Interpreter__Text {
+    border-left: 2px solid var(--highlight);
+  }
+
   .Interpreter__Text--textarea {
     width: 100%;
     border: none;
@@ -169,6 +177,10 @@ form textarea.hoverBottom {
   }
 
   /** Interpreter Markdown **/
+  .Interpreter__Markdown {
+    background-color: whitesmoke;
+  }
+
   .Interpreter__Markdown > * + * {
     margin-top: 0.5rem;
   }
