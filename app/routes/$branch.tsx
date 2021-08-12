@@ -9,6 +9,7 @@ import type { HeadersFunction, MetaFunction, LoaderFunction, ActionFunction, Lin
 
 import BaseStyles from "../styles/base.css"
 import LayoutStyles from "../components/Layout/styles.css"
+import ScrollAreaStyles from "../components/ScrollArea/styles.css"
 import LoaderStyles from "../components/Utils/Loader.css"
 import etag from "../server/etag.server"
 import { getUserFromSession, signIn } from "../server/session.server"
@@ -36,6 +37,7 @@ export const links: LinksFunction = () => {
     { rel: "stylesheet", href: BaseStyles },
     { rel: "stylesheet", href: LayoutStyles },
     { rel: "stylesheet", href: LoaderStyles },
+    { rel: "stylesheet", href: ScrollAreaStyles },
   ]
 }
 

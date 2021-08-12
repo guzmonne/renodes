@@ -180,9 +180,33 @@ main > .Tasks {
     overflow: auto;
   }
 
+  /** Interpreter Code **/
+  .Interpreter__Code {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .Interpreter__Code--pre {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  .Interpreter__Code--language {
+    width: 14ch;
+    border: none;
+    font-family: 'Roboto Mono', monospace;
+    background: #f5f2f0;
+    padding: 2px 1ch 5px 1ch;
+    outline: none;
+    border-bottom-left-radius: 8px;
+    text-align: center;
+  }
+
 /** ScrollArea **/
-.ScrollArea__Root,
-.ScrollArea__Viewport {
+body > .ScrollArea__Root,
+body > .ScrollArea__Root > .ScrollArea__Viewport {
   height: 100vh;
   width: 100%;
 }

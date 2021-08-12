@@ -1,22 +1,27 @@
+.ScrollArea__Root {
+  width: 100%;
+}
+
 .ScrollArea__Scrollbar {
   display: flex;
-  padding: 0.1rem;
   user-select: none;
   touch-action: none;
   transition: background 160ms ease-out;
 }
 
 .ScrollArea__Scrollbar:hover {
-  background-color: whitesmoke;
+  background-color: transparent;
 }
 
 .ScrollArea__Scrollbar[data-orientation="vertical"] {
-  width: 0.5rem;
+  padding: 3px 2px 3px 10px;
+  width: 1rem;
 }
 
 .ScrollArea__Scrollbar[data-orientation="horizontal"] {
   flex-direction: column;
-  height: 0.25rem;
+  padding: 6px 3px 6px 3px;
+  height: 1rem;
 }
 
 .ScrollArea__Thumb {

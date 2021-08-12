@@ -13,6 +13,7 @@ import { useDebounce } from "../../hooks/useDebounce"
 import { NodesProvider, useNodesContext } from "../../hooks/useNodesContext"
 import { useNode } from "../../hooks/useNode"
 import { useInterpreter } from "../../hooks/useInterpreter"
+import { ScrollArea } from "../../components/ScrollArea"
 import type { Task } from "../../models/task"
 
 declare global {
@@ -191,9 +192,14 @@ Tasks.CodeInterpreter = function ({ task, index }: TaskProps) {
   if (hasMounted && window.Prism) window.Prism.highlightAll()
 
   return (
-    <pre className={cn("Interpreter Interpreter__Markdown", hoverClasses)}>
-      <code className="language-js" children={content} />
-    </pre>
+    <div className={cn("Interpreter Interpreter__Code", hoverClasses)}>
+      <ScrollArea orientation="horizontal">
+        <pre className="Interpreter__Code--pre">
+          <code className="language-txt" children={content} />
+        </pre>
+      </ScrollArea>
+      <input type="text" defaultValue="" className="Interpreter__Code--language" />
+    </div>
   )
 }
 /**
