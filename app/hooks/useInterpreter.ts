@@ -16,10 +16,11 @@ export function useInterpreter(node: Task, index: number) {
   } = useNodesContext()
   const handleContentChange = useCallback((e: ChangeEvent<HTMLTextAreaElement>) => setContent(e.currentTarget.value), [setContent])
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (!e.shiftKey) return
+    if (!e.shiftKey && !e.ctrlKey) return
     switch (e.key) {
       case "Enter": { e.preventDefault(); handleAdd(node); break }
       case "Delete": { e.preventDefault(); handleDelete(node); break }
+      case "s": { e.preventDefault(); handleEdit(node.set({ meta: { isInEditMode: !node.meta.isInEditMode } }), false) }
     }
   }, [handleAdd, handleDelete, node])
   const [hoverClasses, setHoverClasses] = useState("")

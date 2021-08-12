@@ -228,7 +228,7 @@ Tasks.Dropdown = function ({ task, index }: TaskProps) {
         <DropdownMenu.Item className="DropdownMenu__Item" onSelect={handleToggleEditMode}>
           <div className="DropdownMenu__LeftSlot">{task.meta.isInEditMode && <FontAwesomeIcon icon={faCheck} />}</div>
           <div className="DropdownMenu__CenterSlot">Edit</div>
-          <div className="DropdownMenu__RightSlot">⇧+Ins</div>
+          <div className="DropdownMenu__RightSlot">⌃+s</div>
         </DropdownMenu.Item>
         <DropdownMenu.Root>
           <DropdownMenu.TriggerItem className="DropdownMenu__Item">
