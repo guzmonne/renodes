@@ -1,7 +1,7 @@
 import { useCallback, Fragment, forwardRef, createElement } from "react"
 import TextareaAutosize from "react-textarea-autosize";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faChevronDown, faChevronRight, faDotCircle, faEllipsisV, faExternalLinkAlt, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons"
+import { faCheck, faChevronDown, faChevronRight, faDotCircle, faEllipsisV, faExternalLinkAlt, faPencilAlt, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons"
 import cn from "classnames"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import ReactMarkdown from "react-markdown"
@@ -130,20 +130,20 @@ Tasks.TaskControl = forwardRef<HTMLDivElement, TaskControlProps>(({ onClick, ico
  * interpreter component.
  */
 Tasks.Interpreter = function ({ task, ...props }: TaskProps) {
+  if (task.meta.isInEditMode) return <Tasks.EditInterpreter task={task} {...props} />
   switch (task.interpreter) {
     case "markdown":
       return <Tasks.MarkdownInterpreter task={task} {...props} />
     case "code":
       return <Tasks.CodeInterpreter task={task} {...props} />
-    case "text":
     default:
-      return <Tasks.TextInterpreter task={task} {...props} />
+      return <Tasks.EditInterpreter task={task} {...props} />
   }
 }
 /**
- * TextInterpreter is the component used to display nodes as text.
+ * EditInterpreter is the component used to display nodes as text.
  */
-Tasks.TextInterpreter = function ({ task, index }: TaskProps) {
+Tasks.EditInterpreter = function ({ task, index }: TaskProps) {
   const {
     content,
     hoverClasses,
@@ -212,6 +212,10 @@ Tasks.Dropdown = function ({ task, index }: TaskProps) {
     handleEdit(task.set({ interpreter }))
   }, [task, handleEdit])
 
+  const handleToggleEditMode = useCallback(() => {
+    handleEdit(task.set({ meta: { isInEditMode: !task.meta.isInEditMode } }), false)
+  }, [task])
+
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger as={Tasks.TaskControl} icon={faEllipsisV} />
@@ -220,6 +224,11 @@ Tasks.Dropdown = function ({ task, index }: TaskProps) {
           <div className="DropdownMenu__LeftSlot"><FontAwesomeIcon icon={faExternalLinkAlt} /></div>
           <div className="DropdownMenu__CenterSlot">Open in new page</div>
           <div className="DropdownMenu__RightSlot"></div>
+        </DropdownMenu.Item>
+        <DropdownMenu.Item className="DropdownMenu__Item" onSelect={handleToggleEditMode}>
+          <div className="DropdownMenu__LeftSlot">{task.meta.isInEditMode && <FontAwesomeIcon icon={faCheck} />}</div>
+          <div className="DropdownMenu__CenterSlot">Edit</div>
+          <div className="DropdownMenu__RightSlot">⇧+Ins</div>
         </DropdownMenu.Item>
         <DropdownMenu.Root>
           <DropdownMenu.TriggerItem className="DropdownMenu__Item">
@@ -230,13 +239,6 @@ Tasks.Dropdown = function ({ task, index }: TaskProps) {
           <DropdownMenu.Content className="DropdownMenu__Content" sideOffset={2} alignOffset={-5}>
             <DropdownMenu.Label className="DropdownMenu__Label">Interpreter</DropdownMenu.Label>
             <DropdownMenu.RadioGroup className="DropdownMenu__RadioGroup" value={task.interpreter || "text"} onValueChange={handleSetInterpeter}>
-              <DropdownMenu.RadioItem className="DropdownMenu__Item" value="text">
-                <DropdownMenu.DropdownMenuItemIndicator className="DropdownMenu__LeftSlot">
-                  <FontAwesomeIcon icon={faDotCircle} />
-                </DropdownMenu.DropdownMenuItemIndicator>
-                <div className="DropdownMenu__CenterSlot">Text</div>
-                <div className="DropdownMenu__RightSlot"></div>
-              </DropdownMenu.RadioItem>
               <DropdownMenu.RadioItem className="DropdownMenu__Item" value="markdown">
                 <DropdownMenu.DropdownMenuItemIndicator className="DropdownMenu__LeftSlot">
                   <FontAwesomeIcon icon={faDotCircle} />

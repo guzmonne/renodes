@@ -79,7 +79,7 @@ main > .Tasks {
 }
 
 .Tasks > .Tasks {
-  padding-left: 1rem;
+  padding-left: 0.5rem;
 }
 
 /** Task **/

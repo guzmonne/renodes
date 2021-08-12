@@ -10,7 +10,7 @@ export interface NodesContextValue {
   query: { isLoading: boolean };
   handleAddEmpty: () => void;
   handleAdd: (task: Task) => void;
-  handleEdit: (task: Task) => void;
+  handleEdit: (task: Task, fetch?: boolean) => void;
   handleDelete: (task: Task) => void;
   handleMeta: (task: Task) => void;
   handleDrag: (newDragIndex: number, newHoverIndex: number) => void;

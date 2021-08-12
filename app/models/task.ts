@@ -9,6 +9,10 @@ export interface TaskMeta {
    * isOpened is a flag used to track if the sub-tasks are opened.
    */
   isOpened?: boolean;
+  /**
+   * isInEditMode is a flag used to track if the task is in edit mode.
+   */
+  isInEditMode?: boolean;
 }
 /**
  * TaskBody is a plain JavaScript object representation of a Task.

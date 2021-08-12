@@ -209,7 +209,12 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
    * handleEdit handles `Task` updated.
    * @param task - Task to be updated.
    */
-  const handleEdit = useCallback((task: Task) => {
+  const handleEdit = useCallback((task: Task, fetch: boolean = true) => {
+    if (!fetch) {
+      const previousTasks: Task[] = queryClient.getQueryData(branch)
+      const index = previousTasks.findIndex((t: Task) => t.id === task.id)
+      queryClient.setQueryData(branch, (tasks: Task[]): Task[] => [...tasks.slice(0, index), task, ...tasks.slice(index + 1)])
+    }
     updateTaskMutation.mutate(task)
   }, [updateTaskMutation])
   /**
