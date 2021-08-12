@@ -27,8 +27,6 @@ export function Tasks() {
     query: { isLoading },
   } = useNodesContext()
 
-  console.log(tasks)
-
   if (isLoading) return <div className="Tasks"><Loader /></div>
 
   return (

@@ -93,13 +93,14 @@ main > .Tasks {
 }
 
 .Task .Task__Controls {
+  align-self: stretch;
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-around;
-  height: 2rem;
   min-width: 2.5rem;
   flex: 0 1 2.5rem;
+  padding: 0.5rem 0;
 }
 
 .Task .Task__Control {
@@ -108,10 +109,6 @@ main > .Tasks {
   color: var(--handle);
   min-width: 1rem;
   max-width: 1rem;
-}
-
-.Task .Task__Control + .Task__Control {
-  margin-right: 1px solid var(--handle);
 }
 
 .Task .Task__Control--transparent {
