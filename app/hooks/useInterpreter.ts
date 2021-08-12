@@ -20,7 +20,13 @@ export function useInterpreter(node: Task, index: number) {
     switch (e.key) {
       case "Enter": { e.preventDefault(); handleAdd(node); break }
       case "Delete": { e.preventDefault(); handleDelete(node); break }
-      case "s": { e.preventDefault(); handleEdit(node.set({ meta: { isInEditMode: !node.meta.isInEditMode } }), false) }
+      case "s": {
+        e.preventDefault()
+        handleEdit(node.set({
+          interpreter: node.interpreter || "markdown",
+          meta: { isInEditMode: false }
+        }), false)
+      }
     }
   }, [handleAdd, handleDelete, node])
   const [hoverClasses, setHoverClasses] = useState("")

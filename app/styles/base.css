@@ -44,6 +44,7 @@ textarea,
 pre,
 code {
   font-family: 'Roboto Mono', monospace;
+  font-size: 1rem;
 }
 
 pre[class*="language-"] {
@@ -102,9 +103,15 @@ main > .Tasks {
 }
 
 .Task .Task__Control {
+  display: flex;
+  justify-content: center;
   color: var(--handle);
   min-width: 1rem;
   max-width: 1rem;
+}
+
+.Task .Task__Control + .Task__Control {
+  margin-right: 1px solid var(--handle);
 }
 
 .Task .Task__Control--transparent {
@@ -157,6 +164,15 @@ main > .Tasks {
   .Interpreter__Markdown {
     background-color: rgb(254, 254, 254);
     text-align: justify;
+    min-height: 37px;
+  }
+
+  .Interpreter__Markdown h1,
+  .Interpreter__Markdown h2,
+  .Interpreter__Markdown h3,
+  .Interpreter__Markdown h4,
+  .Interpreter__Markdown h5 {
+    text-align: left;
   }
 
   .Interpreter__Markdown > * + * {

@@ -16,7 +16,7 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
       .then((response) => response.json())
       .then(({ data }) => Task.collection(data))
   ), {
-    initialData: Task.collection(initialData),
+    initialData: initialData ? Task.collection(initialData) : undefined,
   })
   /**
    * createTaskMutation handles the creation of a new `Task` using
@@ -37,6 +37,7 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
   }, {
     onMutate: async ({ task, afterTask }: { task: Task, afterTask?: Task }): Promise<{ previousTasks: Task[] }> => {
       await queryClient.cancelQueries(branch)
+      task = task.set({ meta: { isInEditMode: true } })
       const previousTasks: Task[] = queryClient.getQueryData(branch)
       queryClient.setQueryData(branch, (tasks: Task[]): Task[] => {
         if (afterTask === undefined) return [...tasks, task]

@@ -24,10 +24,12 @@ declare global {
 export function Tasks() {
   const {
     tasks,
-    query,
+    query: { isLoading },
   } = useNodesContext()
 
-  if (query.isLoading) return <div className="Tasks"><Loader /></div>
+  console.log(tasks)
+
+  if (isLoading) return <div className="Tasks"><Loader /></div>
 
   return (
     <div className="Tasks">
@@ -132,12 +134,10 @@ Tasks.TaskControl = forwardRef<HTMLDivElement, TaskControlProps>(({ onClick, ico
 Tasks.Interpreter = function ({ task, ...props }: TaskProps) {
   if (task.meta.isInEditMode) return <Tasks.EditInterpreter task={task} {...props} />
   switch (task.interpreter) {
-    case "markdown":
-      return <Tasks.MarkdownInterpreter task={task} {...props} />
     case "code":
       return <Tasks.CodeInterpreter task={task} {...props} />
     default:
-      return <Tasks.EditInterpreter task={task} {...props} />
+      return <Tasks.MarkdownInterpreter task={task} {...props} />
   }
 }
 /**
@@ -164,6 +164,7 @@ Tasks.EditInterpreter = function ({ task, index }: TaskProps) {
       value={content}
       onChange={handleContentChange}
       onKeyDown={handleKeyDown}
+      autoFocus={true}
     />
   )
 }

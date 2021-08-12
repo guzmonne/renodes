@@ -50,7 +50,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         if (err.name === "TokenExpiredError" && Date.now() - (new Date(err.expiredAt)).getTime() <= 1000 * 60 * 60 * 24 * 30) {
           return signIn(request, `/${params.branch}`)
         }
-        if (err.name !== "ModelNotFoundError") {
+        if (err.name !== "ModelNotFoundError" && err.name !== "UndefinedTokenError") {
           throw err
         }
       }
@@ -64,7 +64,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
       }
     })
   } catch (err) {
-    if (err.name !== "UndefinedTokenError") console.error(err)
+    console.error(err)
     return json({ data: [], error: err.message })
   }
 }

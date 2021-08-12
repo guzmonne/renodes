@@ -7,7 +7,7 @@ import type { TaskBody } from "../models/task"
 
 export interface NodesContextValue {
   tasks: Task[];
-  query: { isLoading: boolean };
+  query: { isLoading: boolean, isFetching: boolean, status: string };
   handleAddEmpty: () => void;
   handleAdd: (task: Task) => void;
   handleEdit: (task: Task, fetch?: boolean) => void;
