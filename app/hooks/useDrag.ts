@@ -1,8 +1,9 @@
-import { useRef, useCallback } from "react"
-import { useDrag, useDrop } from "react-dnd"
+import { useRef, useState, useEffect } from "react"
+import { useDrag as useReactDndDrag, useDrop } from "react-dnd"
+import cn from "classnames"
 
 import { useNodesContext } from "./useNodesContext"
-import { Task } from "../models/task";
+import type { Task } from "../models/task"
 
 /**
  * TaskDrag represents a Task being dragged.
@@ -26,20 +27,10 @@ export interface TaskDrag {
   type: string
 }
 
-export function useNode(node: Task, index: number) {
+export function useDrag(node: Task, index: number) {
   const ref = useRef<any>(null)
-  const {
-    handleAdd,
-    handleDelete,
-    handleMeta,
-    handleDrag,
-    handleDragEnd,
-    handleEdit,
-  } = useNodesContext()
-  const handleSelectAdd = useCallback(() => handleAdd(node), [handleAdd, node])
-  const handleSelectDelete = useCallback(() => handleDelete(node), [handleDelete, node])
-  const handleSelectExternalLink = useCallback(() => window.open(window.location.origin + "/" + node.id), [node])
-  const handleToggleSubTasks = useCallback(() => handleMeta(node.set({ meta: { isOpened: !node.meta.isOpened } })), [node])
+  const { hoverIndex, dragIndex, handleDrag, handleDragEnd } = useNodesContext()
+  const [hoverClasses, setHoverClasses] = useState("")
 
   const [{ handlerId }, drop] = useDrop({
     accept: node.branch || "TASK",
@@ -53,7 +44,7 @@ export function useNode(node: Task, index: number) {
     }
   })
 
-  const [_, drag, preview] = useDrag({
+  const [_, drag, preview] = useReactDndDrag({
     type: node.branch || "TASK",
     item: () => ({ id: node.id, dragIndex: index, type: node.branch || "TASK" }),
     collect: (monitor: any) => ({ isDragging: monitor.isDragging() }),
@@ -62,16 +53,17 @@ export function useNode(node: Task, index: number) {
 
   drop(preview(ref))
 
+  useEffect(() => setHoverClasses(cn({
+    hoverTop: hoverIndex === index && dragIndex > index,
+    hoverBottom: hoverIndex === index && dragIndex < index
+  })), [index, hoverIndex, dragIndex])
+
   return {
     drag,
     drop,
-    handleEdit,
     handlerId,
-    handleSelectAdd,
-    handleSelectDelete,
-    handleSelectExternalLink,
-    handleToggleSubTasks,
     preview,
     ref,
+    hoverClasses,
   }
 }

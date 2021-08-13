@@ -1,20 +1,22 @@
-import { useCallback, Fragment, forwardRef, createElement } from "react"
+import { useCallback, Fragment, forwardRef, useState, useRef, useEffect } from "react"
 import TextareaAutosize from "react-textarea-autosize";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faCheck, faChevronDown, faChevronRight, faDotCircle, faEllipsisV, faExternalLinkAlt, faPencilAlt, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons"
+import { faPencilAlt, faChevronDown, faChevronRight, faDotCircle, faEllipsisV, faExternalLinkAlt, faPlus, faSave, faTrash } from "@fortawesome/free-solid-svg-icons"
 import cn from "classnames"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import ReactMarkdown from "react-markdown"
 import type { IconDefinition } from "@fortawesome/free-solid-svg-icons"
+import type { FormEvent, KeyboardEventHandler } from "react"
 
 import { Loader } from "../Utils/Loader"
 import { useHasMounted } from "../../hooks/useHasMounted"
 import { useDebounce } from "../../hooks/useDebounce"
 import { NodesProvider, useNodesContext } from "../../hooks/useNodesContext"
-import { useNode } from "../../hooks/useNode"
-import { useInterpreter } from "../../hooks/useInterpreter"
+import { useDrag } from "../../hooks/useDrag"
+import { useParsedContent } from "../../hooks/useParsedContent";
 import { ScrollArea } from "../../components/ScrollArea"
 import type { Task } from "../../models/task"
+import type { ParsedContent } from "../../hooks/useParsedContent"
 
 declare global {
   interface Window { Prism?: { highlightAll: () => void }; }
@@ -60,12 +62,12 @@ export interface TaskProps {
  * Tasks.Task is the main `Task` component.
  */
 Tasks.Task = ({ task, index }: TaskProps) => {
-  const {
-    ref,
-    handleToggleSubTasks,
-    handlerId,
-    drag,
-  } = useNode(task, index)
+  const { handleMeta } = useNodesContext()
+  const { ref, handlerId, drag } = useDrag(task, index)
+  /**
+   * handleToggleSubTasks toggles the value of the flag `isOpened` on the task metadata.
+   */
+  const handleToggleSubTasks = useCallback(() => handleMeta(task.set({ meta: { isOpened: !task.meta.isOpened } })), [task])
 
   return (
     <Fragment>
@@ -90,12 +92,11 @@ Tasks.Task = ({ task, index }: TaskProps) => {
  */
 Tasks.Empty = () => {
   const { handleAddEmpty } = useNodesContext()
-  const handleAdd = useCallback(() => handleAddEmpty(), [handleAddEmpty])
 
   return (
     <div className="Task">
       <div className="Task__Controls">
-        <div className="Task__Control" onClick={handleAdd}>
+        <div className="Task__Control" onClick={handleAddEmpty}>
           <i className="fa fa-plus" aria-hidden="true" />
         </div>
       </div>
@@ -103,7 +104,7 @@ Tasks.Empty = () => {
         className="Interpreter Interpreter__Text"
         name="content"
         defaultValue=""
-        onFocusCapture={handleAdd}
+        onFocusCapture={handleAddEmpty}
       />
     </div>
   )
@@ -127,7 +128,7 @@ Tasks.TaskControl = forwardRef<HTMLDivElement, TaskControlProps>(({ onClick, ico
   )
 })
 /**
- * Interpreter is the component used to show the appropiate node
+ * Interpreter is the component used to show the appropiate task
  * interpreter component.
  */
 Tasks.Interpreter = function ({ task, ...props }: TaskProps) {
@@ -140,26 +141,55 @@ Tasks.Interpreter = function ({ task, ...props }: TaskProps) {
   }
 }
 /**
- * EditInterpreter is the component used to display nodes as text.
+ * EditInterpreter is the component used to display tasks as text.
  */
 Tasks.EditInterpreter = function ({ task, index }: TaskProps) {
-  const {
-    content,
-    hoverClasses,
-    handleContentChange,
-    handleKeyDown,
-    handleEdit,
-  } = useInterpreter(task, index)
+  const { handleEdit, handleAdd, handleDelete } = useNodesContext()
+  const { hoverClasses } = useDrag(task, index)
+  const parsed = useParsedContent<ParsedContent>(task.content, { content: "" })
+  const [content, setContent] = useState<string>(parsed.content)
+  const handleContentChange = useCallback((e: FormEvent<HTMLTextAreaElement>) => setContent(e.currentTarget.value), [setContent])
+  /**
+   * handleEditParsedContent applies the changes made to the content variable
+   * taking into account the possibility of the content being serialized as JSON.
+   */
+  const handleEditParsedContent = useCallback(() => {
+    if (parsed.content === content) return
+    handleEdit(task.set({
+      content: parsed.meta !== undefined
+        ? JSON.stringify({ ...parsed, content })
+        : content
+    }))
+  }, [handleEdit, parsed, content, task])
+  /**
+   * handleKeyDown holds the logic to manage the differnt key bindings supported.
+   * @param e - React KeyboardEvent object for an HTMLTextAreaElement.
+   */
+  const handleKeyDown = useCallback<KeyboardEventHandler<HTMLTextAreaElement>>((e) => {
+    if (!e.shiftKey && !e.ctrlKey) return
+    switch (e.key) {
+      case "Enter": { e.preventDefault(); handleAdd(task); break }
+      case "Delete": { e.preventDefault(); handleDelete(task); break }
+      case "s": {
+        handleEdit(task.set({
+          content: parsed.meta !== undefined
+            ? JSON.stringify({ ...parsed, content })
+            : content,
+          interpreter: task.interpreter || "markdown",
+          meta: { isInEditMode: false }
+        }))
+      }
+    }
+  }, [handleAdd, handleDelete, task])
 
-  useDebounce(() => {
-    if (content === task.content) return
-    const updatedTask = task.set({ content })
-    handleEdit(updatedTask)
-  }, 1000, [content])
+  useDebounce(handleEditParsedContent, 1000, [handleEdit, parsed, content, task])
+
+  useEffect(() => handleEditParsedContent, [])
 
   return (
-    <TextareaAutosize name="content"
-      className={cn("Interpreter Interpreter__Text", hoverClasses)}
+    <TextareaAutosize
+      name="content"
+      className={cn("Interpreter Interpreter__Edit", hoverClasses)}
       value={content}
       onChange={handleContentChange}
       onKeyDown={handleKeyDown}
@@ -168,57 +198,106 @@ Tasks.EditInterpreter = function ({ task, index }: TaskProps) {
   )
 }
 /**
- * MarkdownInterpreter is the component used to display nodes as markdown.
+ * MarkdownInterpreter is the component used to display tasks as markdown.
  */
 Tasks.MarkdownInterpreter = function ({ task, index }: TaskProps) {
-  const { content, hoverClasses } = useInterpreter(task, index)
+  const { hoverClasses } = useDrag(task, index)
+  const parsed = useParsedContent(task.content, { content: "", meta: { language: "js" } })
   const hasMounted = useHasMounted()
 
   if (hasMounted && window.Prism) window.Prism.highlightAll()
 
   return (
     <div className={cn("Interpreter Interpreter__Markdown", hoverClasses)}>
-      <ReactMarkdown children={content} />
+      <ReactMarkdown children={parsed.content} />
     </div>
   )
 }
+export interface CodeParsedContentMeta {
+  content: string;
+  meta: {
+    language: string;
+  }
+}
 /**
- * CodeInterpreter is the component used to display nodes as code.
+ * CodeInterpreter is the component used to display tasks as code.
  */
 Tasks.CodeInterpreter = function ({ task, index }: TaskProps) {
-  const { content, hoverClasses } = useInterpreter(task, index)
+  const { handleEdit } = useNodesContext()
+  const { hoverClasses } = useDrag(task, index)
+  const parsed = useParsedContent<CodeParsedContentMeta>(task.content, { content: "", meta: { language: "js" } })
+  const [language, setLanguage] = useState<string>(parsed.meta.language)
+  /**
+   * handleLanguageChange updates the value stored on the language state variable.
+   * @param e - React FormEvent for an HTMLInptuElement.
+   */
+  const handleLanguageChange = useCallback((e: FormEvent<HTMLInputElement>) => {
+    setLanguage(e.currentTarget.value)
+  }, [setLanguage])
+
+  useDebounce(() => {
+    if (parsed.meta.language === language) return
+    handleEdit(task.set({
+      content: JSON.stringify({
+        ...parsed,
+        meta: { language }
+      })
+    }))
+  }, 1000, [language, handleEdit])
+
+  return (
+    <div className={cn("Interpreter Interpreter__Code", hoverClasses)}>
+      <Code language={language} content={parsed.content} />
+      <input type="text" value={language} onChange={handleLanguageChange} className="Interpreter__Code--language" />
+    </div>
+  )
+}
+
+function Code({ language = "js", content = "" }: { language?: string, content?: string }) {
   const hasMounted = useHasMounted()
 
   if (hasMounted && window.Prism) window.Prism.highlightAll()
 
   return (
-    <div className={cn("Interpreter Interpreter__Code", hoverClasses)}>
-      <ScrollArea orientation="horizontal">
-        <pre className="Interpreter__Code--pre">
-          <code className="language-txt" children={content} />
-        </pre>
-      </ScrollArea>
-      <input type="text" defaultValue="" className="Interpreter__Code--language" />
-    </div>
+    <ScrollArea orientation="horizontal">
+      <pre className="Interpreter__Code--pre">
+        <code className={`language-${language}`} children={content} />
+      </pre>
+    </ScrollArea>
   )
 }
+
 /**
  * Dropdown is the component used to render the Node dropdown menu
  */
-Tasks.Dropdown = function ({ task, index }: TaskProps) {
-  const {
-    handleEdit,
-    handleSelectAdd,
-    handleSelectDelete,
-    handleSelectExternalLink,
-  } = useNode(task, index)
-
-  const handleSetInterpeter = useCallback((interpreter: string) => {
-    handleEdit(task.set({ interpreter }))
+Tasks.Dropdown = function ({ task }: TaskProps) {
+  const { handleEdit, handleAdd, handleDelete } = useNodesContext()
+  /**
+   * handleSelectExternalLink is the callback called when a select external link event is produced.
+   */
+  const handleSelectExternalLink = useCallback(() => window.open(window.location.origin + "/" + task.id), [task])
+  /**
+   * handleSelectDelete is the callback called when a select delete event is produced.
+   */
+  const handleSelectDelete = useCallback(() => handleDelete(task), [handleDelete, task])
+  /**
+   * handleSelectAdd is the callback called when a select add event is produced.
+   */
+  const handleSelectAdd = useCallback(() => handleAdd(task), [handleAdd, task])
+  /**
+   * handleInterpreter updates the value of the task's interpreter.
+   * @param interpreter - New interpreter value.
+   */
+  const handleInterpreter = useCallback((interpreter: string) => {
+    const params: any = { interpreter, meta: { isInEditMode: false } }
+    handleEdit(task.set(params))
   }, [task, handleEdit])
-
+  /**
+   * handleToggleEditMode toggles the flag isInEditMode from the tasks metadata.
+   */
   const handleToggleEditMode = useCallback(() => {
-    handleEdit(task.set({ meta: { isInEditMode: !task.meta.isInEditMode } }), false)
+    const params: any = { meta: { isInEditMode: !task.meta.isInEditMode } }
+    handleEdit(task.set(params), false)
   }, [task])
 
   return (
@@ -231,9 +310,9 @@ Tasks.Dropdown = function ({ task, index }: TaskProps) {
           <div className="DropdownMenu__RightSlot"></div>
         </DropdownMenu.Item>
         <DropdownMenu.Item className="DropdownMenu__Item" onSelect={handleToggleEditMode}>
-          <div className="DropdownMenu__LeftSlot">{task.meta.isInEditMode && <FontAwesomeIcon icon={faCheck} />}</div>
-          <div className="DropdownMenu__CenterSlot">Edit</div>
-          <div className="DropdownMenu__RightSlot">⌃+s</div>
+          <div className="DropdownMenu__LeftSlot">{<FontAwesomeIcon icon={task.meta.isInEditMode ? faSave : faPencilAlt} />}</div>
+          <div className="DropdownMenu__CenterSlot">{task.meta.isInEditMode ? "Save" : "Edit"}</div>
+          <div className="DropdownMenu__RightSlot">{task.meta.isInEditMode && "⌃+s"}</div>
         </DropdownMenu.Item>
         <DropdownMenu.Root>
           <DropdownMenu.TriggerItem className="DropdownMenu__Item">
@@ -243,7 +322,7 @@ Tasks.Dropdown = function ({ task, index }: TaskProps) {
           </DropdownMenu.TriggerItem>
           <DropdownMenu.Content className="DropdownMenu__Content" sideOffset={2} alignOffset={-5}>
             <DropdownMenu.Label className="DropdownMenu__Label">Interpreter</DropdownMenu.Label>
-            <DropdownMenu.RadioGroup className="DropdownMenu__RadioGroup" value={task.interpreter || "text"} onValueChange={handleSetInterpeter}>
+            <DropdownMenu.RadioGroup className="DropdownMenu__RadioGroup" value={task.interpreter || "markdown"} onValueChange={handleInterpreter}>
               <DropdownMenu.RadioItem className="DropdownMenu__Item" value="markdown">
                 <DropdownMenu.DropdownMenuItemIndicator className="DropdownMenu__LeftSlot">
                   <FontAwesomeIcon icon={faDotCircle} />

@@ -14,13 +14,13 @@
 }
 
 .ScrollArea__Scrollbar[data-orientation="vertical"] {
-  padding: 3px 2px 3px 10px;
-  width: 1rem;
+  padding: 4.5rem 0.2rem 10.5rem 0.2rem;
+  width: 0.5rem;
 }
 
 .ScrollArea__Scrollbar[data-orientation="horizontal"] {
   flex-direction: column;
-  padding: 6px 3px 6px 3px;
+  padding: 7px 3px 5px 3px;
   height: 1rem;
 }
 

@@ -44,7 +44,7 @@ textarea,
 pre,
 code {
   font-family: 'Roboto Mono', monospace;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 pre[class*="language-"] {
@@ -125,7 +125,6 @@ main > .Tasks {
 }
 
 /** Interpreter **/
-
 .Interpreter {
   min-width: 0;
   flex: 1 1 auto;
@@ -144,12 +143,13 @@ main > .Tasks {
   border-bottom: 2px solid var(--highlight);
 }
 
-  /** Interpreter Text **/
-  .Interpreter__Text {
+  /** Interpreter Edit **/
+  .Interpreter__Edit {
     border-left: 2px solid var(--highlight);
     border-radius: 0;
     color: var(--text-body);
-    font-size: var(--font-size);
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.9rem;
     font-style: normal;
     font-weight: normal;
     outline: none;
@@ -188,17 +188,23 @@ main > .Tasks {
     align-items: flex-end;
   }
 
-  .Interpreter__Code--pre {
+  pre[class*="language-"].Interpreter__Code--pre {
     width: 100%;
     min-width: 100%;
+    min-height: 3.5rem;
+    background-color: #f5f2f0;
+    padding: 0.5rem;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.9rem;
   }
 
   .Interpreter__Code--language {
     width: 14ch;
     border: none;
     font-family: 'Roboto Mono', monospace;
+    font-size: 0.8rem;
     background: #f5f2f0;
-    padding: 2px 1ch 5px 1ch;
+    padding: 0 1ch 5px 1ch;
     outline: none;
     border-bottom-left-radius: 8px;
     text-align: center;
