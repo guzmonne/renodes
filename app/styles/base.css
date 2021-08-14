@@ -185,7 +185,7 @@ main > .Tasks {
     padding: 0;
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: center;
   }
 
   pre[class*="language-"].Interpreter__Code--pre {
@@ -198,16 +198,32 @@ main > .Tasks {
     font-size: 0.9rem;
   }
 
+  .Interpreter__Code--inputs {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+  }
+
+  .Interpreter__Code--filename,
   .Interpreter__Code--language {
     width: 14ch;
     border: none;
     font-family: 'Roboto Mono', monospace;
     font-size: 0.8rem;
     background: #f5f2f0;
-    padding: 0 1ch 5px 1ch;
+    padding: 0.1rem 1ch 5px 1ch;
     outline: none;
     border-bottom-left-radius: 8px;
     text-align: center;
+  }
+
+  .Interpreter__Code--filename {
+    background-color: white;
+    width: 100%;
+    align-self: flex-start;
+    border-radius: 0;
+    color: var(--handle);
+    text-align: left;
   }
 
 /** ScrollArea **/
