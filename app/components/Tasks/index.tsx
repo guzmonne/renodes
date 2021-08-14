@@ -1,16 +1,16 @@
-import { useCallback, Fragment, forwardRef, useState, useRef, useEffect } from "react"
+import { useCallback, Fragment, forwardRef, useState } from "react"
 import TextareaAutosize from "react-textarea-autosize";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPencilAlt, faChevronDown, faChevronRight, faDotCircle, faEllipsisV, faExternalLinkAlt, faPlus, faSave, faTrash } from "@fortawesome/free-solid-svg-icons"
 import cn from "classnames"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import ReactMarkdown from "react-markdown"
+import { useDebounceCallback } from "@react-hook/debounce"
 import type { IconDefinition } from "@fortawesome/free-solid-svg-icons"
 import type { FormEvent, KeyboardEventHandler } from "react"
 
 import { Loader } from "../Utils/Loader"
 import { useHasMounted } from "../../hooks/useHasMounted"
-import { useDebounce } from "../../hooks/useDebounce"
 import { NodesProvider, useNodesContext } from "../../hooks/useNodesContext"
 import { useDrag } from "../../hooks/useDrag"
 import { useParsedContent } from "../../hooks/useParsedContent";
@@ -148,19 +148,28 @@ Tasks.EditInterpreter = function ({ task, index }: TaskProps) {
   const { hoverClasses } = useDrag(task, index)
   const parsed = useParsedContent<ParsedContent>(task.content, { content: "" })
   const [content, setContent] = useState<string>(parsed.content)
-  const handleContentChange = useCallback((e: FormEvent<HTMLTextAreaElement>) => setContent(e.currentTarget.value), [setContent])
   /**
-   * handleEditParsedContent applies the changes made to the content variable
-   * taking into account the possibility of the content being serialized as JSON.
+   * handleParsedContentChange handles changes to the parsed.content object.
    */
-  const handleEditParsedContent = useCallback(() => {
-    if (parsed.content === content) return
+  const handleParsedContentChange = useCallback(() => {
     handleEdit(task.set({
       content: parsed.meta !== undefined
         ? JSON.stringify({ ...parsed, content })
         : content
     }))
-  }, [handleEdit, parsed, content, task])
+  }, [handleEdit, task, content, parsed])
+  /**
+   * debouncedParsedContentChange is a debounced version of handleParsedContentChange
+   */
+  const debouncedParsedContentChange = useDebounceCallback(handleParsedContentChange, 1000)
+  /**
+   * handleContentChange is the event handler for changes on the contact element.
+   * @param e - React FormEvent for a textarea element.
+   */
+  const handleContentChange = useCallback((e: FormEvent<HTMLTextAreaElement>) => {
+    setContent(e.currentTarget.value)
+    if (e.currentTarget.value !== parsed.content) debouncedParsedContentChange()
+  }, [setContent])
   /**
    * handleKeyDown holds the logic to manage the differnt key bindings supported.
    * @param e - React KeyboardEvent object for an HTMLTextAreaElement.
@@ -175,16 +184,11 @@ Tasks.EditInterpreter = function ({ task, index }: TaskProps) {
           content: parsed.meta !== undefined
             ? JSON.stringify({ ...parsed, content })
             : content,
-          interpreter: task.interpreter || "markdown",
           meta: { isInEditMode: false }
-        }))
+        }), parsed.content !== content)
       }
     }
-  }, [handleAdd, handleDelete, task])
-
-  useDebounce(handleEditParsedContent, 1000, [handleEdit, parsed, content, task])
-
-  useEffect(() => handleEditParsedContent, [])
+  }, [handleAdd, handleDelete, task, content])
 
   return (
     <TextareaAutosize
@@ -217,6 +221,7 @@ export interface CodeParsedContentMeta {
   content: string;
   meta: {
     language: string;
+    filename?: string;
   }
 }
 /**
@@ -225,30 +230,41 @@ export interface CodeParsedContentMeta {
 Tasks.CodeInterpreter = function ({ task, index }: TaskProps) {
   const { handleEdit } = useNodesContext()
   const { hoverClasses } = useDrag(task, index)
-  const parsed = useParsedContent<CodeParsedContentMeta>(task.content, { content: "", meta: { language: "js" } })
+  const parsed = useParsedContent<CodeParsedContentMeta>(task.content, { content: "", meta: { language: "js", filename: "" } })
   const [language, setLanguage] = useState<string>(parsed.meta.language)
+  const [filename, setFilename] = useState<string>(parsed.meta.filename)
+  const debouncedHandleEdit = useDebounceCallback(() => {
+    handleEdit(task.set({
+      content: JSON.stringify({
+        ...parsed,
+        meta: { language, filename }
+      })
+    }))
+  }, 1000)
   /**
    * handleLanguageChange updates the value stored on the language state variable.
    * @param e - React FormEvent for an HTMLInptuElement.
    */
   const handleLanguageChange = useCallback((e: FormEvent<HTMLInputElement>) => {
     setLanguage(e.currentTarget.value)
+    if (e.currentTarget.value !== parsed.meta.language) debouncedHandleEdit()
   }, [setLanguage])
-
-  useDebounce(() => {
-    if (parsed.meta.language === language) return
-    handleEdit(task.set({
-      content: JSON.stringify({
-        ...parsed,
-        meta: { language }
-      })
-    }))
-  }, 1000, [language, handleEdit])
+  /**
+   * handleFilenameChange updates the value stored on the filename state variable.
+   * @param e - React FormEvent for an HTMLInptuElement.
+   */
+  const handleFilenameChange = useCallback((e: FormEvent<HTMLInputElement>) => {
+    setFilename(e.currentTarget.value)
+    if (e.currentTarget.value !== parsed.meta.filename) debouncedHandleEdit()
+  }, [setFilename])
 
   return (
     <div className={cn("Interpreter Interpreter__Code", hoverClasses)}>
       <Code language={language} content={parsed.content} />
-      <input type="text" value={language} onChange={handleLanguageChange} className="Interpreter__Code--language" />
+      <div className="Interpreter__Code--inputs">
+        <input type="text" value={filename} onChange={handleFilenameChange} className="Interpreter__Code--filename" />
+        <input type="text" value={language} onChange={handleLanguageChange} className="Interpreter__Code--language" />
+      </div>
     </div>
   )
 }

@@ -186,12 +186,13 @@ main > .Tasks {
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding-bottom: 0.6rem;
   }
 
   pre[class*="language-"].Interpreter__Code--pre {
     width: 100%;
     min-width: 100%;
-    min-height: 3.5rem;
+    min-height: 2.5rem;
     background-color: #f5f2f0;
     padding: 0.5rem;
     font-family: 'Roboto Mono', monospace;
@@ -211,7 +212,7 @@ main > .Tasks {
     font-family: 'Roboto Mono', monospace;
     font-size: 0.8rem;
     background: #f5f2f0;
-    padding: 0.1rem 1ch 5px 1ch;
+    padding: 0.2rem 1ch 5px 1ch;
     outline: none;
     border-bottom-left-radius: 8px;
     text-align: center;

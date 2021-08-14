@@ -1,4 +1,4 @@
-import { useCallback } from "react"
+import { useCallback, useRef } from "react"
 import { useQueryClient, useQuery, useMutation } from "react-query"
 import { ulid } from "ulid"
 
@@ -14,9 +14,22 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
   const { data: tasks, ...query } = useQuery<Task[]>(branch, () => (
     fetch(`/${branch}`, { headers })
       .then((response) => response.json())
-      .then(({ data }) => Task.collection(data))
+      .then(({ data }) => {
+        let collection = Task.collection(data)
+
+        if (tasks) {
+          tasks.forEach((task: Task) => {
+            if (!task.meta.isInEditMode) return
+            const index = collection.findIndex((t: Task) => t.id === task.id)
+            collection = [...collection.slice(0, index), collection[index].set({ meta: { isInEditMode: true } }), ...collection.slice(index + 1)]
+          })
+        }
+
+        return collection
+      })
   ), {
     initialData: initialData ? Task.collection(initialData) : undefined,
+    keepPreviousData: true
   })
   /**
    * createTaskMutation handles the creation of a new `Task` using
