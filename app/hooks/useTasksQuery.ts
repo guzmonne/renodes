@@ -215,8 +215,9 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
       const previousTasks: Task[] = queryClient.getQueryData(branch)
       const index = previousTasks.findIndex((t: Task) => t.id === task.id)
       queryClient.setQueryData(branch, (tasks: Task[]): Task[] => [...tasks.slice(0, index), task, ...tasks.slice(index + 1)])
+    } else {
+      updateTaskMutation.mutate(task)
     }
-    updateTaskMutation.mutate(task)
   }, [updateTaskMutation])
   /**
    * handleMeta handles a `Task` metadata updates.
