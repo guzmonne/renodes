@@ -15,6 +15,17 @@ class TasksRepository extends Repository<Task, TasksQueryParams> {
    */
   client: TasksClient
   /**
+   * get returns a single Task identified by its `id`.
+   * @param id - Task unique identifier.
+   * @param userId - User unique identifier.
+   * @param recursive - Gets the task plus its sub-tasks.
+   */
+  async get(id: string, userId?: string, recursive: boolean = false): Promise<Task> {
+    const { error, data } = await this.client.get(id, userId, recursive)
+    if (error) throw error
+    return data
+  }
+  /**
    * put stores a Task in the Repository.
    * @param task - Task to store in the Repository.
    */
