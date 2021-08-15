@@ -26,7 +26,7 @@ export const links: LinksFunction = () => {
 export const loader: LoaderFunction = async ({ request, params }) => {
   try {
     const tasks = await repository.query({ branch: undefined })
-    const data = tasks.map(Task.toObject)
+    const data = tasks.map(task => task.toObject())
     return json({ data }, {
       headers: { Etag: etag(JSON.stringify(data)) }
     })

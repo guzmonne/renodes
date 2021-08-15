@@ -58,3 +58,22 @@ test("Task should contain a meta attribute", (assert: Test) => {
   assert.deepEqual(body.meta, task.meta)
   assert.end()
 })
+
+test("Task.collection", (assert: Test) => {
+  const body = { id: ulid(), content: ulid() }
+  const collection = [
+    { id: ulid(), content: ulid() },
+    { id: ulid(), content: ulid() },
+    { id: ulid(), content: ulid() },
+  ]
+  // should be empty by default
+  const task = new Task(body)
+  assert.equal(task.collection.length, 0)
+  // should be able to be set with a list of object.
+  task.collection = collection
+  assert.deepEqual(task.collection, collection.map(t => new Task(t)))
+  // should return as an object when calling Task.toObject()
+  assert.deepEqual(task.toObject().collection?.map(t => ({ id: t.id, content: t.content })), collection)
+  // Ent tests
+  assert.end()
+})

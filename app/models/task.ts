@@ -39,6 +39,10 @@ export interface TaskBody {
    */
   interpreter?: string;
   /**
+   * collection are the Tasks that were created with this Task as their parent.
+   */
+  collection?: TaskBody[];
+  /**
    * meta is an object that can hold aditional information of the Task.
    */
   meta?: TaskMeta;
@@ -63,24 +67,12 @@ export class Task {
       interpreter: body.interpreter,
       meta: body.meta,
     })
+    if (body.collection) this.collection = body.collection
   }
   /**
    * object stores an _freezed_ object representation of the model.
    */
   private object: TaskBody
-  /**
-   * collection creates a Task collection from a list of valid object values.
-   * @param objects: List of objects to converto to a list of Tasks.
-   */
-  static collection(objects: any[]): Task[] {
-    try {
-      if (!objects) return []
-      return objects.map((object: any) => new Task(object))
-    } catch (err) {
-      console.error(err)
-      return []
-    }
-  }
   /**
    * Key getters.
    */
@@ -93,8 +85,29 @@ export class Task {
   /**
    * toObject returns an object representation of the model.
    */
-  static toObject = (task: Task): TaskBody => {
-    return { ...task.object }
+  toObject(): TaskBody {
+    return {
+      ...this.object,
+      collection: this._collection.map(task => task.toObject())
+    }
+  }
+  /**
+   * _collection holds the sub-tasks associated with this task.
+   */
+  private _collection: Task[] = [];
+  /**
+   * collection getter
+   */
+  get collection(): Task[] {
+    return [...this._collection]
+  }
+  /**
+   * collection setter
+   */
+  set collection(objects: any[]) {
+    this._collection = objects.map(object => (
+      isTask(object) ? object : new Task(object)
+    ))
   }
   /**
    * set applies new updates to the model.
@@ -108,6 +121,7 @@ export class Task {
       branch: this.branch,
       userId: this.userId,
       interpreter: body.interpreter || this.interpreter,
+      collection: this.collection,
       meta: body.meta !== undefined
         ? { ...this.meta, ...body.meta }
         : this.object.meta,

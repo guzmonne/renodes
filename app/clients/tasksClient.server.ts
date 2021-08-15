@@ -1,9 +1,11 @@
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb"
 
+
 import { Client } from "./client.server"
 import { driver } from "../drivers/tasksDynamoDriver.server"
 import { Task, TaskBody, TaskPatch, TaskMeta } from "../models/task"
 import type { DBClientResponse } from "../types"
+import { ModelNotFoundError } from "../server/errors.server"
 import type { TasksDynamoDriver, TaskItem } from "../drivers/tasksDynamoDriver.server"
 
 /**
@@ -18,6 +20,11 @@ export interface TasksQueryParams {
    * userId corresponds to the unique identifier of the user.
    */
   userId?: string;
+  /**
+   * recursive is a flag that tells the client to get all the sub-tasks
+   * of each sub-task recursively.
+   */
+  recursive?: boolean;
 }
 /**
  * TasksClient handles communication with the DynamoDB table.
@@ -66,14 +73,45 @@ export class TasksClient extends Client<Task, TasksQueryParams, TaskBody, TaskIt
     return [userId, "Tasks", id].filter(x => x !== undefined).join("#")
   }
   /**
+   * get returns a Task identified by its `id`.
+   * @param id - `Task` unique identifier.
+   * @param userId - User unique identifier.
+   */
+  async get(id: string, userId?: string, recursive: boolean = false): Promise<DBClientResponse<Task>> {
+    try {
+      const pk = this.createPK(id, userId)
+      const item = await this.driver.get(pk)
+      if (!item) throw new ModelNotFoundError()
+      const task = this.toModel(item)
+      if (recursive) {
+        const { data, error } = await this.query({ branch: id, userId, recursive })
+        if (error) throw error
+        task.collection = data as Task[]
+      }
+      return { data: task }
+    } catch (err) {
+      return { error: err.message }
+    }
+  }
+  /**
    * query returns a collection of Tasks.
    */
   async query(params: TasksQueryParams = {}): Promise<DBClientResponse<Task[]>> {
     try {
-      const { branch, userId } = params
+      const { branch, userId, recursive } = params
       const pk = this.createPK(branch, userId)
       const items = await this.driver.list(pk)
-      return { data: items.map(this.toModel) }
+      const tasks = items.map(this.toModel)
+      if (recursive) {
+        for (let task of tasks) {
+          if (task.meta.isOpened) {
+            const { data, error } = await this.query({ branch: task.id, userId, recursive })
+            if (error) throw error
+            task.collection = data as Task[]
+          }
+        }
+      }
+      return { data: tasks }
     } catch (err) {
       return { error: err.message }
     }

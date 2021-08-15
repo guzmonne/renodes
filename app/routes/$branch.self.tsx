@@ -31,7 +31,7 @@ export const loader: LoaderFunction = async ({ params }) => {
     if (self === undefined) {
       return new Response(JSON.stringify({ error: `can't find task with id ${params.branch}` }), { status: 404 })
     }
-    return Task.toObject(self)
+    return self.toObject()
   } catch (err) {
     console.log("error at /$id/self")
     console.log(err)

@@ -15,7 +15,7 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
     fetch(`/${branch}`, { headers })
       .then((response) => response.json())
       .then(({ data }) => {
-        let collection = Task.collection(data)
+        let collection = data.map((body: any) => new Task(body))
 
         if (tasks) {
           tasks.forEach((task: Task) => {
@@ -28,7 +28,7 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
         return collection
       })
   ), {
-    initialData: initialData ? Task.collection(initialData) : undefined,
+    initialData: Array.isArray(initialData) ? initialData.map((body: any) => new Task(body)) : undefined,
     keepPreviousData: true
   })
   /**
@@ -41,7 +41,7 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
     return fetch(`/${branch}`, {
       method: "post",
       headers,
-      body: toFormBody({ ...Task.toObject(task), afterId: afterTask ? afterTask.id : undefined })
+      body: toFormBody({ ...task.toObject(), afterId: afterTask ? afterTask.id : undefined })
     })
       .then(response => {
         if (response.ok) return task
@@ -75,7 +75,7 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
     return fetch(`/${branch}`, {
       method: "put",
       headers,
-      body: toFormBody(Task.toObject(task))
+      body: toFormBody(task.toObject())
     })
       .then(response => {
         if (response.ok) return task
@@ -105,7 +105,7 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
     fetch(`/${branch}`, {
       method: "PATCH",
       headers,
-      body: toFormBody(Task.toObject(task))
+      body: toFormBody(task.toObject())
     })
       .then(response => {
         if (response.ok) return task
