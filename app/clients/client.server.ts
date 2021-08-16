@@ -14,7 +14,7 @@ export interface ClientModel {
  * Client handles communication with the DynamoDB table.
  * @param config - Configuration object.
  */
-export abstract class Client<Model extends ClientModel, QueryParams, Body, Item, Patch, DB> implements DBClient<Model, QueryParams> {
+export abstract class Client<Model extends ClientModel, QueryParams, Body, Item, Patch, DB> implements DBClient<Model, Patch, QueryParams> {
   /**
    * driver is the interface to be used against a DynamoDB table.
    */
@@ -35,11 +35,6 @@ export abstract class Client<Model extends ClientModel, QueryParams, Body, Item,
    * @param model - Model from which to create the Body.
    */
   abstract toBody(model: Model): Body
-  /**
-   * toPatch creates a valid Patch object from a Model.
-   * @param model - Model from which to create the Patch.
-   */
-  abstract toPatch(model: Model): Patch
   /**
    * query returns a collection of Models.
    */
@@ -82,13 +77,15 @@ export abstract class Client<Model extends ClientModel, QueryParams, Body, Item,
     }
   }
   /**
-   * update updates a `Model` in the table.
-   * @param model - Updated `Model` to store
+   * update updates valid values of a Model
+   * @param id - Model unique identifier.
+   * @param patch - Patch to apply to the model.
+   * @param userId - User unique identifier.
    */
-  async update(model: Model): Promise<DBClientResponse<undefined>> {
+  async update(id: string, patch: Patch, userId?: string): Promise<DBClientResponse<undefined>> {
     try {
-      const pk = this.createPK(model.id, model.userId)
-      const ok = await this.driver.update(pk, this.toPatch(model))
+      const pk = this.createPK(id, userId)
+      const ok = await this.driver.update(pk, patch)
       if (!ok) throw new Error(`update error`)
       return {}
     } catch (err) {

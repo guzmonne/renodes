@@ -38,15 +38,6 @@ export class UsersClient extends Client<User, undefined, UserBody, UserItem, Use
    * @param user - User model to convert
    */
   toBody = (user: User): UserBody => user.toObject()
-  /**
-   * toPatch converts a User into a valid patch value.
-   * @param user - User model to convert
-   */
-  toPatch = (user: User): UserPatch => ({
-    avatarURL: user.avatarURL,
-    location: user.location,
-    name: user.name
-  })
 }
 /**
  * client is a preconfigured instance of the UsersClient class.

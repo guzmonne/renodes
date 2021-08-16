@@ -104,7 +104,7 @@ test("taskDynamoDriver.put()", async (assert: Test) => {
   try {
     let tasks: TaskItem[]
     const userId = ulid()
-    const branch = userId + "#Tasks"
+    const parent = userId + "#Tasks"
     const id1 = "001"
     const id2 = "002"
     const id3 = "003"
@@ -113,16 +113,16 @@ test("taskDynamoDriver.put()", async (assert: Test) => {
     const pk3 = key({ userId, id: id3 })
     const content = Math.random().toLocaleString()
     // Put the first element
-    assert.equal(await driver.put(pk1, { id: id1, content }, branch), true)
+    assert.equal(await driver.put(pk1, { id: id1, content }, parent), true)
     // Put the second element
-    assert.equal(await driver.put(pk2, { id: id2, content }, branch), true)
+    assert.equal(await driver.put(pk2, { id: id2, content }, parent), true)
     // Check both `Task` where created in the correct order
-    tasks = await driver.list(branch)
+    tasks = await driver.list(parent)
     assert.deepEqual(tasks.map(task => task.id), [id1, id2])
     // Put a new `Task` after `pk1` not the Root.
-    assert.equal(await driver.put(pk3, { id: id3, content }, branch, pk1), true)
+    assert.equal(await driver.put(pk3, { id: id3, content }, parent, pk1), true)
     // Check to see if the new `Task` was correctly added.
-    tasks = await driver.list(branch)
+    tasks = await driver.list(parent)
     assert.deepEqual(tasks.map(task => task.id), [id1, id3, id2])
     // End assertions
     assert.end()

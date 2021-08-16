@@ -18,9 +18,9 @@ function Document({ children }: { children: React.ReactNode }) {
         {children}
         <Scripts />
         {process.env.NODE_ENV === "development" && <LiveReload />}
+        <script src="https://kit.fontawesome.com/b9358ef67d.js" crossOrigin="anonymous"></script>
         <script src="https://unpkg.com/prismjs@1.24.1/components/prism-core.min.js"></script>
         <script src="https://unpkg.com/prismjs@1.24.1/plugins/autoloader/prism-autoloader.min.js"></script>
-        <script src="https://kit.fontawesome.com/488f974bd7.js" crossOrigin="anonymous"></script>
       </body>
     </html>
   );

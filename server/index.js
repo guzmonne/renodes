@@ -24,19 +24,43 @@ app.use(express.static("public", { maxAge: "1h" }));
 
 // Remix fingerprints its assets so we can cache forever
 app.use(express.static("public/build", { immutable: true, maxAge: "1y" }));
-
-app.get("/nodes/home", remixRoute("nodes.home"))
+// Routes
+/**
+ * Get the current user details.
+ */
 app.get("/users/me", remixRoute("users.me"))
-
-app.get("/:branch", remixRoute("$branch"))
-app.post("/:branch", remixRoute("$branch"))
-app.put("/:branch", remixRoute("$branch"))
-app.delete("/:branch", remixRoute("$branch"))
-app.patch("/:branch", remixRoute("$branch"))
-
-app.get("/:branch/self", remixRoute("$branch.self"))
-
+/**
+ * Not found page. Added here to avoid being catched by the next route.
+ */
+app.get("/404", remixRoute("404"))
+/**
+ * Get a Node identifier by `id`.
+ */
+app.get("/:id", remixRoute("$id"))
+/**
+ * Add a new Node to the collection of the Node identifier by `id`.
+ */
+app.post("/:id", remixRoute("$id"))
+/**
+ * Update a Node identified by `id`.
+ */
+app.put("/:id", remixRoute("$id"))
+/**
+ * Delete a Node identifier by `id`.
+ */
+app.delete("/:id", remixRoute("$id"))
+/**
+ * Patch a Node's metadata identified by `id`.
+ */
+app.patch("/:id", remixRoute("$id"))
+/**
+ * REMIX Routes
+ */
 app.all("*", remixHandler);
+/**
+ * Export API
+ */
+exports = module.exports = { app }
 
 let port = process.env.PORT || 3000;
 app.listen(port, () => {

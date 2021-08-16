@@ -42,16 +42,6 @@ test("userClient.toBody()", (assert: Test) => {
   assert.end()
 })
 
-test("userClient.toPatch()", (assert: Test) => {
-  // Should create a valid patch
-  const body = createBody()
-  const user = new User(body)
-  const { avatarURL, name, location } = body
-  assert.deepEqual(client.toPatch(user), { avatarURL, name, location })
-  // End testing
-  assert.end()
-})
-
 /**
  * Function
  */

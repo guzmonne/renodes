@@ -11,7 +11,7 @@ import type { TaskBody, TaskPatch, TaskMeta } from "../models/task"
  */
 export interface TaskItem extends TaskBody, DynamoDriverItem {
   /**
-   * _b represents the name of the branch that the item belongs.
+   * _b represents the name of the parent that the item belongs.
    */
   _b: string;
   /**
@@ -37,15 +37,15 @@ export class TasksDynamoDriver extends DynamoDriver<TaskBody, TaskItem, TaskPatc
    * getPointingTo returns the `Task` item pointing to the
    * `Task` identified by its `sk` value.
    * @param pk - `Task` unique identifier.
-   * @param branch - `Task` branch.
+   * @param parent - `Task` parent.
    */
-  private async getPointingTo(pk: string, branch: string): Promise<TaskItem | undefined> {
+  private async getPointingTo(pk: string, parent: string): Promise<TaskItem | undefined> {
     const response: QueryCommandOutput = await this.db.send(new QueryCommand({
       TableName: this.tableName,
       IndexName: "byNext",
       KeyConditionExpression: "#_b = :_b AND #_n = :_n",
       ExpressionAttributeNames: { "#_b": "_b", "#_n": "_n" },
-      ExpressionAttributeValues: { ":_b": branch, ":_n": pk },
+      ExpressionAttributeValues: { ":_b": parent, ":_n": pk },
       Limit: 1,
     }))
     return response.Items && response.Items.length === 1
@@ -59,15 +59,15 @@ export class TasksDynamoDriver extends DynamoDriver<TaskBody, TaskItem, TaskPatc
    * item already exist on the table with the same `pk`.
    * @param pk - `Task` unique identifier.
    * @param body - `Task` body to be stored.
-   * @param branch - `Task` branch.
+   * @param parent - `Task` parent.
    * @param afterPk - `Task` to set the new `Task` after.
    */
-  async put(pk: string, body: TaskBody, branch?: string, afterPk?: string): Promise<boolean> {
-    if (!branch) return false
+  async put(pk: string, body: TaskBody, parent?: string, afterPk?: string): Promise<boolean> {
+    if (!parent) return false
     const after = afterPk === undefined
-      ? await this.getTail(branch)
+      ? await this.getTail(parent)
       : await this.get(afterPk)
-    if (after === undefined) return this.putFirst(pk, branch, body)
+    if (after === undefined) return this.putFirst(pk, parent, body)
     const updatePromise: Promise<UpdateCommandOutput> = this.db.send(new UpdateCommand({
       TableName: this.tableName,
       Key: { pk: after.pk },
@@ -76,7 +76,7 @@ export class TasksDynamoDriver extends DynamoDriver<TaskBody, TaskItem, TaskPatc
       ExpressionAttributeNames: { "#_n": "_n" },
       ExpressionAttributeValues: { ":_n": after._n, ":new_n": pk },
     }))
-    const item: TaskItem = { id: body.id, content: body.content, pk, _b: branch, _n: after === undefined ? "." : after._n }
+    const item: TaskItem = { id: body.id, content: body.content, _t: body.interpreter, pk, _b: parent, _n: after === undefined ? "." : after._n }
     if (body.interpreter) item._t = body.interpreter
     const putPromise: Promise<PutCommandOutput> = this.db.send(new PutCommand({
       TableName: this.tableName,
@@ -91,19 +91,19 @@ export class TasksDynamoDriver extends DynamoDriver<TaskBody, TaskItem, TaskPatc
     )
   }
   /**
-   * putFirst creates the `head` item along the first `Task` of a new `branch`.
+   * putFirst creates the `head` item along the first `Task` of a new `parent`.
    * @param pk - `Task` unique identifier.
-   * @param branch - `Task` branch.
+   * @param parent - `Task` parent.
    * @param item - `Task` item to be stored.
    */
-  private async putFirst(pk: string, branch: string, body: TaskBody): Promise<boolean> {
+  private async putFirst(pk: string, parent: string, body: TaskBody): Promise<boolean> {
     const putHeadPromise: Promise<PutCommandOutput> = this.db.send(new PutCommand({
       TableName: this.tableName,
-      Item: { pk: "#" + branch, _b: branch, _n: pk },
+      Item: { pk: "#" + parent, _b: parent, _n: pk },
       ConditionExpression: "attribute_not_exists(#pk)",
       ExpressionAttributeNames: { "#pk": "pk" },
     }))
-    const item: TaskItem = { id: body.id, content: body.content, pk, _b: branch, _n: "." }
+    const item: TaskItem = { id: body.id, content: body.content, _t: body.interpreter, pk, _b: parent, _n: "." }
     if (body.interpreter) item._t = body.interpreter
     const putItemPromise: Promise<PutCommandOutput> = this.db.send(new PutCommand({
       TableName: this.tableName,
@@ -121,15 +121,15 @@ export class TasksDynamoDriver extends DynamoDriver<TaskBody, TaskItem, TaskPatc
    * getTail returns the current tail of the linked list. It should
    * always be the first element of the query since its sort attribute
    * should be set to a dot ("`.`").
-   * @param branch - `Tasks` branch on which to search for the `tail`.
+   * @param parent - `Tasks` parent on which to search for the `tail`.
    */
-  private async getTail(branch: string): Promise<TaskItem | undefined> {
+  private async getTail(parent: string): Promise<TaskItem | undefined> {
     const queryOutput = await this.db.send(new QueryCommand({
       TableName: this.tableName,
       IndexName: "byNext",
       KeyConditionExpression: "#_b = :_b",
       ExpressionAttributeNames: { "#_b": "_b" },
-      ExpressionAttributeValues: { ":_b": branch },
+      ExpressionAttributeValues: { ":_b": parent },
       Limit: 1,
     }))
     return queryOutput.Items && queryOutput.Items.length === 1
@@ -232,15 +232,15 @@ export class TasksDynamoDriver extends DynamoDriver<TaskBody, TaskItem, TaskPatc
   }
   /**
    * list returns the list of `Tasks` under a `pk`.
-   * @param branch - `Tasks` branch.
+   * @param parent - `Tasks` parent.
    */
-  async list(branch: string): Promise<TaskItem[]> {
+  async list(parent: string): Promise<TaskItem[]> {
     const queryOutput: QueryCommandOutput = await this.db.send(new QueryCommand({
       TableName: this.tableName,
       IndexName: "byBranch",
       KeyConditionExpression: "#_b = :_b",
       ExpressionAttributeNames: { "#_b": "_b" },
-      ExpressionAttributeValues: { ":_b": branch },
+      ExpressionAttributeValues: { ":_b": parent },
     }))
     if (!queryOutput.Items || queryOutput.Items.length === 0) return []
     const [head, ...items] = queryOutput.Items as TaskItem[]
@@ -282,16 +282,16 @@ export class TasksDynamoDriver extends DynamoDriver<TaskBody, TaskItem, TaskPatc
    * drag allows to move a `Task` from its current position to a
    * new one.
    * @param fromKey - `Task` to be moved identified by its key.
-   * @param branch - `Tasks` branch.
+   * @param parent - `Tasks` parent.
    * @param afterKey - New position of the `Tasks` identifie by the key
    *                   of the `Task` currently in that position.
    */
-  async after(fromPK: string, branch: string, afterPK?: string): Promise<boolean> {
+  async after(fromPK: string, parent: string, afterPK?: string): Promise<boolean> {
     if (fromPK === afterPK) return true
     const [from, after, $from] = await Promise.all([
       this.get(fromPK),
-      this.get(afterPK || "#" + branch),
-      this.getPointingTo(fromPK, branch),
+      this.get(afterPK || "#" + parent),
+      this.getPointingTo(fromPK, parent),
     ])
     if (!from || !after || !$from) return false
     if (after._n === from.pk) return true

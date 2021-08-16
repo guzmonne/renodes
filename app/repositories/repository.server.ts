@@ -1,16 +1,10 @@
 import type { DBClient } from "../types"
 
-export class Repository<Model, QueryParams extends {}> {
+export abstract class Repository<Model, Patch, QueryParams extends {}> {
   /**
    * client is the interface used to interact with the database.
    */
-  client: DBClient<Model, QueryParams>;
-  /**
-   * constructor is called when a new Repository instance is created.
-   */
-  constructor(client: DBClient<Model, QueryParams>) {
-    this.client = client
-  }
+  client: DBClient<Model, Patch, QueryParams>;
   /**
    * query returns a list of Models.
    * @param params - Query parameters.
@@ -43,8 +37,8 @@ export class Repository<Model, QueryParams extends {}> {
    * update updates a Model in the Repository.
    * @param model - Update Model to store
    */
-  async update(model: Model): Promise<undefined> {
-    const { error } = await this.client.update(model)
+  async update(id: string, patch: Patch, userId?: string): Promise<undefined> {
+    const { error } = await this.client.update(id, patch, userId)
     if (error) throw error
     return undefined
   }

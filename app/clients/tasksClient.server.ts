@@ -13,9 +13,9 @@ import type { TasksDynamoDriver, TaskItem } from "../drivers/tasksDynamoDriver.s
  */
 export interface TasksQueryParams {
   /**
-   * branch corresponds to the branch where the query should run.
+   * parent corresponds to the id where the query should run.
    */
-  branch?: string;
+  parent?: string;
   /**
    * userId corresponds to the unique identifier of the user.
    */
@@ -45,7 +45,7 @@ export class TasksClient extends Client<Task, TasksQueryParams, TaskBody, TaskIt
       id: item.id,
       content: item.content,
       userId: b0 === "Tasks" ? undefined : b0,
-      branch: b1 === "Tasks" ? b2 : b1,
+      parent: b1 === "Tasks" ? b2 : b1,
       interpreter: item._t,
       meta: item._m,
     })
@@ -55,14 +55,6 @@ export class TasksClient extends Client<Task, TasksQueryParams, TaskBody, TaskIt
    * @param task - Task model to convert
    */
   toBody = (task: Task): TaskBody => task
-  /**
-   * toPatch converts a Task into a valid patch value.
-   * @param patch - Task model to convert
-   */
-  toPatch = (task: Task): TaskPatch => ({
-    content: task.content,
-    interpreter: task.interpreter,
-  })
   /**
    * createPK creates a valid `pk` for the current schema
    * of the DynamoDB table.
@@ -84,13 +76,13 @@ export class TasksClient extends Client<Task, TasksQueryParams, TaskBody, TaskIt
       if (!item) throw new ModelNotFoundError()
       const task = this.toModel(item)
       if (recursive) {
-        const { data, error } = await this.query({ branch: id, userId, recursive })
+        const { data, error } = await this.query({ parent: id, userId, recursive })
         if (error) throw error
         task.collection = data as Task[]
       }
       return { data: task }
     } catch (err) {
-      return { error: err.message }
+      return { error: err }
     }
   }
   /**
@@ -98,14 +90,14 @@ export class TasksClient extends Client<Task, TasksQueryParams, TaskBody, TaskIt
    */
   async query(params: TasksQueryParams = {}): Promise<DBClientResponse<Task[]>> {
     try {
-      const { branch, userId, recursive } = params
-      const pk = this.createPK(branch, userId)
+      const { parent, userId, recursive } = params
+      const pk = this.createPK(parent, userId)
       const items = await this.driver.list(pk)
       const tasks = items.map(this.toModel)
       if (recursive) {
         for (let task of tasks) {
           if (task.meta.isOpened) {
-            const { data, error } = await this.query({ branch: task.id, userId, recursive })
+            const { data, error } = await this.query({ parent: task.id, userId, recursive })
             if (error) throw error
             task.collection = data as Task[]
           }
@@ -145,10 +137,10 @@ export class TasksClient extends Client<Task, TasksQueryParams, TaskBody, TaskIt
   async put(task: Task, afterId?: string): Promise<DBClientResponse<Task>> {
     try {
       const pk = this.createPK(task.id, task.userId)
-      const branchPk = this.createPK(task.branch, task.userId)
+      const parentPk = this.createPK(task.parent, task.userId)
       const afterPk = afterId ? this.createPK(afterId, task.userId) : undefined
-      const ok = await this.driver.put(pk, task, branchPk, afterPk)
-      if (!ok) throw new Error(`error while storing task with pk = ${pk} at branch = ${branchPk}`)
+      const ok = await this.driver.put(pk, task, parentPk, afterPk)
+      if (!ok) throw new Error(`error while storing task with pk = ${pk} at parent = ${parentPk}`)
       return { data: task }
     } catch (err) {
       return { error: err.message }
@@ -159,15 +151,15 @@ export class TasksClient extends Client<Task, TasksQueryParams, TaskBody, TaskIt
    * `after` is `undefined` then the `Task` should be dragged to
    * the beginning of the list.
    * @param id - Task unique identifier.
-   * @param branch - Task branch.
+   * @param parent - Task parent.
    * @param afterId - Unique identifier of the `Task` after which the
    *                  `Task` must be positioned after.
    * @param userId - User unique identifier.
    */
-  async after(id: string, branch?: string, afterId?: string, userId?: string): Promise<DBClientResponse<any>> {
+  async after(id: string, parent?: string, afterId?: string, userId?: string): Promise<DBClientResponse<any>> {
     try {
       const pk = this.createPK(id, userId)
-      const _b = this.createPK(branch, userId)
+      const _b = this.createPK(parent, userId)
       const apk = !afterId ? undefined : this.createPK(afterId, userId)
       const ok = await this.driver.after(pk, _b, apk)
       if (!ok) throw new Error(`couldn't move task with id = ${id} after task with id ${afterId}`)

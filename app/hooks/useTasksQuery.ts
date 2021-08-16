@@ -1,99 +1,123 @@
-import { useCallback, useRef } from "react"
+import { useCallback, useState } from "react"
 import { useQueryClient, useQuery, useMutation } from "react-query"
 import { ulid } from "ulid"
 
-import { Task } from "../models/task"
-import type { TaskBody } from "../models/task"
+import { Task, isTask } from "../models/task"
+import type { TaskBody, TaskPatch, TaskMeta } from "../models/task"
 
 const headers = new Headers()
 headers.append("Accept", "application/json")
 headers.append("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
 
-export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
+export function useTasksQuery(id: string, initialData: Task | TaskBody) {
   const queryClient = useQueryClient()
-  const { data: tasks, ...query } = useQuery<Task[]>(branch, () => (
-    fetch(`/${branch}`, { headers })
-      .then((response) => response.json())
-      .then(({ data }) => {
-        let collection = data.map((body: any) => new Task(body))
+  /**
+   * Fetch a Task and its collection by id.
+   */
+  const { data, ...query } = useQuery<Task>(id, () => {
+    console.log(data.meta.isOpened)
+    return !data.meta.isOpened
+      ? Promise.resolve(data)
+      : fetch(`/${id}`, { headers })
+        .then((response) => response.json())
+        .then((body) => {
+          if (body.error) throw body.error
+          const newTask = new Task(body.data)
+          if (data) {
+            data.collection.forEach((task: Task) => {
+              if (!task.meta.isInEditMode) return
+              const index = newTask.collection.findIndex((t: Task) => t.id === task.id)
+              if (!index) return
+              newTask.collection = [
+                ...newTask.collection.slice(0, index),
+                newTask.collection[index].set({ meta: { isInEditMode: true } }),
+                ...newTask.collection.slice(index + 1)]
+            })
+          }
+          return newTask
+        })
+  }, {
+    initialData: (): Task => isTask(initialData) ? initialData : new Task(initialData),
+    staleTime: 1000,
 
-        if (tasks) {
-          tasks.forEach((task: Task) => {
-            if (!task.meta.isInEditMode) return
-            const index = collection.findIndex((t: Task) => t.id === task.id)
-            collection = [...collection.slice(0, index), collection[index].set({ meta: { isInEditMode: true } }), ...collection.slice(index + 1)]
-          })
-        }
-
-        return collection
-      })
-  ), {
-    initialData: Array.isArray(initialData) ? initialData.map((body: any) => new Task(body)) : undefined,
-    keepPreviousData: true
   })
   /**
-   * createTaskMutation handles the creation of a new `Task` using
-   * an Optimistic UI workflow.
-   * @param task - `Task` to create.
-   * @param afterTask - `Task` after which the new `Task` should be created.
+   * addTaskMutation adds a new Task to the collection.
+   * @param task - `Task` to add.
+   * @param afterTask - `Task` after which the new `Task` should be added.
    */
-  const createTaskMutation = useMutation(({ task, afterTask }) => {
-    return fetch(`/${branch}`, {
+  const addTaskMutation = useMutation(({ body, afterId }) => {
+    return fetch(`/${afterId === undefined ? data.id : data.parent}`, {
       method: "post",
       headers,
-      body: toFormBody({ ...task.toObject(), afterId: afterTask ? afterTask.id : undefined })
+      body: toFormBody({ ...body, afterId })
     })
       .then(response => {
-        if (response.ok) return task
+        if (response.ok) return data
         throw new Error("couldn't create new task")
       })
   }, {
-    onMutate: async ({ task, afterTask }: { task: Task, afterTask?: Task }): Promise<{ previousTasks: Task[] }> => {
-      await queryClient.cancelQueries(branch)
-      task = task.set({ meta: { isInEditMode: true } })
-      const previousTasks: Task[] = queryClient.getQueryData(branch)
-      queryClient.setQueryData(branch, (tasks: Task[]): Task[] => {
-        if (afterTask === undefined) return [...tasks, task]
-        const index = tasks.findIndex(task => task.id === afterTask.id)
-        return [...tasks.slice(0, index), afterTask, task, ...tasks.slice(index + 1)]
-      })
-      return { previousTasks }
+    onMutate: async ({ body, afterId }: { body: TaskBody, afterId?: string }): Promise<{ previousTask: Task, previousParentTask: Task }> => {
+      await queryClient.cancelQueries(data.id)
+      const newTask = (new Task(body)).set({ meta: { isInEditMode: true } })
+      const previousTask: Task = queryClient.getQueryData(data.id)
+      const previousParentTask: Task = queryClient.getQueryData(data.parent)
+      if (afterId === undefined) {
+        queryClient.setQueryData(data.id, (task: Task): Task => {
+          return task.set({ collection: [...task.collection, newTask] })
+        })
+      } else {
+        queryClient.setQueryData(data.parent || "home", (task: Task): Task => {
+          const index = task.collection.findIndex(t => t.id === afterId)
+          const afterTask = task.collection[index]
+          return task.set({
+            collection: [...task.collection.slice(0, index), afterTask, newTask, ...task.collection.slice(index + 1)]
+          })
+        })
+      }
+      return { previousTask, previousParentTask }
     },
     onError: (_, __, context) => {
-      queryClient.setQueryData(branch, context.previousTasks)
+      queryClient.setQueryData(data.id, context.previousTask)
+      queryClient.setQueryData(data.parent, context.previousParentTask)
     },
     onSettled: () => {
-      queryClient.invalidateQueries(branch, { exact: true, refetchActive: false })
+      queryClient.invalidateQueries(data.id, { exact: true, refetchActive: false })
     }
   })
   /**
-   * updateTaskMutation handles the updates of a `Task` using
-   * an Optimistic UI workflow.
+   * updateTaskMutation updates the values of the Node.
    * @param task - `Task` to update.
    */
-  const updateTaskMutation = useMutation((task) => {
-    return fetch(`/${branch}`, {
+  const updateTaskMutation = useMutation((body) => {
+    return fetch(`/${id}`, {
       method: "put",
       headers,
-      body: toFormBody(task.toObject())
+      body: toFormBody(body)
     })
       .then(response => {
-        if (response.ok) return task
+        if (response.ok) return data
         throw new Error("couldn't update task")
       })
   }, {
-    onMutate: async (task: Task): Promise<{ previousTasks: Task[] }> => {
-      await queryClient.cancelQueries(branch, { exact: true })
-      const previousTasks: Task[] = queryClient.getQueryData(branch)
-      const index = previousTasks.findIndex((t: Task) => t.id === task.id)
-      queryClient.setQueryData(branch, (tasks: Task[]): Task[] => [...tasks.slice(0, index), task, ...tasks.slice(index + 1)])
-      return { previousTasks }
+    onMutate: async (patch: TaskPatch): Promise<{ previousTask: Task, previousParentTask: Task }> => {
+      await queryClient.cancelQueries(id, { exact: true })
+      const previousTask: Task = queryClient.getQueryData(id)
+      const newTask = data.set(patch)
+      queryClient.setQueryData(id, newTask)
+      const previousParentTask: Task = queryClient.getQueryData(data.parent || "home")
+      const index = previousParentTask.collection.findIndex((t: Task) => t.id === id)
+      queryClient.setQueryData(data.parent || "home", (parentTask: Task): Task => parentTask.set({
+        collection: [...parentTask.collection.slice(0, index), newTask, ...parentTask.collection.slice(index + 1)]
+      }))
+      return { previousTask, previousParentTask }
     },
     onError: (_, __, context) => {
-      queryClient.setQueryData(branch, context.previousTasks)
+      queryClient.setQueryData(data.id, context.previousParentTask)
+      queryClient.setQueryData(id, context.previousTask)
     },
     onSettled: () => {
-      queryClient.invalidateQueries(branch, { exact: true, refetchActive: false })
+      queryClient.invalidateQueries(id, { exact: true, refetchActive: false })
     }
   })
   /**
@@ -101,57 +125,63 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
    * Optimistic UI workflow.
    * @param task - `Task` whose metadata should be updated.
    */
-  const metaTaskMutation = useMutation((task) => (
-    fetch(`/${branch}`, {
+  const metaTaskMutation = useMutation((meta) => (
+    fetch(`/${id}`, {
       method: "PATCH",
       headers,
-      body: toFormBody(task.toObject())
+      body: toFormBody({ meta })
     })
       .then(response => {
-        if (response.ok) return task
+        if (response.ok) return data
         throw new Error("couldn't update task")
       })
   ), {
-    onMutate: async (task: Task): Promise<{ previousTasks: Task[] }> => {
-      await queryClient.cancelQueries(branch)
-      const previousTasks: Task[] = queryClient.getQueryData(branch)
-      const index = previousTasks.findIndex((t: Task) => t.id === task.id)
-      queryClient.setQueryData(branch, (tasks: Task[]): Task[] => [...tasks.slice(0, index), task, ...tasks.slice(index + 1)])
-      return { previousTasks }
+    onMutate: async (meta: TaskMeta): Promise<{ previousTask: Task, previousParentTask: Task }> => {
+      await queryClient.cancelQueries(id)
+      const previousTask: Task = queryClient.getQueryData(id)
+      const newTask = data.set(data.set({ meta }))
+      queryClient.setQueryData(id, newTask)
+      const previousParentTask: Task = queryClient.getQueryData(data.parent || "home")
+      const index = previousParentTask.collection.findIndex((t: Task) => t.id === id)
+      queryClient.setQueryData(data.parent || "home", (parentTask: Task): Task => parentTask.set({
+        collection: [...parentTask.collection.slice(0, index), newTask, ...parentTask.collection.slice(index + 1)]
+      }))
+      return { previousTask, previousParentTask }
     },
     onError: (_, __, context) => {
-      queryClient.setQueryData(branch, context.previousTasks)
+      queryClient.setQueryData(data.id, context.previousParentTask)
+      queryClient.setQueryData(id, context.previousTask)
     },
     onSettled: () => {
-      queryClient.invalidateQueries(branch, { exact: true, refetchActive: false })
+      queryClient.invalidateQueries(id, { exact: true, refetchActive: false })
     }
   })
   /**
-   * deleteTaskMutation handles the deletion of a `Task` using
-   * an Optimistic UI workflow.
-   * @param task - `Task` to delete.
+   * deleteTaskMutation handles the deletion of the Task.
    */
-  const deleteTaskMutation = useMutation((task) => {
-    return fetch(`/${task.id}`, {
+  const deleteTaskMutation = useMutation(() => {
+    return fetch(`/${id}`, {
       method: "delete",
       headers,
     })
       .then(response => {
-        if (response.ok) return task
+        if (response.ok) return data
         throw new Error("couldn't delete task")
       })
   }, {
-    onMutate: async (task: Task): Promise<{ previousTasks: Task[] }> => {
-      await queryClient.cancelQueries(branch)
-      const previousTasks: Task[] = queryClient.getQueryData(branch)
-      queryClient.setQueryData(branch, (tasks: Task[]): Task[] => tasks.filter(t => t.id !== task.id))
-      return { previousTasks }
+    onMutate: async (): Promise<{ previousParentTask: Task }> => {
+      await queryClient.cancelQueries(id)
+      const previousParentTask: Task = queryClient.getQueryData(data.parent || "home")
+      queryClient.setQueryData(data.parent || "home", (task: Task): Task => task.set({
+        collection: task.collection.filter(t => t.id !== id)
+      }))
+      return { previousParentTask }
     },
     onError: (_, __, context) => {
-      queryClient.setQueryData(branch, context.previousTasks)
+      queryClient.setQueryData(data.parent || "home", context.previousParentTask)
     },
     onSettled: () => {
-      queryClient.invalidateQueries(branch, { exact: true, refetchActive: false })
+      queryClient.invalidateQueries(data.parent || "home", { exact: true, refetchActive: false })
     }
   })
   /**
@@ -161,100 +191,111 @@ export function useTasksQuery(branch: string, initialData?: TaskBody[]) {
    * @param hoverIndex - Index of the `Task` being hovered.
    */
   const dragTaskMutation = useMutation(({ dragIndex, hoverIndex }) => {
-    const task = tasks[dragIndex]
-    const after = hoverIndex !== 0
-      ? tasks[dragIndex < hoverIndex ? hoverIndex : hoverIndex - 1]
+    const dragTask = data.collection[dragIndex]
+    const afterTask = hoverIndex !== 0
+      ? data.collection[dragIndex < hoverIndex ? hoverIndex : hoverIndex - 1]
       : undefined
-    const body: { dragId: string, afterId?: string } = { dragId: task.id }
-    if (after) body.afterId = after.id
-    return fetch(`/${branch}`, {
+    const body: { dragId: string, afterId?: string } = { dragId: dragTask.id }
+    if (afterTask) body.afterId = afterTask.id
+    return fetch(`/${id}`, {
       method: "post",
       headers,
       body: toFormBody(body)
     })
       .then(response => {
-        if (response.ok) return task
+        if (response.ok) return data
         throw new Error("couldn't drag task")
       })
   }, {
-    onMutate: async ({ dragIndex, hoverIndex }: { dragIndex: number, hoverIndex: number }): Promise<{ previousTasks: Task[] }> => {
-      await queryClient.cancelQueries(branch)
-      const previousTasks: Task[] = queryClient.getQueryData(branch)
-      queryClient.setQueryData(branch, (tasks: Task[]): Task[] => {
-        const task = tasks[dragIndex]
-        const _tasks = [...tasks]
-        _tasks.splice(dragIndex, 1)
-        _tasks.splice(hoverIndex, 0, task)
-        return _tasks
+    onMutate: async ({ dragIndex, hoverIndex }: { dragIndex: number, hoverIndex: number }): Promise<{ previousTask: Task }> => {
+      await queryClient.cancelQueries(id)
+      const previousTask: Task = queryClient.getQueryData(id)
+      queryClient.setQueryData(id, (task: Task): Task => {
+        const dragTask = task.collection[dragIndex]
+        const collection = [...task.collection]
+        collection.splice(dragIndex, 1)
+        collection.splice(hoverIndex, 0, dragTask)
+        return task.set({ collection })
       })
-      return { previousTasks }
+      return { previousTask }
     },
     onError: (_, __, context) => {
-      queryClient.setQueryData(branch, context.previousTasks)
+      queryClient.setQueryData(id, context.previousTask)
     },
     onSettled: () => {
-      queryClient.invalidateQueries(branch, { exact: true, refetchActive: false })
+      queryClient.invalidateQueries(id, { exact: true, refetchActive: false })
     }
   })
   /**
    * handleAddEmpty handles the creation of a new empty `Task`.
-   * @param task - Task to add to the list.
    */
   const handleAddEmpty = useCallback(() => {
-    const task = new Task({ id: ulid(), branch, content: "" })
-    createTaskMutation.mutate({ task })
-  }, [createTaskMutation, branch])
+    addTaskMutation.mutate({ body: { id: ulid(), parent: id, content: "" } })
+  }, [addTaskMutation])
   /**
-   * handleAdd handles the creation of new `Tasks`.
-   * @param task - Task to add to the list.
+   * handleAdd handles the creation of a new `Task`.
+   * @param body - Body of the new Task.
+   * @param afterId - Id of the Task after which the new Task should be inserted.
    */
-  const handleAdd = useCallback((task: Task) => {
-    const newTask = new Task({ id: ulid(), branch, content: "" })
-    createTaskMutation.mutate({ task: newTask, afterTask: task })
-  }, [createTaskMutation, branch])
+  const handleAddAfter = useCallback(() => {
+    addTaskMutation.mutate({ body: { id: ulid(), content: "", parent: data.parent }, afterId: data.id })
+  }, [addTaskMutation, data])
   /**
-   * handleDelete allows a Child component to remove a task from the list.\
-   * @param task - Task to be deleted.
+   * handleDelete handles the deletion of the `Task`.
    */
-  const handleDelete = useCallback((task: Task) => {
-    confirm("Are you sure you want to delete this Task?") && deleteTaskMutation.mutate(task)
+  const handleDelete = useCallback(() => {
+    confirm("Are you sure you want to delete this Task?") && deleteTaskMutation.mutate()
   }, [deleteTaskMutation])
   /**
-   * handleEdit handles `Task` updated.
-   * @param task - Task to be updated.
+   * handleEdit handles the edition of the `Task`.
+   * @param patch - Patch to set on the `Task`.
+   * @param fetch - Flag that allows editing the `Task` without an API call.
    */
-  const handleEdit = useCallback((task: Task, fetch: boolean = true) => {
+  const handleEdit = useCallback((patch: TaskPatch, fetch: boolean = true) => {
     if (!fetch) {
-      const previousTasks: Task[] = queryClient.getQueryData(branch)
-      const index = previousTasks.findIndex((t: Task) => t.id === task.id)
-      queryClient.setQueryData(branch, (tasks: Task[]): Task[] => [...tasks.slice(0, index), task, ...tasks.slice(index + 1)])
+      queryClient.setQueryData(id, (task: Task) => task.set(patch))
+      queryClient.setQueryData(data.parent || "home" || "home", (task: Task) => {
+        const index = task.collection.findIndex((t: Task) => t.id === id)
+        return task.set({
+          collection: [...task.collection.slice(0, index), task.collection[index].set(patch), ...task.collection.slice(index + 1)]
+        })
+      })
     } else {
-      updateTaskMutation.mutate(task)
+      updateTaskMutation.mutate(patch)
     }
   }, [updateTaskMutation])
   /**
-   * handleMeta handles a `Task` metadata updates.
+   * handleMeta handles a `Task's` metadata updates.
    * @param task - Task whose metadata should be updated.
    */
-  const handleMeta = useCallback((task: Task) => {
-    metaTaskMutation.mutate(task)
+  const handleMeta = useCallback((meta: TaskMeta) => {
+    metaTaskMutation.mutate(meta)
   }, [metaTaskMutation])
+  /**
+   * handleDrag handles dragging `Tasks` inside it's collection.
+   * @param dragIndex - Index of `Task` being dragged.
+   * @param hoverIndex - Index of `Task` where it's being dropped.
+   */
+  const handleDrag = useCallback((dragIndex: number, hoverIndex: number) => {
+    dragTaskMutation.mutate({ dragIndex, hoverIndex })
+  }, [dragTaskMutation])
   /**
    * Export
    */
   return {
-    tasks,
+    data,
     query,
-    createTaskMutation,
+    addTaskMutation,
     updateTaskMutation,
     deleteTaskMutation,
     dragTaskMutation,
     metaTaskMutation,
-    handleAdd,
+    handleAddAfter,
     handleAddEmpty,
     handleDelete,
     handleEdit,
     handleMeta,
+    handleDrag,
   }
 }
 /**

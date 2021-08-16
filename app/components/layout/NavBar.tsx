@@ -16,7 +16,7 @@ export function NavBar({ user }: NavBarProps) {
     <UserProvider userBody={user}>
       <div className="NavBar">
         <h1 className="Title">
-          re<span className="Title__gradient">Task</span>
+          re<span className="Title__gradient">Nodes</span>
         </h1>
         {user
           ? <NavBar.User />

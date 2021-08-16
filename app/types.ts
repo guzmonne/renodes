@@ -35,7 +35,7 @@ export interface DBDriver<Body, Item, Patch, DB> {
 /**
  * DBClient is the standard interface that a DBClient must support.
  */
-export interface DBClient<Model, QueryParams> {
+export interface DBClient<Model, Patch, QueryParams> {
   /**
    * query returns a collection of Models.
    * @param params - Query parameters.
@@ -54,9 +54,11 @@ export interface DBClient<Model, QueryParams> {
   put(model: Model): Promise<DBClientResponse<Model>>;
   /**
    * update updates valid values of a Model
-   * @param model - Updated Model to be stored.
+   * @param id - Model unique identifier.
+   * @param patch - Patch to apply to the model.
+   * @param userId - User unique identifier.
    */
-  update(model: Model): Promise<DBClientResponse<undefined>>;
+  update(id: string, patch: Patch, userId?: string): Promise<DBClientResponse<undefined>>;
   /**
    * delete deletes a Model identified by its `id` and `userId`.
    * @param id - Model unique identifier.

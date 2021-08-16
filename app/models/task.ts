@@ -31,9 +31,9 @@ export interface TaskBody {
    */
   userId?: string;
   /**
-   * branch represents the branch that the Task belongs to.
+   * parent represents the parent that the Task belongs to.
    */
-  branch?: string;
+  parent?: string;
   /**
    * interpreter is the name of the interpreter that should render the Task
    */
@@ -51,7 +51,7 @@ export interface TaskBody {
  * TaskPatch is a partial interface of the TaskBody which include
  * only the attributes that can be patched on a Task.
  */
-export type TaskPatch = Pick<Partial<TaskBody>, "content" | "interpreter">
+export type TaskPatch = Pick<Partial<TaskBody>, "content" | "interpreter" | "meta">
 /**
  * Task is the model representation of a task.
  * @param body - Object data to create a new Task.
@@ -62,7 +62,7 @@ export class Task {
     this.object = Object.freeze({
       id: body.id || ulid(),
       content: body.content || "",
-      branch: body.branch,
+      parent: body.parent,
       userId: body.userId,
       interpreter: body.interpreter,
       meta: body.meta,
@@ -78,7 +78,7 @@ export class Task {
    */
   get id() { return this.object.id }
   get content() { return this.object.content }
-  get branch() { return this.object.branch }
+  get parent() { return this.object.parent }
   get userId() { return this.object.userId }
   get interpreter() { return this.object.interpreter }
   get meta() { return this.object.meta === undefined ? {} : this.object.meta }
@@ -118,10 +118,10 @@ export class Task {
     return new Task({
       id: this.id,
       content: body.content !== undefined ? body.content : this.content,
-      branch: this.branch,
+      parent: this.parent,
       userId: this.userId,
       interpreter: body.interpreter || this.interpreter,
-      collection: this.collection,
+      collection: body.collection || this.collection,
       meta: body.meta !== undefined
         ? { ...this.meta, ...body.meta }
         : this.object.meta,
