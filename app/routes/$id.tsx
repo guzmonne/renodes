@@ -17,7 +17,7 @@ import { getUserFromSession, signIn, signOut } from "../server/session.server"
 import { repository } from "../repositories/tasks.server"
 import { Task } from "../models/task"
 import { NavBar } from "../components/Layout/NavBar"
-import { Task as TaskComponent } from "../components/Task"
+import { Task as TaskComponent } from "../components/Task/RemixTask"
 import type { TaskBody } from "../models/task"
 import type { UserBody } from "../models/user"
 
@@ -131,15 +131,12 @@ export default function () {
     <IdProvider>
       <ScrollArea.Root className="ScrollArea__Root">
         <ScrollArea.Viewport className="ScrollArea__Viewport">
-          <QueryClientProvider client={queryClient}>
-            <ReactQueryDevtools initialIsOpen={true} />
-            <main>
-              {query.get("navbar") !== "none" && <NavBar user={user} />}
-              <DndProvider options={HTML5toTouch}>
-                <TaskComponent initialData={data} id={id} />
-              </DndProvider>
-            </main>
-          </QueryClientProvider>
+          <main>
+            {query.get("navbar") !== "none" && <NavBar user={user} />}
+            <DndProvider options={HTML5toTouch}>
+              <TaskComponent data={data} id={id} />
+            </DndProvider>
+          </main>
         </ScrollArea.Viewport>
         <ScrollArea.Scrollbar className="ScrollArea__Scrollbar" orientation="vertical">
           <ScrollArea.Thumb className="ScrollArea__Thumb" />

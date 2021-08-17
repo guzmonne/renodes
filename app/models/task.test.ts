@@ -1,5 +1,7 @@
 import test from "tape"
 import { ulid } from "ulid"
+import range from "lodash/range"
+import random from "lodash/random"
 import type { Test } from "tape"
 
 import { Task } from "./task"
@@ -77,3 +79,31 @@ test("Task.collection", (assert: Test) => {
   // Ent tests
   assert.end()
 })
+
+test("Task.find", (assert: Test) => {
+  let previousLevel: Task[] = randomCollection("0#")
+  for (let l of range(1, random(3, 10))) {
+    let currentLevel = randomCollection(l + "#")
+    for (let pTask of previousLevel) {
+      const index = random(0, currentLevel.length - 1)
+      const cTask = currentLevel[index]
+      currentLevel = [
+        ...currentLevel.slice(0, index),
+        cTask.set({ parent: cTask.id, collection: [...cTask.collection, pTask] }),
+        ...currentLevel.slice(index + 1)
+      ]
+    }
+    previousLevel = currentLevel
+  }
+  const root = new Task({ id: "." + previousLevel[0].id, content: "", collection: previousLevel })
+  console.log(JSON.stringify({ root }, null, 2))
+  assert.end()
+})
+
+function randomCollection(id: string, max: number = 10, min: number = 3): Task[] {
+  const result: Task[] = []
+  for (let i of range(0, random(min, max - 1))) {
+    result.push(new Task({ id: id + i, content: id + i }))
+  }
+  return result
+}
