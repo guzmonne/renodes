@@ -168,7 +168,7 @@ export function Task({ index, initialData, id }: TaskProps) {
     handleDelete,
     handleMeta,
     handleDrag,
-  } = useTasksQuery(id, initialData)
+  } = useTasksQuery(id, initialData, index === undefined)
 
   return (
     <TaskContext.Provider value={{
@@ -199,7 +199,7 @@ Task.View = function TaskView() {
     <Fragment>
       <div className="Task">
         <div className="Task__Controls">
-          <Task.Control icon={"fa-chevron-right"} />
+          <Task.Control icon={data.meta.isOpened ? "fa-chevron-down" : "fa-chevron-right"} />
           <Task.Dropdown />
         </div>
         <Task.Interpreter />

@@ -9,37 +9,34 @@ const headers = new Headers()
 headers.append("Accept", "application/json")
 headers.append("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
 
-export function useTasksQuery(id: string, initialData: Task | TaskBody) {
+export function useTasksQuery(id: string, initialData: Task | TaskBody, enabled: boolean = false) {
   const queryClient = useQueryClient()
   /**
    * Fetch a Task and its collection by id.
    */
   const { data, ...query } = useQuery<Task>(id, () => {
-    console.log(data.meta.isOpened)
-    return !data.meta.isOpened
-      ? Promise.resolve(data)
-      : fetch(`/${id}`, { headers })
-        .then((response) => response.json())
-        .then((body) => {
-          if (body.error) throw body.error
-          const newTask = new Task(body.data)
-          if (data) {
-            data.collection.forEach((task: Task) => {
-              if (!task.meta.isInEditMode) return
-              const index = newTask.collection.findIndex((t: Task) => t.id === task.id)
-              if (!index) return
-              newTask.collection = [
-                ...newTask.collection.slice(0, index),
-                newTask.collection[index].set({ meta: { isInEditMode: true } }),
-                ...newTask.collection.slice(index + 1)]
-            })
-          }
-          return newTask
-        })
+    return fetch(`/${id}`, { headers })
+      .then((response) => response.json())
+      .then((body) => {
+        if (body.error) throw body.error
+        const newTask = new Task(body.data)
+        if (data) {
+          data.collection.forEach((task: Task) => {
+            if (!task.meta.isInEditMode) return
+            const index = newTask.collection.findIndex((t: Task) => t.id === task.id)
+            if (!index) return
+            newTask.collection = [
+              ...newTask.collection.slice(0, index),
+              newTask.collection[index].set({ meta: { isInEditMode: true } }),
+              ...newTask.collection.slice(index + 1)]
+          })
+        }
+        return newTask
+      })
   }, {
     initialData: (): Task => isTask(initialData) ? initialData : new Task(initialData),
     staleTime: 1000,
-
+    enabled,
   })
   /**
    * addTaskMutation adds a new Task to the collection.
