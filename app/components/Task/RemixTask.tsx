@@ -165,7 +165,9 @@ export function Task({ index, data: initialData, id }: TaskProps) {
 
   return (
     <TaskContext.Provider value={{ ...query }}>
-      {index === undefined ? <Task.View id={data.id} data={data} /> : <Task.ItemView id={data.id} data={data} index={index} />}
+      {index === undefined
+        ? <Task.View id={data.id} data={data} />
+        : <Task.ItemView id={data.id} data={data} index={index} />}
     </TaskContext.Provider>
   )
 }
@@ -488,7 +490,6 @@ Task.Dropdown = function TaskDropdown({ id, data }: TaskProps) {
  * as part of a collection.
  */
 Task.ItemDropdown = function TaskDropdown({ id, data }: TaskProps) {
-  console.log({ id, data })
   const { handleEdit, handleAdd, handleDelete } = useTaskContext()
   /**
    * handleSelectExternalLink is the callback called when a select external link event is produced.
@@ -501,7 +502,7 @@ Task.ItemDropdown = function TaskDropdown({ id, data }: TaskProps) {
   /**
    * handleSelectAdd is the callback called when a select add event is produced.
    */
-  const handleSelectAdd = useCallback(() => handleAdd(data.parent, id), [handleAdd])
+  const handleSelectAdd = useCallback(() => handleAdd(id), [handleAdd])
   /**
    * handleInterpreter updates the value of the task's interpreter.
    * @param interpreter - New interpreter value.

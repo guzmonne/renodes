@@ -5,7 +5,7 @@ import { ulid } from "ulid";
 import { Task, isTask } from "../models/task"
 import type { TaskBody, TaskPatch, TaskMeta } from "../models/task"
 
-export function useRemixTasksQuery(id: string, initialData: Task | TaskBody) {
+export function useRemixTasksQuery(parent: string, initialData: Task | TaskBody) {
   const submit = useSubmit()
   const [data, setData] = useState((): Task => isTask(initialData) ? initialData : new Task(initialData))
 
