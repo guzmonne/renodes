@@ -32,7 +32,7 @@ test("/home - should be able to create a new task", async (assert: Test) => {
       .send(body)
       .expect("x-remix-redirect", "/home")
       .expect(204)
-    assert.deepEqual(response.body, {})
+    assert.deepEqual(response.body, {}, "should return an empty object")
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
@@ -43,7 +43,11 @@ test("/home - should be able to create a new task", async (assert: Test) => {
       .set({ "Accept": "application/json" })
       .expect("Content-Type", /json/)
       .expect(200)
-    assert.deepEqual(response.body, { data: { id: "home", content: "Home Node", parent: "home", collection: [{ ...body, collection: [] }] } })
+    assert.deepEqual(
+      response.body,
+      { data: { id: "home", content: "Home Node", parent: "home", collection: [{ ...body }] } },
+      "should have been correctly stored"
+    )
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
@@ -54,7 +58,7 @@ test("/home - should be able to create a new task", async (assert: Test) => {
       .set({ "Accept": "application/json" })
       .expect("Content-Type", /json/)
       .expect(200)
-    assert.deepEqual(response.body, { data: { ...body, collection: [] } })
+    assert.deepEqual(response.body, { data: { ...body, collection: [] } }, "should've been correctly stored")
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
@@ -73,7 +77,7 @@ test("/home - should be able to update a task", async (assert: Test) => {
       .send(body)
       .expect("x-remix-redirect", "/home")
       .expect(204)
-    assert.deepEqual(response.body, {})
+    assert.deepEqual(response.body, {}, "should be empty by default")
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
@@ -84,7 +88,7 @@ test("/home - should be able to update a task", async (assert: Test) => {
       .set({ "Accept": "application/json" })
       .expect("Content-Type", /json/)
       .expect(200)
-    assert.deepEqual(response.body, { data: { ...body, collection: [] } })
+    assert.deepEqual(response.body, { data: { ...body, collection: [] } }, "should've been stored correctly")
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
@@ -99,7 +103,7 @@ test("/home - should be able to update a task", async (assert: Test) => {
       .send({ content, interpreter })
       .expect("x-remix-redirect", `/${body.id}`)
       .expect(204)
-    assert.deepEqual(response.body, {})
+    assert.deepEqual(response.body, {}, "should return an empty object")
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
@@ -110,7 +114,11 @@ test("/home - should be able to update a task", async (assert: Test) => {
       .set({ "Accept": "application/json" })
       .expect("Content-Type", /json/)
       .expect(200)
-    assert.deepEqual(response.body, { data: { ...body, content, interpreter, collection: [] } })
+    assert.deepEqual(
+      response.body,
+      { data: { ...body, content, interpreter, collection: [] } },
+      "should've been updated correctly"
+    )
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
@@ -119,7 +127,7 @@ test("/home - should be able to update a task", async (assert: Test) => {
 })
 
 test("/home - should be able to delete a task", async (assert: Test) => {
-  const body = { id: ulid(), content: ulid() }
+  const body = { id: ulid(), content: ulid(), collection: [] }
   // Create a new task
   try {
     const response = await request(app)
@@ -140,7 +148,7 @@ test("/home - should be able to delete a task", async (assert: Test) => {
       .set({ "Accept": "application/json" })
       .expect("Content-Type", /json/)
       .expect(200)
-    assert.deepEqual(response.body, { data: { ...body, collection: [] } })
+    assert.deepEqual(response.body, { data: { ...body } })
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
@@ -181,7 +189,7 @@ test("/home - should be able to create sub tasks", async (assert: Test) => {
       .send(body)
       .expect("x-remix-redirect", "/home")
       .expect(204)
-    assert.deepEqual(response.body, {})
+    assert.deepEqual(response.body, {}, "should be empty by default")
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
@@ -192,7 +200,7 @@ test("/home - should be able to create sub tasks", async (assert: Test) => {
       .set({ "Accept": "application/json" })
       .expect("Content-Type", /json/)
       .expect(200)
-    assert.deepEqual(response.body, { data: { ...body, collection: [] } })
+    assert.deepEqual(response.body, { data: { ...body, collection: [] } }, "should've been stored correctly")
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
@@ -209,7 +217,7 @@ test("/home - should be able to create sub tasks", async (assert: Test) => {
         .send(subBody)
         .expect("x-remix-redirect", `/${body.id}`)
         .expect(204)
-      assert.deepEqual(response.body, {})
+      assert.deepEqual(response.body, {}, "should return an empty object")
     } catch (err) {
       assert.error(err, "error should be undefined")
     }
@@ -220,7 +228,7 @@ test("/home - should be able to create sub tasks", async (assert: Test) => {
         .set({ "Accept": "application/json" })
         .expect("Content-Type", /json/)
         .expect(200)
-      assert.deepEqual(response.body, { data: { ...subBody, parent: body.id, collection: [] } })
+      assert.deepEqual(response.body, { data: { ...subBody, parent: body.id, collection: [] } }, "should've been correctly stored")
     } catch (err) {
       assert.error(err, "error should be undefined")
     }
@@ -232,7 +240,11 @@ test("/home - should be able to create sub tasks", async (assert: Test) => {
       .set({ "Accept": "application/json" })
       .expect("Content-Type", /json/)
       .expect(200)
-    assert.deepEqual(response.body, { data: { ...body, collection: [{ ...subBody1, parent: body.id, collection: [] }, { ...subBody2, parent: body.id, collection: [] }, { ...subBody3, parent: body.id, collection: [] }] } })
+    assert.deepEqual(
+      response.body,
+      { data: { ...body, collection: [{ ...subBody1, parent: body.id }, { ...subBody2, parent: body.id }, { ...subBody3, parent: body.id }] } },
+      "should've been correctly stored"
+    )
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
@@ -302,7 +314,7 @@ test("/home - should be able to drag a sub-task", async (assert: Test) => {
       .set({ "Accept": "application/json" })
       .expect("Content-Type", /json/)
       .expect(200)
-    assert.deepEqual(response.body, { data: { ...body, collection: [{ ...subBody1, parent: body.id, collection: [] }, { ...subBody2, parent: body.id, collection: [] }, { ...subBody3, parent: body.id, collection: [] }] } })
+    assert.deepEqual(response.body, { data: { ...body, collection: [{ ...subBody1, parent: body.id }, { ...subBody2, parent: body.id }, { ...subBody3, parent: body.id }] } })
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
@@ -326,7 +338,7 @@ test("/home - should be able to drag a sub-task", async (assert: Test) => {
       .set({ "Accept": "application/json" })
       .expect("Content-Type", /json/)
       .expect(200)
-    assert.deepEqual(response.body, { data: { ...body, collection: [{ ...subBody2, parent: body.id, collection: [] }, { ...subBody1, parent: body.id, collection: [] }, { ...subBody3, parent: body.id, collection: [] }] } })
+    assert.deepEqual(response.body, { data: { ...body, collection: [{ ...subBody2, parent: body.id }, { ...subBody1, parent: body.id }, { ...subBody3, parent: body.id }] } })
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
@@ -350,7 +362,7 @@ test("/home - should be able to drag a sub-task", async (assert: Test) => {
       .set({ "Accept": "application/json" })
       .expect("Content-Type", /json/)
       .expect(200)
-    assert.deepEqual(response.body, { data: { ...body, collection: [{ ...subBody3, parent: body.id, collection: [] }, { ...subBody2, parent: body.id, collection: [] }, { ...subBody1, parent: body.id, collection: [] }] } })
+    assert.deepEqual(response.body, { data: { ...body, collection: [{ ...subBody3, parent: body.id }, { ...subBody2, parent: body.id }, { ...subBody1, parent: body.id }] } })
   } catch (err) {
     assert.error(err, "error should be undefined")
   }

@@ -1,15 +1,18 @@
 import { ulid } from "ulid"
 import { createContext, useCallback, useContext, useReducer } from "react"
 import { useSubmit } from "remix"
+import { omit } from "lodash"
+import { Map } from "immutable"
 import type { ReactNode } from "react"
+
 
 import type { NodeItem, Node, NodePatch, NodeMeta } from "../models/node"
 
 /**
- * NodeContextValue is the interface that represents the value handled
- * by NodeContext.
+ * NodesContextValue is the interface that represents the value handled
+ * by NodesContext.
  */
-export interface NodeContextValue {
+export interface NodesContextValue {
   /**
    * onDrag drags a Node to another position inside the porent Node collection.
    * @param parent - The id of the parent Node.
@@ -23,7 +26,7 @@ export interface NodeContextValue {
    * @param afterId - The id of the Node after which the new Node should be added.
    * @param id - Custom id of the new Node.
    */
-  onAdd: (parent: string, afterId?: string, id?: string) => void;
+  onAdd: (parent?: string, afterId?: string, id?: string) => void;
   /**
    * onEdit edits a Node.
    * @param id - Node unique identifier.
@@ -62,6 +65,8 @@ export interface NodeContextValue {
    * rootId represents the id of the root Node.
    */
   rootId: string
+
+  nodesMap: NodesMap;
 }
 /**
  * NodeAction is the action consumed by the NodesProvider's reducer.
@@ -103,47 +108,47 @@ export interface NodesState {
   fetchStatus: NodesFetchStatus;
 }
 /**
- * NodeContextProviderProps represent the props of the NodeContextProvider component.
+ * NodesContextProviderProps represent the props of the NodesContextProvider component.
  */
-export interface NodeContextProviderProps {
+export interface NodesContextProviderProps {
   /**
    * root is the Node root.
    */
   root: NodeItem;
   /**
-   * children is the children components of the NodeContext.
+   * children is the children components of the NodesContext.
    */
   children: ReactNode;
 }
 /**
- * NodeContext is the React Context created to store all the nodes and
+ * NodesContext is the React Context created to store all the nodes and
  * login on the page.
  */
-export const NodeContext = createContext<NodeContextValue>(undefined)
+export const NodesContext = createContext<NodesContextValue>(undefined)
 /**
- * useNodesContext is a hook that makes sures the NodeContextProvider is being
- * used before trying to access the value of NodeContext.
+ * useNodesContext is a hook that makes sures the NodesContextProvider is being
+ * used before trying to access the value of NodesContext.
  */
 export function useNodesContext() {
-  const context = useContext(NodeContext)
+  const context = useContext(NodesContext)
 
-  if (context !== undefined) {
-    throw new Error("useNodeContext must be used within a NodeProvider")
+  if (context === undefined) {
+    throw new Error("useNodesContext must be used within a NodeProvider")
   }
 
   return context
 }
 /**
- * NodeContextProvider is a component that wraps and serves the value stored
- * on NodeContext.
+ * NodesContextProvider is a component that wraps and serves the value stored
+ * on NodesContext.
  * @param root - Root Node of the page.
  */
-export function NodeContextProvider({ root, children }: NodeContextProviderProps) {
+export function NodesContextProvider({ root, children }: NodesContextProviderProps) {
   const submit = useSubmit()
   const [state, dispatch] = useReducer(reducer, {
-    nodesMap: new Map<string, Node>(),
+    nodesMap: normalizeNodeItemRecursively(Map<string, Node>(), root),
     rootId: root.id,
-    fetchStatus: new Map<string, string>(),
+    fetchStatus: Map<string, string>(),
   })
   /**
    * onAdd adds a Node to the under a parent Node, and optionally, under
@@ -152,22 +157,12 @@ export function NodeContextProvider({ root, children }: NodeContextProviderProps
    * @param afterId - Id of the Node after which the new Node should be added.
    * @param id - Custom id for the new Node.
    */
-  const onAdd = useCallback((parent: string, afterId?: string, id?: string) => {
-    const node = {
-      id: id || ulid(),
-      content: "",
-      parent,
-      collection: [],
-      meta: { isInEditMode: true }
-    }
+  const onAdd = useCallback((parent?: string, afterId?: string, id?: string) => {
+    id || (id = ulid())
+    const content = ""
+    const node = { id, content, parent, collection: [], meta: { isInEditMode: true } }
     dispatch({ type: "ADD", payload: { node, afterId } })
-    const form = createRemixFormElement(`/${parent}`, "post")
-    form
-      .input("id", node.id)
-      .input("content", node.content)
-      .input("parent", node.parent)
-      .input("afterId", afterId)
-    submit(form)
+    fetch(`/${parent || "home"}`, { method: "POST", body: formEncode({ id, parent, afterId, content }) })
   }, [dispatch, submit])
   /**
    * onDelete deletes a node.
@@ -175,35 +170,29 @@ export function NodeContextProvider({ root, children }: NodeContextProviderProps
    */
   const onDelete = useCallback((id: string) => {
     dispatch({ type: "DELETE", payload: id })
-    const form = createRemixFormElement(`/${id}`, "delete")
-    submit(form)
+    fetch(`/${id}`, { method: "DELETE" })
   }, [dispatch, submit])
   /**
    * onEdit edits a Node
    * @param id - Id of the Node to be edited.
    * @param patch - Patch to apply to the Node.
-   * @param fetch - Flag that indicates if the edits should be propagated to the backend.
+   * @param propagete - Flag that indicates if the edits should be propagated to the backend.
    */
-  const onEdit = useCallback((id: string, patch: NodePatch, fetch: boolean = true) => {
+  const onEdit = useCallback((id: string, patch: NodePatch, propagete: boolean = true) => {
     dispatch({ type: "EDIT", payload: { id, patch } })
-    if (!fetch) return
-    const form = createRemixFormElement(`/${id}`, "put")
-    patch.content && form.input("content", patch.content)
-    patch.interpreter && form.input("interpreter", patch.interpreter)
-    submit(form)
+    if (!propagete) return
+    fetch(`/${id}`, { method: "PUT", body: formEncode(omit(patch, "meta")) })
   }, [dispatch, submit])
   /**
    * onMeta updates the metadata attributes of a Node.
    * @param id - Id of the Node to be edited.
    * @param meta - Metadata object to merge.
-   * @param fetch - Flag that indicates if the edits should be propagated to the backend.
+   * @param propagate - Flag that indicates if the edits should be propagated to the backend.
    */
-  const onMeta = useCallback((id: string, meta: NodeMeta, fetch: boolean = true) => {
+  const onMeta = useCallback((id: string, meta: NodeMeta, propagate: boolean = true) => {
     dispatch({ type: "META", payload: { id, meta } })
-    if (!fetch) return
-    const form = createRemixFormElement(`/${id}`, "patch")
-    form.object("meta", meta)
-    submit(form)
+    if (!propagate) return
+    fetch(`/${id}`, { method: "PATCH", body: formEncode({ meta }) })
   }, [dispatch, submit])
   /**
    * onDrag edits the position of a Node inside its parent collection.
@@ -213,11 +202,7 @@ export function NodeContextProvider({ root, children }: NodeContextProviderProps
    */
   const onDrag = useCallback((parent: string, dragIndex: number, hoverIndex?: number) => {
     dispatch({ type: "DRAG", payload: { parent, dragIndex, hoverIndex } })
-    const form = createRemixFormElement(`/${parent}`, "post")
-    form
-      .input("dragIndex", dragIndex, "number")
-      .input("hoverIndex", hoverIndex, "number")
-    submit(form)
+    fetch(`/${parent}`, { method: "POST", body: formEncode({ dragIndex, hoverIndex }) })
   }, [submit, dispatch])
   /**
    * getNode gets a Node by its id.
@@ -248,8 +233,8 @@ export function NodeContextProvider({ root, children }: NodeContextProviderProps
           .then((text) => { throw new Error(`couldn't fetch: ${text}`) })
           .catch((err) => { throw new Error(`couldn't fetch: ${err.message}`) })
       })
-      .then((item: NodeItem) => {
-        dispatch({ type: "FETCH_SUCCESS", payload: { id, item } })
+      .then((response: { data: NodeItem }) => {
+        dispatch({ type: "FETCH_SUCCESS", payload: { id, item: response.data } })
       })
       .catch((err) => {
         dispatch({ type: "FETCH_FAILURE", payload: id })
@@ -260,7 +245,7 @@ export function NodeContextProvider({ root, children }: NodeContextProviderProps
    * Value
    */
   return (
-    <NodeContext.Provider value={{
+    <NodesContext.Provider value={{
       onAdd,
       onDelete,
       onEdit,
@@ -270,9 +255,10 @@ export function NodeContextProvider({ root, children }: NodeContextProviderProps
       getFetchStatus,
       fetchNode,
       rootId: state.rootId,
+      nodesMap: state.nodesMap,
     }}>
       {children}
-    </NodeContext.Provider>
+    </NodesContext.Provider>
   )
 }
 /**
@@ -284,6 +270,11 @@ export function NodeContextProvider({ root, children }: NodeContextProviderProps
  * @param action - The action to reduce.
  */
 function reducer(state: NodesState, { type, payload }: NodeAction): NodesState {
+  const nextState = getState(state, { type, payload })
+  return nextState
+}
+
+function getState(state: NodesState, { type, payload }: NodeAction): NodesState {
   switch (type) {
     case "INIT": return reduceInitAction(state, payload as NodeItem)
     case "DELETE": return reduceDeleteAction(state, payload as string)
@@ -317,21 +308,17 @@ function reduceInitAction(state: NodesState, payload: NodeItem): NodesState {
  * @property payload.afterId - The if of the node after which the new Node should be added.
  */
 function reduceAddAction(state: NodesState, { node, afterId }: { node: Node, afterId?: string }): NodesState {
-  if (state.nodesMap.has(node.parent) === false) return { ...state }
-  const parent = state.nodesMap.get(node.parent)
-  const { collection } = parent
+  const { parent = "home" } = node
+  if (state.nodesMap.has(parent) === false) return { ...state }
+  const parentNode = state.nodesMap.get(parent)
+  const { collection } = parentNode
   const index = afterId
     ? collection.findIndex((id) => id === afterId)
     : collection.length - 1
-  state.nodesMap.set(node.parent, {
-    ...parent,
-    collection: [...collection.slice(0, index), node.id, ...collection.slice(index + 1)]
-  })
-  state.nodesMap.set(node.id, node)
-  return {
-    ...state,
-    nodesMap: { ...state.nodesMap }
-  }
+  collection.splice(index + 1, 0, node.id)
+  state.nodesMap = state.nodesMap.set(parent, { ...parentNode, collection })
+  state.nodesMap = state.nodesMap.set(node.id, node)
+  return { ...state }
 }
 /**
  * reduceDeleteAction returns the new state after deleting an existing Node
@@ -343,14 +330,11 @@ function reduceDeleteAction(state: NodesState, id: string): NodesState {
   const node = state.nodesMap.get(id)
   if (state.nodesMap.has(node.parent) === false) return { ...state }
   const parent = state.nodesMap.get(node.parent)
-  state.nodesMap.set(parent.id, {
+  state.nodesMap = state.nodesMap.set(parent.id, {
     ...parent,
     collection: parent.collection.filter(_id => _id !== id)
   })
-  return {
-    ...state,
-    nodesMap: { ...state.nodesMap }
-  }
+  return { ...state }
 }
 /**
  * reduceEditAction returns the new state after editing an existing Node.
@@ -362,11 +346,8 @@ function reduceDeleteAction(state: NodesState, id: string): NodesState {
 function reduceEditAction(state: NodesState, { id, patch }: { id: string, patch: NodePatch }): NodesState {
   if (state.nodesMap.has(id) === false) return { ...state }
   const node = state.nodesMap.get(id)
-  state.nodesMap.set(id, { ...node, ...patch })
-  return {
-    ...state,
-    nodesMap: { ...state.nodesMap }
-  }
+  state.nodesMap = state.nodesMap.set(id, { ...node, ...patch })
+  return { ...state }
 }
 /**
  * reduceMetaAction returns the new state after editing the metadata of a Node.
@@ -378,11 +359,8 @@ function reduceEditAction(state: NodesState, { id, patch }: { id: string, patch:
 function reduceMetaAction(state: NodesState, { id, meta }: { id: string, meta: NodeMeta }): NodesState {
   if (state.nodesMap.has(id) === false) return { ...state }
   const node = state.nodesMap.get(id)
-  state.nodesMap.set(id, { ...node, meta: { ...node.meta, ...meta } })
-  return {
-    ...state,
-    nodesMap: { ...state.nodesMap }
-  }
+  state.nodesMap = state.nodesMap.set(id, { ...node, meta: { ...node.meta, ...meta } })
+  return { ...state }
 }
 /**
  * reduceDragAction returns the new state after dragging a Node inside a parents collection
@@ -398,11 +376,8 @@ function reduceDragAction(state: NodesState, { parent, dragIndex, hoverIndex }: 
   const { collection } = parentNode
   collection.splice(dragIndex, 1)
   collection.splice(hoverIndex, 0, collection[dragIndex])
-  state.nodesMap.set(parent, parentNode)
-  return {
-    ...state,
-    nodesMap: { ...state.nodesMap }
-  }
+  state.nodesMap = state.nodesMap.set(parent, parentNode)
+  return { ...state }
 }
 /**
  * reduceFetchRequestAction returns the new state after requesting the data of a Node.
@@ -413,7 +388,7 @@ function reduceFetchRequestAction(state: NodesState, id: string): NodesState {
   state.fetchStatus.set(id, "isFetching")
   return {
     ...state,
-    fetchStatus: { ...state.fetchStatus },
+    fetchStatus: Map(state.fetchStatus),
   }
 }
 /**
@@ -426,7 +401,7 @@ function reduceFetchFailureAction(state: NodesState, id: string): NodesState {
   state.fetchStatus.set(id, "failure")
   return {
     ...state,
-    fetchStatus: { ...state.fetchStatus },
+    fetchStatus: Map(state.fetchStatus),
   }
 }
 /**
@@ -441,8 +416,8 @@ function reduceFetchSuccessAction(state: NodesState, { id, item }: { id: string,
   state.fetchStatus.set(id, "success")
   return {
     ...state,
-    nodesMap: { ...normalizeNodeItemRecursively(state.nodesMap, item) },
-    fetchStatus: { ...state.fetchStatus }
+    nodesMap: Map(normalizeNodeItemRecursively(state.nodesMap, item)),
+    fetchStatus: Map(state.fetchStatus)
   }
 }
 /**
@@ -457,20 +432,20 @@ function normalizeNodeItemRecursively(nodesMap: Map<string, Node>, nodeItem: Nod
   // We don't want the backend metadata to replace the frontend's metadata.
   if (nodesMap.has(nodeItem.id) && nodeItem.meta) {
     const currentNode = nodesMap.get(nodeItem.id)
-    nodesMap.set(nodeItem.id, {
+    nodesMap = nodesMap.set(nodeItem.id, {
       ...nodeItem,
       meta: { ...nodeItem.meta, ...currentNode.meta },
       collection: ids,
     })
   } else {
-    nodesMap.set(nodeItem.id, {
+    nodesMap = nodesMap.set(nodeItem.id, {
       ...nodeItem,
       meta: nodeItem.meta || {},
       collection: ids,
     })
   }
   for (let item of collection) {
-    normalizeNodeItemRecursively(nodesMap, item)
+    nodesMap = normalizeNodeItemRecursively(nodesMap, item)
   }
   return nodesMap
 }
@@ -521,4 +496,21 @@ function createRemixFormElement(action: string, method: string = "post"): RemixH
     return form.input(name, value.join("&"))
   }
   return form
+}
+/**
+ * Functions
+ */
+/**
+ * formEncode converts an object into a valid form encoded string.
+ * @param obj - Object to stringify.
+ */
+function formEncode(obj: any): string {
+  const formBody = []
+  for (let [key, value] of Object.entries(obj)) {
+    if (value === undefined || value === null) continue
+    let encodedKey = encodeURIComponent(key)
+    let encodedVal = typeof value === "object" ? formEncode(value) : encodeURIComponent(value as any)
+    formBody.push(encodedKey + "=" + encodedVal)
+  }
+  return formBody.join("&")
 }

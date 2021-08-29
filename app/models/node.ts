@@ -35,8 +35,8 @@ export interface NodeItem {
  * Node is the interface that represents a Node on the frontend.
  */
 export interface Node extends Omit<NodeItem, "collection"> {
-  collection: string[];
-  meta: NodeMeta;
+  collection?: string[];
+  meta?: NodeMeta;
 };
 /**
  * NodeMeta is a plain JavaScript object that contains

@@ -15,7 +15,6 @@ export function useTasksQuery(id: string, initialData: Task | TaskBody) {
    * Fetch a Task and its collection by id.
    */
   const { data, ...query } = useQuery<Task>(id, () => {
-    console.log(data.meta.isOpened)
     return !data.meta.isOpened
       ? Promise.resolve(data)
       : fetch(`/${id}`, { headers })

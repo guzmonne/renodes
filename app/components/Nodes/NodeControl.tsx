@@ -21,11 +21,11 @@ export interface NodeControlProps {
 /**
  * NodeControl represents a control div used to handle a Node.
  */
-export const NodeControl = forwardRef<HTMLDivElement, NodeControlProps>(({ onClick, icon, className, ...props }, ref) => {
+export const NodeControl = forwardRef<HTMLDivElement, NodeControlProps>(function NodeControl({ onClick, icon, className, ...props }, ref) {
   return (
     <div
       onClick={onClick}
-      className={cn("Task__Control", className)}
+      className={cn("Node__Control", className)}
       ref={ref}
       {...props}
     >

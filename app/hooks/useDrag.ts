@@ -57,7 +57,7 @@ export function useDrag(node: Node, index: number) {
       const { dragIndex, hoverIndex } = item
       if (hoverIndex === index) return
       item.hoverIndex = index
-      // onDrag(node.parent, dragIndex, index)
+      onDrag(node.parent, dragIndex, index)
     }
   })
   // Set up the drag logic
