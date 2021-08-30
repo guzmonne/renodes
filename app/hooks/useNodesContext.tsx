@@ -1,6 +1,5 @@
 import { ulid } from "ulid"
 import { createContext, useCallback, useContext, useReducer } from "react"
-import { useSubmit } from "remix"
 import { omit } from "lodash"
 import { Map } from "immutable"
 import type { ReactNode } from "react"
@@ -144,7 +143,6 @@ export function useNodesContext() {
  * @param root - Root Node of the page.
  */
 export function NodesContextProvider({ root, children }: NodesContextProviderProps) {
-  const submit = useSubmit()
   const [state, dispatch] = useReducer(reducer, {
     nodesMap: normalizeNodeItemRecursively(Map<string, Node>(), root),
     rootId: root.id,
@@ -163,7 +161,7 @@ export function NodesContextProvider({ root, children }: NodesContextProviderPro
     const node = { id, content, parent, collection: [], meta: { isInEditMode: true } }
     dispatch({ type: "ADD", payload: { node, afterId } })
     fetch(`/${parent || "home"}`, { method: "POST", body: formEncode({ id, parent, afterId, content }) })
-  }, [dispatch, submit])
+  }, [dispatch])
   /**
    * onDelete deletes a node.
    * @param id - Id of the Node to delete.
@@ -171,7 +169,7 @@ export function NodesContextProvider({ root, children }: NodesContextProviderPro
   const onDelete = useCallback((id: string) => {
     dispatch({ type: "DELETE", payload: id })
     fetch(`/${id}`, { method: "DELETE" })
-  }, [dispatch, submit])
+  }, [dispatch])
   /**
    * onEdit edits a Node
    * @param id - Id of the Node to be edited.
@@ -182,7 +180,7 @@ export function NodesContextProvider({ root, children }: NodesContextProviderPro
     dispatch({ type: "EDIT", payload: { id, patch } })
     if (!propagete) return
     fetch(`/${id}`, { method: "PUT", body: formEncode(omit(patch, "meta")) })
-  }, [dispatch, submit])
+  }, [dispatch])
   /**
    * onMeta updates the metadata attributes of a Node.
    * @param id - Id of the Node to be edited.
@@ -193,7 +191,7 @@ export function NodesContextProvider({ root, children }: NodesContextProviderPro
     dispatch({ type: "META", payload: { id, meta } })
     if (!propagate) return
     fetch(`/${id}`, { method: "PATCH", body: formEncode({ meta }) })
-  }, [dispatch, submit])
+  }, [dispatch])
   /**
    * onDrag edits the position of a Node inside its parent collection.
    * @param parent - Id of the parent Node.
@@ -203,7 +201,7 @@ export function NodesContextProvider({ root, children }: NodesContextProviderPro
   const onDrag = useCallback((parent: string, dragIndex: number, hoverIndex?: number) => {
     dispatch({ type: "DRAG", payload: { parent, dragIndex, hoverIndex } })
     fetch(`/${parent}`, { method: "POST", body: formEncode({ dragIndex, hoverIndex }) })
-  }, [submit, dispatch])
+  }, [dispatch])
   /**
    * getNode gets a Node by its id.
    * @param id - Node unique identifier.
@@ -448,54 +446,6 @@ function normalizeNodeItemRecursively(nodesMap: Map<string, Node>, nodeItem: Nod
     nodesMap = normalizeNodeItemRecursively(nodesMap, item)
   }
   return nodesMap
-}
-/**
- * RemixHTMLFormElement extends the HTMLFormElement.
- */
-interface RemixHTMLFormElement extends HTMLFormElement {
-  /**
-   * input adds a new input to the form
-   * @param name - name prop of the input.
-   * @param value - value prop of the input.
-   * @param type - value tyoe of the input.
-   */
-  input: (name: string, value: any, type?: string) => RemixHTMLFormElement;
-  /**
-   * object is a special function that can create a form encoded input.
-   * @param name - name prop of the input.
-   * @param object - object to encode.
-   */
-  object: (name: string, object: any) => RemixHTMLFormElement;
-}
-/**
- * createRemixFormElement returns a new form element.
- * @param action - Form action attribute
- * @param method - Form method attribute
- */
-function createRemixFormElement(action: string, method: string = "post"): RemixHTMLFormElement {
-  const form = document.createElement("form") as RemixHTMLFormElement
-  form.setAttribute("action", action)
-  form.setAttribute("method", method)
-  form.input = (name: string, value: any, type: string = "text") => {
-    if (value === undefined || value === null) return form
-    const input = document.createElement("input")
-    input.setAttribute("name", name)
-    input.setAttribute("type", type)
-    input.setAttribute("value", value)
-    form.appendChild(input)
-    return form
-  }
-  form.object = (name: string, object: any): RemixHTMLFormElement => {
-    if (object === undefined || object === null || typeof object !== "object") return form
-    const value: string[] = []
-    for (let [key, val] of Object.entries(object)) {
-      let encodedKey = encodeURIComponent(key)
-      let encodedVal = encodeURIComponent(val as any)
-      value.push(encodedKey + "=" + encodedVal)
-    }
-    return form.input(name, value.join("&"))
-  }
-  return form
 }
 /**
  * Functions

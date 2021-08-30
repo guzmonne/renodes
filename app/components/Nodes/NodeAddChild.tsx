@@ -3,22 +3,22 @@ import TextareaAutosize from "react-textarea-autosize";
 import { NodeControl } from "./NodeControl"
 
 /**
- * NodeEmptyProps represnts the props of the NodeEmpty component.
+ * NodeAddChildProps represnts the props of the NodeAddChild component.
  */
-export interface NodeEmptyProps {
+export interface NodeAddChildProps {
   /**
    * onAdd is the callback used to create a new Node.
    */
   onAdd: () => void;
 }
 /**
- * NodeEmpty renders an empty Node, capable of creating new ones.
+ * NodeAddChild renders an empty Node, capable of creating new ones.
  */
-export function NodeEmpty({ onAdd }: NodeEmptyProps) {
+export function NodeAddChild({ onAdd }: NodeAddChildProps) {
   return (
     <div className="Node">
       <div className="Node__Controls">
-        <NodeControl icon="fa-plus" onClick={onAdd} />
+        <NodeControl icon="plus" onClick={onAdd} />
       </div>
       <TextareaAutosize
         className="Interpreter Interpreter__Text"

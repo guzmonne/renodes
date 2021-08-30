@@ -51,6 +51,10 @@ pre[class*="language-"] {
   margin: 0;
 }
 
+.svg-inline--fa {
+  font-size: 1rem;
+}
+
 /** Title **/
 .Title {
   color: var(--purple);

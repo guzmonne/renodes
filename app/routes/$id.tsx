@@ -4,13 +4,13 @@ import { DndProvider } from "react-dnd-multi-backend"
 import { IdProvider } from "@radix-ui/react-id"
 import HTML5toTouch from "react-dnd-multi-backend/dist/cjs/HTML5toTouch"
 import * as ScrollArea from "@radix-ui/react-scroll-area"
+import { QueryClient, QueryClientProvider } from 'react-query'
 import type { HeadersFunction, MetaFunction, LoaderFunction, ActionFunction, LinksFunction } from "remix"
 
 import { getUserFromSession, signIn, signOut } from "../server/session.server"
 import { NavBar } from "../components/Layout/NavBar"
-import { NodesContextProvider } from "../hooks/useNodesContext"
 import { repository } from "../repositories/nodes.server"
-import { Node } from "../components/Nodes/Node"
+import { NodesTree } from "../components/Nodes/NodesTree"
 import etag from "../server/etag.server"
 import BaseStyles from "../styles/base.css"
 import LayoutStyles from "../components/Layout/styles.css"
@@ -115,9 +115,10 @@ export const action: ActionFunction = async ({ request, params }) => {
   }
 }
 
+const queryClient = new QueryClient()
+
 export default function () {
   const { data, user } = useRouteData<{ data: NodeItem, user: UserBody | undefined, error?: string }>()
-  const { id } = useParams()
   const { search } = useLocation()
 
   const query = new URLSearchParams(search)
@@ -130,17 +131,17 @@ export default function () {
         <ScrollArea.Viewport className="ScrollArea__Viewport">
           <main>
             {query.get("navbar") !== "none" && <NavBar user={user} />}
-            <DndProvider options={HTML5toTouch}>
-              <NodesContextProvider root={data}>
-                <Node id={id} />
-              </NodesContextProvider>
-            </DndProvider>
+            <QueryClientProvider client={queryClient}>
+              <DndProvider options={HTML5toTouch}>
+                <NodesTree root={data} />
+              </DndProvider>
+            </QueryClientProvider>
           </main>
         </ScrollArea.Viewport>
         <ScrollArea.Scrollbar className="ScrollArea__Scrollbar" orientation="vertical">
           <ScrollArea.Thumb className="ScrollArea__Thumb" />
         </ScrollArea.Scrollbar>
       </ScrollArea.Root>
-    </IdProvider>
+    </IdProvider >
   )
 }

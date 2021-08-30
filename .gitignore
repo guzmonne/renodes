@@ -9,3 +9,4 @@ api.rest
 /db
 .env
 .DS_Store
+.npmrc

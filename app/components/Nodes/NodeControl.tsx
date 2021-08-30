@@ -1,5 +1,7 @@
 import { forwardRef } from "react"
 import cn from "classnames"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import type { IconName } from "@fortawesome/fontawesome-common-types"
 
 /**
  * NodeControl represents the props of the NodeControl component.
@@ -8,7 +10,7 @@ export interface NodeControlProps {
   /**
    * icon must be a valid FontAwesome icon name.
    */
-  icon: string;
+  icon: IconName;
   /**
    * onClick is the action to be triggered when the control is clicked.
    */
@@ -29,7 +31,7 @@ export const NodeControl = forwardRef<HTMLDivElement, NodeControlProps>(function
       ref={ref}
       {...props}
     >
-      <i className={cn("fas", icon)}></i>
+      <FontAwesomeIcon icon={icon} />
     </div>
   )
 })

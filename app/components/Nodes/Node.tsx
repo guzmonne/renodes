@@ -6,7 +6,7 @@ import { useNodesContext } from "../../hooks/useNodesContext"
 import { NodeControl } from "./NodeControl"
 import { NodeDropdown } from "./NodeDropdown"
 import { NodeInterpreter } from "./NodeInterpreter"
-import { NodeEmpty } from "./NodeEmpty"
+import { NodeAddChild } from "./NodeAddChild"
 import type { Node as NodeModel } from "../../models/node"
 import { useNode } from "../../hooks/useNode"
 
@@ -184,7 +184,7 @@ export function NodeComponent({
         <div className={cn("Node", hoverClasses)}>
           <div className="Node__Controls">
             <NodeControl
-              icon={node.meta.isOpened ? "fa fa-chevron-down" : "fa fa-chevron-right"}
+              icon={node.meta.isOpened ? "chevron-down" : "chevron-right"}
               onClick={onToggleNode}
               ref={drag}
               data-handler-id={handlerId}
@@ -211,9 +211,9 @@ export function NodeComponent({
           />
         </div>
       }
-      <div className="Nodes" key={node.meta.isOpened ? "fa fa-chevron-down" : "fa fa-chevron-right"}>
+      <div className="Nodes" key={node.meta.isOpened ? "chevron-down" : "chevron-right"}>
         {(isRoot || node.meta.isOpened) && node.collection.length === 0
-          ? <NodeEmpty onAdd={onAddChild} />
+          ? <NodeAddChild onAdd={onAddChild} />
           : node.collection.map((id, index) => (
             <Node key={id} id={id} index={index} />
           ))
