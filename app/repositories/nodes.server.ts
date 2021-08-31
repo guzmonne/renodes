@@ -68,6 +68,7 @@ class NodesRepository extends Repository<NodeItem, NodePatch, NodesQueryParams> 
    * @param userId - User unique identifier.
    */
   async after(id: string, parent?: string, afterId?: string, userId?: string): Promise<any> {
+    if (parent === "home") parent = undefined
     const response = await this.client.after(id, parent, afterId, userId)
     if (response && response.error) throw response.error
     return undefined

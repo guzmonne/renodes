@@ -1,7 +1,11 @@
-import { Fragment, createContext, useRef, useEffect, useState, useMemo, useCallback, useContext } from "react"
+import { Fragment, createContext, useRef, useEffect, useState, useCallback, useContext } from "react"
 import { ulid } from "ulid"
 import { Map as ImmutableMap } from "immutable"
 import { useQuery, useMutation } from "react-query"
+import { useDrag, useDrop } from "react-dnd"
+import cn from "classnames"
+import type { XYCoord } from 'dnd-core'
+import type { DropTargetMonitor } from "react-dnd"
 
 import { NodeControl } from "./NodeControl"
 import { NodeDropdown } from "./NodeDropdown"
@@ -46,6 +50,10 @@ export interface NodeProps {
    */
   model: ImmutableNodeModel;
   /**
+   * index corresponds to the Node's index inside its parent collection.
+   */
+  index?: number;
+  /**
    * isRoot is a flag that should only set to true for the root Node.
    */
   isRoot?: boolean;
@@ -70,6 +78,27 @@ export interface NodeBranchProps {
    * loading is a flag that tells the Branch that new data is being loaded.
    */
   loading?: boolean;
+}
+/**
+ * NodeDrag is the interface React DND uses to handle dragging a Node.
+ */
+export interface NodeDrag {
+  /**
+   * dragIndex corresponds to the index of the `Nodes` being dragged.
+   */
+  dragIndex: number;
+  /**
+   * hoverIndex corresponds to the index of the `Nodes` that is being hovered.
+   */
+  hoverIndex: number;
+  /**
+   * id is the unique identifier of the task.
+   */
+  id: string
+  /**
+   * type indicates the type of the Node being dragged.
+   */
+  type: string
 }
 /**
  * NodesTreeContext is the React context used throughout the Node's Tree.
@@ -138,6 +167,22 @@ export function NodesTree({ root, parent }: NodesTreeProps) {
       headers,
     }).then((response) => {
       if (!response.ok) throw new Error("couldn't edit the Node's metadata")
+    })
+  ))
+  /**
+   * dragMutation persist drag actions on the backend.
+   * @param variables - Mutation variables.
+   * @property variables.parent - Node parent
+   * @property variables.dragId - Node unique identifier.
+   * @property variables.afterId - Node after which the dragged Node should be placed.
+   */
+  const dragMutation = useMutation(({ parent, dragId, afterId }: { parent: string, dragId: string, afterId?: string }) => (
+    fetch(`/${parent}`, {
+      method: "POST",
+      headers,
+      body: toFormBody({ dragId, afterId })
+    }).then((response) => {
+      if (!response.ok) throw new Error("couldn't drag the Node")
     })
   ))
   /**
@@ -238,6 +283,22 @@ export function NodesTree({ root, parent }: NodesTreeProps) {
     editMutation.mutate({ id, patch: { content } })
   }, [setState, state])
   /**
+   * onDrag updates the position of Node inside it's parent collection by dragging
+   * it after another Node.
+   * @param dragId - Node unique identifier.
+   * @param dragIndex - Current index of the Node being dragged.
+   * @param hoverIndex - Index of the Node being hovered.
+   */
+  const onDrag = useCallback((dragId: string, dragIndex: number, hoverIndex?: number) => {
+    const parent = state.getIn([dragId, "parent"]) as string || "home"
+    const collection = state.getIn([parent, "collection"]) as string[]
+    const afterId = hoverIndex === 0 ? undefined : collection[hoverIndex]
+    collection.splice(dragIndex, 1)
+    collection.splice(hoverIndex, 0, dragId)
+    setState(state.setIn([parent, "collection"], [...collection]))
+    dragMutation.mutate({ parent, dragId, afterId })
+  }, [setState, state])
+  /**
    * onFetch substitutes an existing model from a current on gotten from the backend.
    * @param id - Node's unique identifier.
    */
@@ -248,11 +309,6 @@ export function NodesTree({ root, parent }: NodesTreeProps) {
     setState(state.merge(createImmutableNodesStateFrom(data, state)))
     return state.get(id)
   }, [setState, state])
-  /**
-   * isRoot is a flag that indicates that this flag should be rendered as
-   * a root Node.
-   */
-  const isRoot = useMemo(() => parent === undefined, [parent])
   // ---
   return (
     <NodesTreeContext.Provider value={{
@@ -261,12 +317,13 @@ export function NodesTree({ root, parent }: NodesTreeProps) {
       onAddSibling,
       onContentChange,
       onDelete,
+      onDrag,
+      onFetch,
       onInterpreterChange,
       onOpenExternalLink,
       onSave,
       onToggleIsInEditMode,
       onToggleIsOpened,
-      onFetch,
     }}>
       <Node
         model={state.get(root.id)}
@@ -284,23 +341,29 @@ export function Node({
   model,
   isHome = false,
   isRoot = false,
+  index = -1,
 }: NodeProps) {
   const {
     onAddChild,
     onAddSibling,
     onContentChange,
     onDelete,
+    onDrag,
+    onFetch,
     onInterpreterChange,
     onOpenExternalLink,
     onSave,
     onToggleIsInEditMode,
     onToggleIsOpened,
-    onFetch,
   } = useContext(NodesTreeContext)
   /**
    * id is the unique identifier of a Node.
    */
   const id = model.get("id") as string
+  /**
+   * parent is the unique identifier of the parent Node.
+   */
+  const parent = model.get("parent") as string
   /**
    * collection is a list of child Nodes.
    */
@@ -392,15 +455,56 @@ export function Node({
     if (isOpened === true && isOpenedRef.current === false) query.refetch()
     isOpenedRef.current = isOpened
   }, [model])
+  /**
+   * Handle dragging Nodes inside a parent Node's collection.
+   */
+  const ref = useRef<any>(null)
+  // Set up the drop logic.
+  const [{ hoveredClassName, hovered, handlerId }, drop] = useDrop({
+    accept: parent || "NODE",
+    collect: (monitor) => {
+      const item = (monitor.getItem() || {}) as NodeDrag
+      const { dragIndex, hoverIndex } = item
+      const className = cn({
+        hoverTop: hoverIndex === index && dragIndex > index,
+        hoverBottom: hoverIndex === index && dragIndex < index
+      })
+      return {
+        handlerId: monitor.getHandlerId(),
+        hovered: monitor.isOver(),
+        hoveredClassName: className,
+      }
+    },
+    hover: (item: NodeDrag) => {
+      if (!ref.current || index === -1) return
+      const { dragIndex, hoverIndex } = item
+      if (hoverIndex === index) return
+      item.hoverIndex = index
+    },
+    drop: (item: NodeDrag) => {
+      const { id, dragIndex, hoverIndex } = item
+      if (dragIndex === hoverIndex) return
+      onDrag(id, dragIndex, hoverIndex)
+    }
+  })
+  // Set up the drag logic
+  const [_, drag, preview] = useDrag({
+    type: parent || "NODE",
+    item: () => ({ id, dragIndex: index, type: parent || "NODE" }),
+  })
+  // Combine the drop and preview values with our ref.
+  drop(preview(ref))
   // ---
   return (
     <Fragment>
       {!isHome &&
-        <div className="Node">
+        <div className={cn("Node", { [hoveredClassName]: hovered })} ref={ref}>
           <div className="Node__Controls">
             <NodeControl
               icon={isOpened ? "chevron-down" : "chevron-right"}
               onClick={handleOnToggleIsOpened}
+              ref={drag}
+              data-handler-id={handlerId}
             />
             <NodeDropdown
               onAdd={handleOnAddSibling}
@@ -441,7 +545,7 @@ export function NodeBranch({ loading, collection, onAdd }: NodeBranchProps) {
     <div className="Nodes">
       {collection.length === 0
         ? <NodeAddChild onAdd={onAdd} />
-        : collection.map((id) => <Node key={id} model={state.get(id)} />)
+        : collection.map((id, index) => <Node key={id} index={index} model={state.get(id)} />)
       }
     </div>
   )

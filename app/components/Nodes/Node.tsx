@@ -176,7 +176,7 @@ export function NodeComponent({
   onToggleEditMode,
   onToggleNode,
 }: NodeComponentProps) {
-  const { drag, handlerId, hoverClasses } = useDrag(node, index)
+  const { drag, handlerId, hoverClasses } = useDrag(node.id, node.parent, index)
 
   return (
     <Fragment>

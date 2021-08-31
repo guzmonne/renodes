@@ -139,11 +139,11 @@ main > .Nodes {
   padding: 0.5rem;
 }
 
-.Interpreter.hoverTop {
+.Node.hoverTop .Interpreter {
   border-top: 2px solid var(--highlight);
 }
 
-.Interpreter.hoverBottom {
+.Node.hoverBottom .Interpreter {
   border-bottom: 2px solid var(--highlight);
 }
 
