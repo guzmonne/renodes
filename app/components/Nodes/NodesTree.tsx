@@ -159,7 +159,6 @@ export function NodesTree({ root, parent }: NodesTreeProps) {
     const id = model.get("id") as string
     const isInEditMode = value === undefined ? !model.getIn(["meta", "isInEditMode"]) : value
     setState(state.setIn([id, "meta", "isInEditMode"], isInEditMode))
-    metaMutation.mutate({ id, meta: { isInEditMode } })
   }, [setState, state])
   /**
    * onAddSibling adds a new Node after the current model.
