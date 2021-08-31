@@ -51,6 +51,10 @@ pre[class*="language-"] {
   margin: 0;
 }
 
+.svg-inline--fa {
+  font-size: 1rem;
+}
+
 /** Title **/
 .Title {
   color: var(--purple);
@@ -66,12 +70,12 @@ pre[class*="language-"] {
   -webkit-text-fill-color: transparent;
 }
 
-/** Tasks **/
-main > .Tasks {
+/** Nodes **/
+main > .Nodes {
   margin-bottom: 10rem;
 }
 
-.Tasks {
+.Nodes {
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -79,12 +83,12 @@ main > .Tasks {
   align-items: center;
 }
 
-.Tasks > .Tasks {
+.Nodes > .Nodes {
   padding-left: 0.5rem;
 }
 
-/** Task **/
-.Task {
+/** Node **/
+.Node {
   width: 100%;
   display: flex;
   flex-direction: row;
@@ -92,7 +96,7 @@ main > .Tasks {
   justify-content: space-between;
 }
 
-.Task .Task__Controls {
+.Node .Node__Controls {
   align-self: stretch;
   display: flex;
   flex-direction: row;
@@ -103,7 +107,7 @@ main > .Tasks {
   padding: 0.5rem 0;
 }
 
-.Task .Task__Control {
+.Node .Node__Control {
   display: flex;
   justify-content: center;
   color: var(--handle);
@@ -111,16 +115,16 @@ main > .Tasks {
   max-width: 1rem;
 }
 
-.Task .Task__Control--transparent {
+.Node .Node__Control--transparent {
   opacity: 0;
 }
 
-.Task .fa-grip-vertical {
+.Node .fa-grip-vertical {
   cursor: pointer;
 }
 
-.Task .fa-chevron-right,
-.Task .fa-chevron-down {
+.Node .fa-chevron-right,
+.Node .fa-chevron-down {
   cursor: grab;
 }
 
@@ -135,11 +139,11 @@ main > .Tasks {
   padding: 0.5rem;
 }
 
-.Interpreter.hoverTop {
+.Node.hoverTop .Interpreter {
   border-top: 2px solid var(--highlight);
 }
 
-.Interpreter.hoverBottom {
+.Node.hoverBottom .Interpreter {
   border-bottom: 2px solid var(--highlight);
 }
 

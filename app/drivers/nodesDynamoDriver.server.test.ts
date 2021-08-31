@@ -2,26 +2,26 @@ import test from "tape"
 import { ulid } from "ulid"
 import type { Test } from "tape"
 
-import { driver, TaskItem } from "./tasksDynamoDriver.server"
+import { driver, NodeDynamoItem } from "./nodesDynamoDriver.server"
 
 /**
  * To simplify this patterns an abstraction must be made
  * on top of them. It should handle the following methods:
- *  1.  `get`   : Gets a single `Task` by its `pk` and `sk`.
- *  2.  `put`   : Puts a new `Task` identified by its `pk` and `sk`.
- *  3.  `list`  : Lists all of the `Tasks` under a `pk`.
- *  4.  `delete`: Deletes a single `Task` identified by its `pk` and `sk`.
- *  5.  `update`: Updates a single `Task` identified by its `pk` and `sk`.
- *  6.  `after` : Changes the position of a `Task` identified by its `pk`
+ *  1.  `get`   : Gets a single `Node` by its `pk` and `sk`.
+ *  2.  `put`   : Puts a new `Node` identified by its `pk` and `sk`.
+ *  3.  `list`  : Lists all of the `Nodes` under a `pk`.
+ *  4.  `delete`: Deletes a single `Node` identified by its `pk` and `sk`.
+ *  5.  `update`: Updates a single `Node` identified by its `pk` and `sk`.
+ *  6.  `after` : Changes the position of a `Node` identified by its `pk`
  *                and `sk` to a new one identified by its `sk`.
  */
-test("Task Linked List abstraction", async (assert: Test) => {
+test("Node Linked List abstraction", async (assert: Test) => {
   const id1 = "001"
   const id2 = "002"
   const id3 = "003"
   const id4 = "004"
   const userId = ulid()
-  const root = userId + "#Tasks"
+  const root = userId + "#Nodes"
   const pk1 = key({ userId, id: id1 })
   const pk2 = key({ userId, id: id2 })
   const pk3 = key({ userId, id: id3 })
@@ -31,7 +31,7 @@ test("Task Linked List abstraction", async (assert: Test) => {
   const c3 = Math.random().toLocaleString()
   const c4 = Math.random().toLocaleString()
   /**
-   * First, we'll insert three new `Tasks` using the `put` method.
+   * First, we'll insert three new `Nodes` using the `put` method.
    */
   assert.equal(await driver.put(pk1, { id: id1, content: c1 }, root), true)
   assert.equal(await driver.put(pk2, { id: id2, content: c2 }, root), true)
@@ -87,7 +87,7 @@ test("Task Linked List abstraction", async (assert: Test) => {
   assert.equal(await driver.delete(pk1), true)
   assert.deepEqual((await driver.list(root)).map(item => item.pk), [])
   /**
-   * Adding new `Tasks` after it gets empty should return a correctly
+   * Adding new `Nodes` after it gets empty should return a correctly
    * sorted list.
    */
   assert.equal(await driver.put(pk1, { id: id1, content: c1 }, root), true)
@@ -100,11 +100,11 @@ test("Task Linked List abstraction", async (assert: Test) => {
   assert.end()
 })
 
-test("taskDynamoDriver.put()", async (assert: Test) => {
+test("nodeDynamoDriver.put()", async (assert: Test) => {
   try {
-    let tasks: TaskItem[]
+    let nodes: NodeDynamoItem[]
     const userId = ulid()
-    const parent = userId + "#Tasks"
+    const parent = userId + "#Nodes"
     const id1 = "001"
     const id2 = "002"
     const id3 = "003"
@@ -116,14 +116,14 @@ test("taskDynamoDriver.put()", async (assert: Test) => {
     assert.equal(await driver.put(pk1, { id: id1, content }, parent), true)
     // Put the second element
     assert.equal(await driver.put(pk2, { id: id2, content }, parent), true)
-    // Check both `Task` where created in the correct order
-    tasks = await driver.list(parent)
-    assert.deepEqual(tasks.map(task => task.id), [id1, id2])
-    // Put a new `Task` after `pk1` not the Root.
+    // Check both `Node` where created in the correct order
+    nodes = await driver.list(parent)
+    assert.deepEqual(nodes.map(node => node.id), [id1, id2])
+    // Put a new `Node` after `pk1` not the Root.
     assert.equal(await driver.put(pk3, { id: id3, content }, parent, pk1), true)
-    // Check to see if the new `Task` was correctly added.
-    tasks = await driver.list(parent)
-    assert.deepEqual(tasks.map(task => task.id), [id1, id3, id2])
+    // Check to see if the new `Node` was correctly added.
+    nodes = await driver.list(parent)
+    assert.deepEqual(nodes.map(node => node.id), [id1, id3, id2])
     // End assertions
     assert.end()
   } catch (err) {
@@ -132,11 +132,11 @@ test("taskDynamoDriver.put()", async (assert: Test) => {
   }
 })
 
-test("taskDynamoDriver.update()", async (assert: Test) => {
-  let task: TaskItem | undefined
+test("nodeDynamoDriver.update()", async (assert: Test) => {
+  let node: NodeDynamoItem | undefined
   let id = ulid()
   let userId = ulid()
-  let root = userId + "#Tasks"
+  let root = userId + "#Nodes"
   let pk = key({ userId, id })
   let content = ulid()
   // Put a new element on the table
@@ -158,49 +158,49 @@ test("taskDynamoDriver.update()", async (assert: Test) => {
   assert.equal(await driver.update(pk, { content, interpreter: newInterpreter }), true)
   // Check that both the content and the interpreter was updated correctly
   assert.deepEqual(await driver.get(pk), { pk, _b: root, _n: ".", id, content, _t: newInterpreter })
-  // Put a new task with an interpreter
+  // Put a new node with an interpreter
   id = ulid()
   userId = ulid()
-  root = userId + "#Tasks"
+  root = userId + "#Nodes"
   pk = key({ userId, id })
   content = ulid()
   interpreter = ulid()
   assert.equal(await driver.put(pk, { id, content, interpreter }, root), true)
-  // Check that the task was correctly stored
+  // Check that the node was correctly stored
   assert.deepEqual(await driver.get(pk), { pk, _b: root, _n: ".", id, content, _t: interpreter })
   // End tests
   assert.end()
 })
 
-test("taskDynamoDriver.meta()", async (assert: Test) => {
+test("nodeDynamoDriver.meta()", async (assert: Test) => {
   try {
-    let task: TaskItem | undefined
+    let node: NodeDynamoItem | undefined
     const id = "001"
     const userId = ulid()
-    const root = userId + "#Tasks"
+    const root = userId + "#Nodes"
     const pk = key({ userId, id: id })
     const content = Math.random().toLocaleString()
     // Put the element
     assert.equal(await driver.put(pk, { id, content }, root), true)
     // Expect the `meta` object to be empty
-    task = await driver.get(pk)
-    if (!task) throw new Error("task is undefined")
-    assert.equal(task.pk, pk)
-    assert.deepEqual(task._m, undefined)
+    node = await driver.get(pk)
+    if (!node) throw new Error("node is undefined")
+    assert.equal(node.pk, pk)
+    assert.deepEqual(node._m, undefined)
     // Update the value of `isOpened`
     assert.equal(await driver.meta(pk, { isOpened: true }), true)
     // Check that the value of `isOpened` has been updated correctly
-    task = await driver.get(pk)
-    if (!task) throw new Error("task is undefined")
-    assert.equal(task.pk, pk)
-    assert.deepEqual(task._m, { isOpened: true })
+    node = await driver.get(pk)
+    if (!node) throw new Error("node is undefined")
+    assert.equal(node.pk, pk)
+    assert.deepEqual(node._m, { isOpened: true })
     // Change the value of `isOpened` to false
     assert.equal(await driver.meta(pk, { isOpened: false }), true)
     // Check that the value of `isOpened` has been updated correctly
-    task = await driver.get(pk)
-    if (!task) throw new Error("task is undefined")
-    assert.equal(task.pk, pk)
-    assert.deepEqual(task._m, { isOpened: false })
+    node = await driver.get(pk)
+    if (!node) throw new Error("node is undefined")
+    assert.equal(node.pk, pk)
+    assert.deepEqual(node._m, { isOpened: false })
     assert.end()
   } catch (err) {
     console.error("Error inside Try/Catch!!!")
@@ -215,6 +215,6 @@ type KeyConfig = { id?: string, userId?: string, type?: string }
  * `pk` or `sk` inside the table.
  * @param config - Key configuration object.
  */
-function key({ id = "", userId = "U1", type = "Tasks" }: KeyConfig = {}) {
+function key({ id = "", userId = "U1", type = "Nodes" }: KeyConfig = {}) {
   return [userId, type, id].filter(x => x !== "").join("#")
 }

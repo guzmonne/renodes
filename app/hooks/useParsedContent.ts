@@ -1,7 +1,16 @@
-import { useState, useMemo, useEffect, useCallback } from "react"
+import { useState, useMemo, useEffect } from "react"
 
+/**
+ * ParsedContent represents a deserialized content string.
+ */
 export interface ParsedContent {
+  /**
+   * content is the actual content of the string.
+   */
   content: string;
+  /**
+   * meta represents aditional metadata related to the content.
+   */
   meta?: { [key: string]: any };
 }
 /**

@@ -7,5 +7,6 @@ node_modules
 # Custom
 api.rest
 /db
-okteto.yml
 .env
+.DS_Store
+.npmrc

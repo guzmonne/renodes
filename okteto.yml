@@ -1,0 +1,9 @@
+name: renodes
+image: node:14
+command: ./run.sh
+sync:
+  - .:/usr/src/app
+forward:
+  - 3000:3000
+  - 3001:3001
+  - 8001:8001

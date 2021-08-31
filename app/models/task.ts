@@ -109,6 +109,42 @@ export class Task {
       isTask(object) ? object : new Task(object)
     ))
   }
+
+  add(task: Task, afterId?: string): Task {
+    if (afterId === undefined) return this.set({ collection: [...this.collection, task] })
+    const index = this.collection.findIndex(t => t.id === afterId)
+    if (index === -1) return this.set({ collection: [...this.collection, task] })
+    const afterTask = this.collection[index]
+    return this.set({
+      collection: [...this.collection.slice(0, index), afterTask, task, ...this.collection.slice(index + 1)]
+    })
+  }
+
+  find(id: string): Task | undefined {
+    if (id === this.id) return this
+    let task: Task | undefined
+    for (let t of this.collection) {
+      task = t.find(id)
+    }
+    return task
+  }
+
+  addTo(parent: string, task: Task, afterId?: string): Task {
+    // If the parent is the current task, create a new one with an updated collection.
+    if (parent === this.id) return this.add(task, afterId)
+    // Else, we need to find the parent
+    const parentTask = this.find(parent)
+
+
+
+    // Else, we look recursively inside our collection until we find the parent.
+    for (let [index, t] of this.collection.entries()) {
+      if (t.id === parent) return this.set({
+        collection: [...this.collection.slice(0, index), t.add(task, afterId), ...this.collection.slice(index + 1)]
+      })
+    }
+    return this
+  }
   /**
    * set applies new updates to the model.
    * @param body - Update data to be applied.
@@ -118,7 +154,7 @@ export class Task {
     return new Task({
       id: this.id,
       content: body.content !== undefined ? body.content : this.content,
-      parent: this.parent,
+      parent: body.parent || this.parent,
       userId: this.userId,
       interpreter: body.interpreter || this.interpreter,
       collection: body.collection || this.collection,

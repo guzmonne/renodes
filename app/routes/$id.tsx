@@ -1,24 +1,22 @@
 import { useRouteData, json, redirect } from "remix"
-import { useLocation, useParams } from "react-router-dom"
-import { QueryClient, QueryClientProvider } from "react-query"
+import { useLocation } from "react-router-dom"
 import { DndProvider } from "react-dnd-multi-backend"
 import { IdProvider } from "@radix-ui/react-id"
 import HTML5toTouch from "react-dnd-multi-backend/dist/cjs/HTML5toTouch"
 import * as ScrollArea from "@radix-ui/react-scroll-area"
-import { ReactQueryDevtools } from "react-query/devtools"
+import { QueryClient, QueryClientProvider } from 'react-query'
 import type { HeadersFunction, MetaFunction, LoaderFunction, ActionFunction, LinksFunction } from "remix"
 
+import { getUserFromSession, signIn, signOut } from "../server/session.server"
+import { NavBar } from "../components/Layout/NavBar"
+import { repository } from "../repositories/nodes.server"
+import { NodesTree } from "../components/Nodes/NodesTree"
+import etag from "../server/etag.server"
 import BaseStyles from "../styles/base.css"
 import LayoutStyles from "../components/Layout/styles.css"
-import ScrollAreaStyles from "../components/ScrollArea/styles.css"
 import LoaderStyles from "../components/Utils/Loader.css"
-import etag from "../server/etag.server"
-import { getUserFromSession, signIn, signOut } from "../server/session.server"
-import { repository } from "../repositories/tasks.server"
-import { Task } from "../models/task"
-import { NavBar } from "../components/Layout/NavBar"
-import { Task as TaskComponent } from "../components/Task"
-import type { TaskBody } from "../models/task"
+import ScrollAreaStyles from "../components/ScrollArea/styles.css"
+import type { NodeItem } from "../models/node"
 import type { UserBody } from "../models/user"
 
 export const meta: MetaFunction = ({ params }) => {
@@ -58,7 +56,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
       }
     }
     const node = await repository.get(params.id, undefined, true)
-    const body = { data: node.toObject(), user }
+    const body = { data: node, user }
     return json(body, {
       headers: {
         "Etag": etag(JSON.stringify(body)),
@@ -79,6 +77,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
 export const action: ActionFunction = async ({ request, params }) => {
   try {
+    const url = new URL(request.headers.get("Referer") || request.headers.get("Origin"))
     const data = new URLSearchParams(await request.text())
     const id = data.get("id")
     const content = data.get("content")
@@ -91,8 +90,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         if (dragId) {
           await repository.after(dragId, params.id, afterId)
         } else {
-          const task = new Task({ id, content, interpreter, parent: params.id })
-          await repository.put(task, afterId)
+          await repository.put({ id, content, interpreter, parent: params.id }, afterId)
         }
         break
       case "PUT":
@@ -107,7 +105,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         await repository.delete(params.id)
         break
     }
-    return redirect(`/${params.id}`, { status: 204 })
+    return url.pathname
   } catch (err) {
     console.error(err)
     return redirect("/404", {
@@ -120,9 +118,9 @@ export const action: ActionFunction = async ({ request, params }) => {
 const queryClient = new QueryClient()
 
 export default function () {
+  const { data, user } = useRouteData<{ data: NodeItem, user: UserBody | undefined, error?: string }>()
   const { search } = useLocation()
-  const { id } = useParams()
-  const { data, user } = useRouteData<{ data: TaskBody, user: UserBody | undefined, error?: string }>()
+
   const query = new URLSearchParams(search)
 
   if (!data) return <div>Error</div>
@@ -131,20 +129,19 @@ export default function () {
     <IdProvider>
       <ScrollArea.Root className="ScrollArea__Root">
         <ScrollArea.Viewport className="ScrollArea__Viewport">
-          <QueryClientProvider client={queryClient}>
-            <ReactQueryDevtools initialIsOpen={true} />
-            <main>
-              {query.get("navbar") !== "none" && <NavBar user={user} />}
+          <main>
+            {query.get("navbar") !== "none" && <NavBar user={user} />}
+            <QueryClientProvider client={queryClient}>
               <DndProvider options={HTML5toTouch}>
-                <TaskComponent initialData={data} id={id} />
+                <NodesTree root={data} />
               </DndProvider>
-            </main>
-          </QueryClientProvider>
+            </QueryClientProvider>
+          </main>
         </ScrollArea.Viewport>
         <ScrollArea.Scrollbar className="ScrollArea__Scrollbar" orientation="vertical">
           <ScrollArea.Thumb className="ScrollArea__Thumb" />
         </ScrollArea.Scrollbar>
       </ScrollArea.Root>
-    </IdProvider>
+    </IdProvider >
   )
 }
