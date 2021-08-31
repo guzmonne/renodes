@@ -448,6 +448,12 @@ export function Node({
     onSave(model, value)
   }, [onSave, model])
   /**
+   * handleOnOpenExternalLink opens the Node on another window.
+   */
+  const handleOnOpenExternalLink = useCallback(() => {
+    onOpenExternalLink(model)
+  }, [onOpenExternalLink, model])
+  /**
    * Refetch the Node's data when it's opened.
    */
   useEffect(() => {
@@ -510,7 +516,7 @@ export function Node({
               onAdd={handleOnAddSibling}
               onDelete={handleOnDelete}
               noExternalLink={isRoot}
-              onExternalLink={onOpenExternalLink}
+              onExternalLink={handleOnOpenExternalLink}
               isInEditMode={isInEditMode}
               onEdit={handleOnToggleIsInEditMode}
               interpreter={interpreter}
