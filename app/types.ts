@@ -1,5 +1,3 @@
-import type { Task, TaskMeta } from "./models/task"
-
 export interface DBDriver<Body, Item, Patch, DB> {
   /**
    * db represents the database driver.

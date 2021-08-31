@@ -4,8 +4,8 @@ import { redirect } from "@remix-run/node";
 
 export const meta: MetaFunction = () => {
   return {
-    title: "ReTask",
-    description: "Nested task manager",
+    title: "ReNodes",
+    description: "Recursive Node Manager",
   }
 }
 

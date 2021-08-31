@@ -92,7 +92,7 @@ export interface NodeDrag {
    */
   hoverIndex: number;
   /**
-   * id is the unique identifier of the task.
+   * id is the unique identifier of the Node.
    */
   id: string
   /**

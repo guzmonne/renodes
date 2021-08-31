@@ -21,9 +21,9 @@ test("/home - should be empty by default", (assert: Test) => {
     })
 })
 
-test("/home - should be able to create a new task", async (assert: Test) => {
+test("/home - should be able to create a new node", async (assert: Test) => {
   const body = { id: ulid(), content: ulid() }
-  // Create a new task
+  // Create a new node
   try {
     const response = await request(app)
       .post("/home")
@@ -36,7 +36,7 @@ test("/home - should be able to create a new task", async (assert: Test) => {
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
-  // Check if task was correctly stored by checking the home collection
+  // Check if node was correctly stored by checking the home collection
   try {
     const response = await request(app)
       .get("/home")
@@ -51,7 +51,7 @@ test("/home - should be able to create a new task", async (assert: Test) => {
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
-  // Check if task was correctly stored by checking its endpoint
+  // Check if node was correctly stored by checking its endpoint
   try {
     const response = await request(app)
       .get(`/${body.id}`)
@@ -66,9 +66,9 @@ test("/home - should be able to create a new task", async (assert: Test) => {
   assert.end()
 })
 
-test("/home - should be able to update a task", async (assert: Test) => {
+test("/home - should be able to update a node", async (assert: Test) => {
   const body = { id: ulid(), content: ulid() }
-  // Create a new task
+  // Create a new node
   try {
     const response = await request(app)
       .post("/home")
@@ -81,7 +81,7 @@ test("/home - should be able to update a task", async (assert: Test) => {
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
-  // Check if task was correctly stored.
+  // Check if node was correctly stored.
   try {
     const response = await request(app)
       .get(`/${body.id}`)
@@ -92,7 +92,7 @@ test("/home - should be able to update a task", async (assert: Test) => {
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
-  // Update the task
+  // Update the node
   const content = ulid()
   const interpreter = ulid()
   try {
@@ -107,7 +107,7 @@ test("/home - should be able to update a task", async (assert: Test) => {
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
-  // Check if task was correctly updated.
+  // Check if node was correctly updated.
   try {
     const response = await request(app)
       .get(`/${body.id}`)
@@ -126,9 +126,9 @@ test("/home - should be able to update a task", async (assert: Test) => {
   assert.end()
 })
 
-test("/home - should be able to delete a task", async (assert: Test) => {
+test("/home - should be able to delete a node", async (assert: Test) => {
   const body = { id: ulid(), content: ulid(), collection: [] }
-  // Create a new task
+  // Create a new node
   try {
     const response = await request(app)
       .post("/home")
@@ -141,7 +141,7 @@ test("/home - should be able to delete a task", async (assert: Test) => {
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
-  // Check if task was correctly stored.
+  // Check if node was correctly stored.
   try {
     const response = await request(app)
       .get(`/${body.id}`)
@@ -152,7 +152,7 @@ test("/home - should be able to delete a task", async (assert: Test) => {
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
-  // Delete the task
+  // Delete the node
   try {
     const response = await request(app)
       .delete(`/${body.id}`)
@@ -164,7 +164,7 @@ test("/home - should be able to delete a task", async (assert: Test) => {
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
-  // Check if task was correctly deleted.
+  // Check if node was correctly deleted.
   try {
     await request(app)
       .get(`/${body.id}`)
@@ -178,9 +178,9 @@ test("/home - should be able to delete a task", async (assert: Test) => {
   assert.end()
 })
 
-test("/home - should be able to create sub tasks", async (assert: Test) => {
+test("/home - should be able to create sub nodes", async (assert: Test) => {
   const body = { id: ulid(), content: ulid() }
-  // Create a new task
+  // Create a new node
   try {
     const response = await request(app)
       .post("/home")
@@ -193,7 +193,7 @@ test("/home - should be able to create sub tasks", async (assert: Test) => {
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
-  // Check if task was correctly stored by checking its endpoint
+  // Check if node was correctly stored by checking its endpoint
   try {
     const response = await request(app)
       .get(`/${body.id}`)
@@ -204,7 +204,7 @@ test("/home - should be able to create sub tasks", async (assert: Test) => {
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
-  // Add the sub-tasks
+  // Add the sub-nodes
   const subBody1 = { id: ulid(), content: ulid(), interpreter: ulid() }
   const subBody2 = { id: ulid(), content: ulid(), interpreter: ulid() }
   const subBody3 = { id: ulid(), content: ulid(), interpreter: ulid() }
@@ -221,7 +221,7 @@ test("/home - should be able to create sub tasks", async (assert: Test) => {
     } catch (err) {
       assert.error(err, "error should be undefined")
     }
-    // Check if task was correctly stored by checking its endpoint
+    // Check if node was correctly stored by checking its endpoint
     try {
       const response = await request(app)
         .get(`/${subBody.id}`)
@@ -233,7 +233,7 @@ test("/home - should be able to create sub tasks", async (assert: Test) => {
       assert.error(err, "error should be undefined")
     }
   }
-  // Check that the sub-tasks were stored correctly.
+  // Check that the sub-nodes were stored correctly.
   try {
     const response = await request(app)
       .get(`/${body.id}`)
@@ -252,9 +252,9 @@ test("/home - should be able to create sub tasks", async (assert: Test) => {
   assert.end()
 })
 
-test("/home - should be able to drag a sub-task", async (assert: Test) => {
+test("/home - should be able to drag a sub-node", async (assert: Test) => {
   const body = { id: ulid(), content: ulid() }
-  // Create a new task
+  // Create a new node
   try {
     const response = await request(app)
       .post("/home")
@@ -267,7 +267,7 @@ test("/home - should be able to drag a sub-task", async (assert: Test) => {
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
-  // Check if task was correctly stored by checking its endpoint
+  // Check if node was correctly stored by checking its endpoint
   try {
     const response = await request(app)
       .get(`/${body.id}`)
@@ -278,7 +278,7 @@ test("/home - should be able to drag a sub-task", async (assert: Test) => {
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
-  // Add the sub-tasks
+  // Add the sub-nodes
   const subBody1 = { id: ulid(), content: ulid(), interpreter: ulid() }
   const subBody2 = { id: ulid(), content: ulid(), interpreter: ulid() }
   const subBody3 = { id: ulid(), content: ulid(), interpreter: ulid() }
@@ -295,7 +295,7 @@ test("/home - should be able to drag a sub-task", async (assert: Test) => {
     } catch (err) {
       assert.error(err, "error should be undefined")
     }
-    // Check if task was correctly stored by checking its endpoint
+    // Check if node was correctly stored by checking its endpoint
     try {
       const response = await request(app)
         .get(`/${subBody.id}`)
@@ -307,7 +307,7 @@ test("/home - should be able to drag a sub-task", async (assert: Test) => {
       assert.error(err, "error should be undefined")
     }
   }
-  // Check that the sub-tasks were stored correctly.
+  // Check that the sub-nodes were stored correctly.
   try {
     const response = await request(app)
       .get(`/${body.id}`)
@@ -331,7 +331,7 @@ test("/home - should be able to drag a sub-task", async (assert: Test) => {
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
-  // Check that the sub-tasks were stored correctly.
+  // Check that the sub-nodes were stored correctly.
   try {
     const response = await request(app)
       .get(`/${body.id}`)
@@ -355,7 +355,7 @@ test("/home - should be able to drag a sub-task", async (assert: Test) => {
   } catch (err) {
     assert.error(err, "error should be undefined")
   }
-  // Check that the sub-tasks were stored correctly.
+  // Check that the sub-nodes were stored correctly.
   try {
     const response = await request(app)
       .get(`/${body.id}`)

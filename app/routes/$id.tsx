@@ -77,7 +77,6 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
 export const action: ActionFunction = async ({ request, params }) => {
   try {
-    const url = new URL(request.headers.get("Referer") || request.headers.get("Origin"))
     const data = new URLSearchParams(await request.text())
     const id = data.get("id")
     const content = data.get("content")
@@ -105,7 +104,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         await repository.delete(params.id)
         break
     }
-    return url.pathname
+    return `/${params.id}`
   } catch (err) {
     console.error(err)
     return redirect("/404", {

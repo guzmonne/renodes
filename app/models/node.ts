@@ -44,11 +44,11 @@ export interface Node extends Omit<NodeItem, "collection"> {
  */
 export interface NodeMeta {
   /**
-   * isOpened is a flag used to track if the sub-tasks are opened.
+   * isOpened is a flag used to track if the Node collection is opened.
    */
   isOpened?: boolean;
   /**
-   * isInEditMode is a flag used to track if the task is in edit mode.
+   * isInEditMode is a flag used to track if the Node is in edit mode.
    */
   isInEditMode?: boolean;
 }
