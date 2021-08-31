@@ -1,3 +1,8 @@
+.NavBar {
+  width: 100%;
+  max-width: 960px;
+}
+
 .NavBar,
 .NavBar__User {
   display: flex;

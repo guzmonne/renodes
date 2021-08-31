@@ -4,8 +4,6 @@ import { Map as ImmutableMap } from "immutable"
 import { useQuery, useMutation } from "react-query"
 import { useDrag, useDrop } from "react-dnd"
 import cn from "classnames"
-import type { XYCoord } from 'dnd-core'
-import type { DropTargetMonitor } from "react-dnd"
 
 import { NodeControl } from "./NodeControl"
 import { NodeDropdown } from "./NodeDropdown"

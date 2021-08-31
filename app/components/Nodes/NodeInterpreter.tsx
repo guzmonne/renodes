@@ -216,7 +216,7 @@ export function NodeCodeInterpreter({ content, onChange }: NodeCodeInterpreterPr
   /**
    * debounceHandleChange is the debounced verion of handleChange
    */
-  const debouncedHandleChange = useDebounceCallback(handleChange)
+  const debouncedHandleChange = useDebounceCallback(handleChange, 1000)
   /**
    * handleLanguageChange updates the value stored on the language state variable.
    * @param e - React FormEvent for an HTMLInptuElement.

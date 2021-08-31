@@ -33,13 +33,6 @@ html {
   color: var(--text-body);
 }
 
-main {
-  padding: 0.5rem;
-  margin: 0 auto;
-  width: 100vw;
-  max-width: 960px;
-}
-
 textarea,
 pre,
 code {
@@ -51,8 +44,20 @@ pre[class*="language-"] {
   margin: 0;
 }
 
-.svg-inline--fa {
-  font-size: 1rem;
+/** Layout **/
+body {
+  display: flex;
+  align-items: center;
+}
+
+main {
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  margin: 0 auto;
+  max-width: calc(960px + 3.5rem);
 }
 
 /** Title **/
@@ -75,12 +80,20 @@ main > .Nodes {
   margin-bottom: 10rem;
 }
 
+@media (min-width: 1016px) {
+  .Node .Node__Controls {
+    position: absolute;
+    left: -2.5rem;
+  }
+}
+
 .Nodes {
   width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  max-width: 960px;
 }
 
 .Nodes > .Nodes {
@@ -94,6 +107,7 @@ main > .Nodes {
   flex-direction: row;
   align-items: flex-start;
   justify-content: space-between;
+  position: relative;
 }
 
 .Node .Node__Controls {
@@ -126,6 +140,22 @@ main > .Nodes {
 .Node .fa-chevron-right,
 .Node .fa-chevron-down {
   cursor: grab;
+}
+
+@media (min-width: calc(960px + 3.5rem)) {
+  .Node {
+    position: relative;
+  }
+
+  .Node .Node__Controls {
+    position: absolute;
+    left: -2.5rem;
+    display: flex;
+    justify-content: center;
+    color: var(--handle);
+    min-width: 1rem;
+    max-width: 1rem;
+  }
 }
 
 /** Interpreter **/
