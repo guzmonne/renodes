@@ -1,5 +1,5 @@
 import { useRouteData, json, redirect } from "remix"
-import { useLocation, useParams } from "react-router-dom"
+import { useLocation } from "react-router-dom"
 import { DndProvider } from "react-dnd-multi-backend"
 import { IdProvider } from "@radix-ui/react-id"
 import HTML5toTouch from "react-dnd-multi-backend/dist/cjs/HTML5toTouch"

@@ -3,6 +3,7 @@
 export PS1="$ "
 
 set -o allexport; source .env; set +o allexport
+npm install --save-dev pm2
 npm run pm2 -- start ecosystem.config.js
 npm run pm2 -- logs &
 

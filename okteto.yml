@@ -1,4 +1,4 @@
-name: retask
+name: renodes
 image: node:14
 command: ./run.sh
 sync:

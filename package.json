@@ -78,7 +78,7 @@
     "@types/react-dom": "^17.0.4",
     "@types/tape": "^4.13.1",
     "dynamodb-admin": "^4.0.1",
-    "pm2": "^5.1.0",
+    "pm2": "^5.1.1",
     "supertest": "^6.1.5",
     "tap-diff": "^0.1.1",
     "tape": "^5.2.2",

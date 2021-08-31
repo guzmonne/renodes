@@ -1,14 +1,14 @@
-import { Fragment, createContext, useEffect, useState, useCallback, useContext } from "react"
+import { Fragment, createContext, useRef, useEffect, useState, useMemo, useCallback, useContext } from "react"
 import { ulid } from "ulid"
 import { Map as ImmutableMap } from "immutable"
-import { useQuery } from "react-query"
+import { useQuery, useMutation } from "react-query"
 
 import { NodeControl } from "./NodeControl"
 import { NodeDropdown } from "./NodeDropdown"
 import { NodeInterpreter } from "./NodeInterpreter"
 import { NodeAddChild } from "./NodeAddChild"
 import { Loader } from "../Utils/Loader"
-import type { Node as NodeModel, NodeItem, NodeMeta } from "../../models/node"
+import type { Node as NodeModel, NodeItem, NodeMeta, NodePatch } from "../../models/node"
 
 /**
  * headers is a constant that configures the appropiate headers to use on a fetch request.
@@ -50,17 +50,9 @@ export interface NodeProps {
    */
   isRoot?: boolean;
   /**
-   * isOpened is a flag that toggles the viewing of it's Node collection.
-   */
-  isOpened?: boolean;
-  /**
    * isHome is a flag that is toggled only if the Node represents the Home pseudo-Node.
    */
   isHome?: boolean;
-  /**
-   * isInEditMode is a flag that indicates if the Node should be renders in edit mode.
-   */
-  isInEditMode?: boolean;
 }
 /**
  * NodeBranchProps represent the props of the NodeBranch component.
@@ -90,11 +82,73 @@ const NodesTreeContext = createContext(null)
 export function NodesTree({ root, parent }: NodesTreeProps) {
   let [state, setState] = useState(() => createImmutableNodesStateFrom(root))
   /**
+   * addMutation persists add actions on the backend.
+   * @param variables - Mutation variables.
+   * @property variables.id - Parent node id.
+   * @property variables.node - Node body.
+   * @property variables.afterId - Id of the Node after which this Node should be added.
+   */
+  const addMutation = useMutation(({ parent, node, afterId }: { parent: string, node: NodeModel, afterId?: string }) => (
+    fetch(`/${parent}`, {
+      method: "POST",
+      headers,
+      body: toFormBody({ ...node, afterId })
+    }).then((response => {
+      if (!response.ok) throw new Error("couldn't add the new Node")
+    }))
+  ))
+  /**
+   * editMutation persists edit actions on the backend.
+   * @param variables - Mutation variables.
+   * @property variables.id - Node unique identifier.
+   * @property variables.patch - Node patch to apply.
+   */
+  const editMutation = useMutation(({ id, patch }: { id: string, patch: NodePatch }) => (
+    fetch(`/${id}`, {
+      method: "PUT",
+      headers,
+      body: toFormBody(patch)
+    }).then((response) => {
+      if (!response.ok) throw new Error("couldn't edit the Node")
+    })
+  ))
+  /**
+   * metaMutation persists meta actions on the backend.
+   * @param variables - Mutation variables.
+   * @property variables.id - Node unique identifier.
+   * @property variables.meta - Node metdata to update.
+   */
+  const metaMutation = useMutation(({ id, meta }: { id: string, meta: NodeMeta }) => (
+    fetch(`/${id}`, {
+      method: "PATCH",
+      headers,
+      body: toFormBody({ meta })
+    }).then((response) => {
+      if (!response.ok) throw new Error("couldn't edit the Node's metadata")
+    })
+  ))
+  /**
+   * deleteMutation persists delete actions on the backend.
+   * @param variables - Mutation variables.
+   * @property variables.id - Node unique identifier
+   */
+  const deleteMutation = useMutation(({ id }: { id: string }) => (
+    fetch(`/${id}`, {
+      method: "DELETE",
+      headers,
+    }).then((response) => {
+      if (!response.ok) throw new Error("couldn't edit the Node's metadata")
+    })
+  ))
+  /**
    * onToggleIsOpened toggles the value of the model's isOpened meta value.
    * @param model - The model whose `isOpened` value should be toggled.
    */
   const onToggleIsOpened = useCallback((model: ImmutableNodeModel) => {
-    setState(state.setIn([model.get("id"), "meta", "isOpened"], !model.getIn(["meta", "isOpened"])))
+    const id = model.get("id") as string
+    const isOpened = !model.getIn(["meta", "isOpened"])
+    setState(state.setIn([id, "meta", "isOpened"], isOpened))
+    metaMutation.mutate({ id, meta: { isOpened } })
   }, [setState, state])
   /**
    * onToggleIsInEditMode toggles the value of the model's isInEditMode meta value.
@@ -102,7 +156,10 @@ export function NodesTree({ root, parent }: NodesTreeProps) {
    * @param value - Value to set.
    */
   const onToggleIsInEditMode = useCallback((model: ImmutableNodeModel, value?: boolean) => {
-    setState(state.setIn([model.get("id"), "meta", "isInEditMode"], value === undefined ? !model.getIn(["meta", "isInEditMode"]) : value))
+    const id = model.get("id") as string
+    const isInEditMode = value === undefined ? !model.getIn(["meta", "isInEditMode"]) : value
+    setState(state.setIn([id, "meta", "isInEditMode"], isInEditMode))
+    metaMutation.mutate({ id, meta: { isInEditMode } })
   }, [setState, state])
   /**
    * onAddSibling adds a new Node after the current model.
@@ -111,10 +168,12 @@ export function NodesTree({ root, parent }: NodesTreeProps) {
   const onAddSibling = useCallback((model: ImmutableNodeModel) => {
     const id = ulid()
     const parent = model.get("parent") as string || "home"
-    state = state.set(id, ImmutableMap({ id, content: "", parent, collection: [], meta: { isInEditMode: true } }) as ImmutableNodeModel)
+    const node: NodeModel = { id, content: "", parent, collection: [], meta: { isInEditMode: true } }
+    state = state.set(id, ImmutableMap(node) as ImmutableNodeModel)
     const collection = state.getIn([parent, "collection"]) as string[]
     const index = collection.findIndex((id) => id === model.get("id") as string)
     setState(state.setIn([parent, "collection"], [...collection.slice(0, index + 1), id, ...collection.slice(index + 1)]))
+    addMutation.mutate({ parent, node, afterId: model.get("id") as string })
   }, [setState, state])
   /**
    * onAddChild adds a new Node as child of the current model.
@@ -123,19 +182,22 @@ export function NodesTree({ root, parent }: NodesTreeProps) {
   const onAddChild = useCallback((model: ImmutableNodeModel) => {
     const id = ulid()
     const parent = model.get("id") as string
-    state = state.set(id, ImmutableMap({ id, content: "", parent, collection: [], meta: { isInEditMode: true } }) as ImmutableNodeModel)
+    const node: NodeModel = { id, content: "", parent, collection: [], meta: { isInEditMode: true } }
+    state = state.set(id, ImmutableMap(node) as ImmutableNodeModel)
     const collection = model.get("collection") as string[]
     setState(state.setIn([parent, "collection"], [...collection, id]))
+    addMutation.mutate({ parent, node })
   }, [setState, state])
   /**
    * onDelete deletes a Node from a parent collection.
    * @param model - Node model to delete from parent.
    */
   const onDelete = useCallback((model: ImmutableNodeModel) => {
-    const modelId = model.get("id") as string
+    const id = model.get("id") as string
     const parent = model.get("parent") as string || "home"
     const collection = state.getIn([parent, "collection"]) as string[]
-    setState(state.setIn([parent, "collection"], collection.filter(id => id !== modelId)))
+    setState(state.setIn([parent, "collection"], collection.filter(_id => _id !== id)))
+    deleteMutation.mutate({ id })
   }, [setState, state])
   /**
    * onOpenExternalLink opens a new page with the model Node as root.
@@ -147,29 +209,34 @@ export function NodesTree({ root, parent }: NodesTreeProps) {
   /**
    * onInterpreterChange updates the value of a Node model's interpeter.
    * @param model - Node model to update.
-   * @param value - New interpreter value
+   * @param interpreter - New interpreter interpreter
    */
-  const onInterpreterChange = useCallback((model: ImmutableNodeModel, value: string) => {
-    setState(state.setIn([model.get("id") as string, "interpreter"], value))
+  const onInterpreterChange = useCallback((model: ImmutableNodeModel, interpreter: string) => {
+    const id = model.get("id") as string
+    setState(state.setIn([id, "interpreter"], interpreter))
+    editMutation.mutate({ id, patch: { interpreter } })
   }, [setState, state])
   /**
    * onContentChange updates the value of a Node model's content.
    * @param model - Node model to update.
-   * @param value - New content value
+   * @param content - New content content
    */
-  const onContentChange = useCallback((model: ImmutableNodeModel, value: string) => {
-    setState(state.setIn([model.get("id") as string, "content"], value))
+  const onContentChange = useCallback((model: ImmutableNodeModel, content: string) => {
+    const id = model.get("id") as string
+    setState(state.setIn([id, "content"], content))
+    editMutation.mutate({ id, patch: { content } })
   }, [setState, state])
   /**
    * onSave updates the value of a Node model's content and set the value of
    * isInEditMode to false.
    * @param model - Node model to update.
-   * @param value - New content value.
+   * @param content - New content content.
    */
-  const onSave = useCallback((model: ImmutableNodeModel, value: string) => {
+  const onSave = useCallback((model: ImmutableNodeModel, content: string) => {
     const id = model.get("id") as string
-    state = state.setIn([id, "content"], value)
+    state = state.setIn([id, "content"], content)
     setState(state.setIn([id, "meta", "isInEditMode"], false))
+    editMutation.mutate({ id, patch: { content } })
   }, [setState, state])
   /**
    * onFetch substitutes an existing model from a current on gotten from the backend.
@@ -182,9 +249,12 @@ export function NodesTree({ root, parent }: NodesTreeProps) {
     setState(state.merge(createImmutableNodesStateFrom(data, state)))
     return state.get(id)
   }, [setState, state])
-
-  const isRoot = parent === undefined
-
+  /**
+   * isRoot is a flag that indicates that this flag should be rendered as
+   * a root Node.
+   */
+  const isRoot = useMemo(() => parent === undefined, [parent])
+  // ---
   return (
     <NodesTreeContext.Provider value={{
       state,
@@ -203,8 +273,6 @@ export function NodesTree({ root, parent }: NodesTreeProps) {
         model={state.get(root.id)}
         isRoot={true}
         isHome={root.id === "home"}
-        isOpened={isRoot || !!state.getIn([root.id, "meta", "isOpened"])}
-        isInEditMode={!!state.getIn([root.id, "meta", "isInEditMode"])}
       />
     </NodesTreeContext.Provider>
   )
@@ -217,8 +285,6 @@ export function Node({
   model,
   isHome = false,
   isRoot = false,
-  isOpened,
-  isInEditMode,
 }: NodeProps) {
   const {
     onAddChild,
@@ -249,12 +315,20 @@ export function Node({
    */
   const content = model.get("content") as string
   /**
-   * Flags
+   * isOpened is a flag that indicates that the sub-nodes collection is opened.
    */
-  isOpened = isOpened === undefined ? !!model.getIn(["meta", "isOpened"]) : !!isOpened
-  isInEditMode = isInEditMode === undefined ? !!model.getIn(["meta", "isInEditMode"]) : !!isInEditMode
+  const isOpened = !!model.getIn(["meta", "isOpened"])
   /**
-   * React Query
+   * isInEditMode is a flag that indicates that the Node is in edit mode.
+   */
+  const isInEditMode = !!model.getIn(["meta", "isInEditMode"])
+  /**
+   * isOpenedRef is a hack used to track the previous value of isOpened, and
+   * this trigger updates over the Node.
+   */
+  const isOpenedRef = useRef<boolean>(isOpened)
+  /**
+   * query is a React Query function to refetch more data from a Node.
    */
   const query = useQuery<ImmutableNodeModel>(["Node", id], async () => onFetch(id), {
     enabled: false,
@@ -263,10 +337,7 @@ export function Node({
    * handleOnToggleIsOpened toggles the visibility of child Nodes.
    */
   const handleOnToggleIsOpened = useCallback(() => {
-    onToggleIsOpened(model)
-    // Run the refetch on a setTimeout to be sure that the onToggleIsOpened
-    // function updates the state before running the onFetch function.
-    if (isOpened === false) setTimeout(() => query.refetch())
+    onToggleIsOpened(model, query.refetch)
   }, [onToggleIsOpened, model])
   /**
    * handleOnToggleIsInEditMode toggles the visibility of child Nodes.
@@ -314,10 +385,15 @@ export function Node({
   const handleOnSave = useCallback((value: string) => {
     onSave(model, value)
   }, [onSave, model])
-  console.log({ query })
   /**
-   * Return
+   * Refetch the Node's data when it's opened.
    */
+  useEffect(() => {
+    const isOpened = model.getIn(["meta", "isOpened"]) as boolean
+    if (isOpened === true && isOpenedRef.current === false) query.refetch()
+    isOpenedRef.current = isOpened
+  }, [model])
+  // ---
   return (
     <Fragment>
       {!isHome &&
@@ -349,7 +425,7 @@ export function Node({
           />
         </div>
       }
-      {isOpened && <NodeBranch loading={collection.length === 0 && query.isLoading} collection={collection} onAdd={handleOnAddChild} />}
+      {(isHome || isOpened) && <NodeBranch loading={collection.length === 0 && query.isLoading} collection={collection} onAdd={handleOnAddChild} />}
     </Fragment>
   )
 }
@@ -400,4 +476,18 @@ function createImmutableNodesStateFrom(item: NodeItem, result?: ImmutableNodesSt
   }
 
   return result
+}
+/**
+ * toFormBody converts an object into a valid form encoded string.
+ * @param obj - Object to stringify.
+ */
+function toFormBody(obj: any): string {
+  const formBody = []
+  for (let [key, value] of Object.entries(obj)) {
+    if (value === undefined || value === null) continue
+    let encodedKey = encodeURIComponent(key)
+    let encodedVal = typeof value === "object" ? toFormBody(value) : encodeURIComponent(value as any)
+    formBody.push(encodedKey + "=" + encodedVal)
+  }
+  return formBody.join("&")
 }
