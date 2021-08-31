@@ -4,6 +4,7 @@ import { Map as ImmutableMap } from "immutable"
 import { useQuery, useMutation } from "react-query"
 import { useDrag, useDrop } from "react-dnd"
 import cn from "classnames"
+import type { KeyboardEventHandler, FocusEventHandler } from "react"
 
 import { NodeControl } from "./NodeControl"
 import { NodeDropdown } from "./NodeDropdown"
@@ -452,6 +453,31 @@ export function Node({
     onOpenExternalLink(model)
   }, [onOpenExternalLink, model])
   /**
+   * handleOnFocus focuses on the edit textarea if the Node is in edit mode.
+   */
+  const handleOnFocus = useCallback<FocusEventHandler<HTMLDivElement>>((e) => {
+    if (!model.getIn(["meta", "isInEditMode"])) return
+    focusOnTextArea(e.currentTarget)
+  }, [model])
+  /**
+   * handleOnKeyDown handles key presses on top of the Node.
+   */
+  const handleOnKeyDown = useCallback<KeyboardEventHandler<HTMLDivElement>>((e) => {
+    switch (e.key) {
+      case "Enter": {
+        if (!e.shiftKey) return
+        e.preventDefault()
+        handleOnAddSibling()
+      }
+      case "e": {
+        if (!e.ctrlKey) return
+        if (model.getIn(["meta", "isInEditMode"])) return focusOnTextArea(e.currentTarget)
+        handleOnToggleIsInEditMode()
+        return
+      }
+    }
+  }, [handleOnAddSibling, handleOnToggleIsInEditMode, model])
+  /**
    * Refetch the Node's data when it's opened.
    */
   useEffect(() => {
@@ -481,7 +507,7 @@ export function Node({
     },
     hover: (item: NodeDrag) => {
       if (!ref.current || index === -1) return
-      const { dragIndex, hoverIndex } = item
+      const { hoverIndex } = item
       if (hoverIndex === index) return
       item.hoverIndex = index
     },
@@ -502,7 +528,13 @@ export function Node({
   return (
     <Fragment>
       {!isHome &&
-        <div className={cn("Node", { [hoveredClassName]: hovered })} ref={ref}>
+        <div
+          className={cn("Node", { [hoveredClassName]: hovered })}
+          ref={ref}
+          tabIndex={isInEditMode ? undefined : index + 1}
+          onKeyDown={handleOnKeyDown}
+          onFocus={handleOnFocus}
+        >
           <div className="Node__Controls">
             <NodeControl
               icon={isOpened ? "chevron-down" : "chevron-right"}
@@ -529,6 +561,7 @@ export function Node({
             onDelete={handleOnDelete}
             onChange={handleOnContentChange}
             onSave={handleOnSave}
+            tabIndex={index + 1}
           />
         </div>
       }
@@ -597,4 +630,13 @@ function toFormBody(obj: any): string {
     formBody.push(encodedKey + "=" + encodedVal)
   }
   return formBody.join("&")
+}
+/**
+ * focusOnTextarea calls the focus method on the first textarea available inside
+ * the provided div element.
+ * @param div - Html DIV element.
+ */
+function focusOnTextArea(div: HTMLDivElement) {
+  const textarea = div.getElementsByTagName("textarea")[0]
+  if (textarea) textarea.focus()
 }

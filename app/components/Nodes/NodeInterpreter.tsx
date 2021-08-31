@@ -1,8 +1,8 @@
-import { useState, useCallback, KeyboardEventHandler } from "react";
+import { useState, useCallback } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import { useDebounceCallback } from "@react-hook/debounce"
 import ReactMarkdown from "react-markdown"
-import type { FormEvent } from "react"
+import type { KeyboardEventHandler, FormEvent } from "react"
 
 import { useParsedContent } from "../../hooks/useParsedContent"
 import { useHasMounted } from "../../hooks/useHasMounted"
@@ -45,6 +45,11 @@ export interface NodeInterpreterProps {
    * onDelete is called if the user wants to delete the Node being edited.
    */
   onDelete: () => void;
+  /**
+   * tabIndex is the tab index to apply on an interpreter input for better
+   * page handling.
+   */
+  tabIndex?: number;
 }
 /**
  * NodeInterpreter interprets the Node's content and displays it.
@@ -83,6 +88,11 @@ export interface NodeEditInterpreterProps {
    * onDelete is called if the user wants to delete the Node being edited.
    */
   onDelete: () => void;
+  /**
+   * tabIndex is the tab index to apply on an interpreter input for better
+   * page handling.
+   */
+  tabIndex?: number;
 }
 export function NodeEditInterpreter({ content, onChange, onSave, ...props }: NodeEditInterpreterProps) {
   const parsed = useParsedContent<ParsedContent>(content, { content: "" })
@@ -117,7 +127,7 @@ export function NodeEditInterpreter({ content, onChange, onSave, ...props }: Nod
 /**
  * NodeEditInterpreter interprets the content as a textare component.
  */
-export function NodeEditInterpreterComponent({ content, onChange, onSave, onAdd, onDelete }: NodeEditInterpreterProps) {
+export function NodeEditInterpreterComponent({ content, onChange, onSave, onAdd, onDelete, ...props }: NodeEditInterpreterProps) {
   const [unbouncedContent, setDebouncedContent] = useState(content)
   const onDebouncedChange = useDebounceCallback(onChange, 1000)
   /**
@@ -161,6 +171,7 @@ export function NodeEditInterpreterComponent({ content, onChange, onSave, onAdd,
       onChange={handleChange}
       onKeyDown={handleKeyDown}
       autoFocus={true}
+      {...props}
     />
   )
 }

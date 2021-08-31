@@ -70,7 +70,7 @@ export function NodeDropdown({
         <DropdownMenu.Item className="DropdownMenu__Item" onSelect={onEdit ? onEdit : VOID}>
           <div className="DropdownMenu__LeftSlot">{isInEditMode ? <FontAwesomeIcon icon={["fas", "save"]} /> : <FontAwesomeIcon icon={["fas", "pencil"]} />}</div>
           <div className="DropdownMenu__CenterSlot">{isInEditMode ? "Save" : "Edit"}</div>
-          <div className="DropdownMenu__RightSlot">{isInEditMode && "⌃+s"}</div>
+          <div className="DropdownMenu__RightSlot">{isInEditMode ? "⌃+s" : "⌃+e"}</div>
         </DropdownMenu.Item>
         <DropdownMenu.Root>
           <DropdownMenu.TriggerItem className="DropdownMenu__Item">
