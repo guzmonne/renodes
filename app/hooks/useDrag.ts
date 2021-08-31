@@ -25,7 +25,7 @@ export interface NodeDrag {
    */
   type: string
 }
-export function useDrag(node: Node, index: number) {
+export function useDrag(id: string, parent: string, index: number) {
   const ref = useRef<any>(null)
   const [[dragIndex, hoverIndex], setIndexes] = useState<number[]>([])
   const { onDrag } = useNodesContext()
@@ -46,24 +46,24 @@ export function useDrag(node: Node, index: number) {
   const onDragEnd = useCallback((dragIndex: number, hoverIndex: number) => {
     setIndexes([])
     if (dragIndex === hoverIndex) return
-    onDrag(node.parent, dragIndex, hoverIndex)
+    onDrag(parent, dragIndex, hoverIndex)
   }, [setIndexes, onDrag])
   // Set up the drop logic.
   const [{ handlerId }, drop] = useDrop({
-    accept: node.parent || "NODE",
+    accept: parent || "NODE",
     collect: (monitor) => ({ handlerId: monitor.getHandlerId() }),
     hover: (item: NodeDrag) => {
       if (!ref.current || index === -1) return
       const { dragIndex, hoverIndex } = item
       if (hoverIndex === index) return
       item.hoverIndex = index
-      onDrag(node.parent, dragIndex, index)
+      onDrag(parent, dragIndex, index)
     }
   })
   // Set up the drag logic
   const [_, drag, preview] = useReactDndDrag({
-    type: node.parent || "TASK",
-    item: () => ({ id: node.id, dragIndex: index, type: node.parent || "NODE" }),
+    type: parent || "NODE",
+    item: () => ({ id, dragIndex: index, type: parent || "NODE" }),
     collect: (monitor: any) => ({ isDragging: monitor.isDragging() }),
     end: (item: any, _: any) => onDragEnd(item.dragIndex, item.hoverIndex)
   })
