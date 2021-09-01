@@ -1,6 +1,14 @@
 .NavBar {
   width: 100%;
-  max-width: 960px;
+  max-width: calc(960px);
+  margin: 0 auto;
+  padding-left: 2.5rem;
+}
+
+@media (min-width: 1015px) {
+  .NavBar {
+    padding-left: 0rem;
+  }
 }
 
 .NavBar,

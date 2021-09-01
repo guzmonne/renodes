@@ -328,11 +328,13 @@ export function NodesTree({ root, parent }: NodesTreeProps) {
       onToggleIsInEditMode,
       onToggleIsOpened,
     }}>
-      <Node
-        model={state.get(root.id)}
-        isRoot={true}
-        isHome={root.id === "home"}
-      />
+      <div className="NodesTree">
+        <Node
+          model={state.get(root.id)}
+          isRoot={true}
+          isHome={root.id === "home"}
+        />
+      </div>
     </NodesTreeContext.Provider>
   )
 }

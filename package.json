@@ -49,6 +49,7 @@
     "immutable": "^4.0.0-rc.14",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.21",
+    "marked": "^3.0.2",
     "morgan": "^1.10.0",
     "prismjs": "^1.24.1",
     "react": "^17.0.1",
@@ -63,6 +64,7 @@
     "react-syntax-highlighter": "^15.4.4",
     "react-textarea-autosize": "^8.3.3",
     "remix": "^0.17.5",
+    "sanitize-html": "^2.4.0",
     "ulid": "^2.3.0"
   },
   "devDependencies": {
@@ -77,6 +79,7 @@
     "@types/react": "^17.0.4",
     "@types/react-dnd-multi-backend": "^6.0.1",
     "@types/react-dom": "^17.0.4",
+    "@types/sanitize-html": "^2.3.2",
     "@types/tape": "^4.13.1",
     "dynamodb-admin": "^4.0.1",
     "pm2": "^5.1.1",

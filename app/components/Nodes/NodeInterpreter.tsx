@@ -1,12 +1,13 @@
 import { useState, useCallback } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import { useDebounceCallback } from "@react-hook/debounce"
-import ReactMarkdown from "react-markdown"
 import type { KeyboardEventHandler, FormEvent } from "react"
 
+import { useMarked } from "../../hooks/useMarked"
 import { useParsedContent } from "../../hooks/useParsedContent"
 import { useHasMounted } from "../../hooks/useHasMounted"
 import { ScrollArea } from "../../components/ScrollArea"
+import { Loader } from "../Utils/Loader"
 import type { ParsedContent } from "../../hooks/useParsedContent"
 
 /**
@@ -288,11 +289,14 @@ export function NodeCodeInterpreterComponent({ language, content, filename, onFi
 
   return (
     <div className="Interpreter Interpreter__Code">
-      <ScrollArea orientation="horizontal">
-        <pre className="Interpreter__Code--pre">
-          <code className={`language-${language}`} children={content} />
-        </pre>
-      </ScrollArea>
+      {!hasMounted
+        ? <Loader />
+        : <ScrollArea orientation="horizontal">
+          <pre className="Interpreter__Code--pre">
+            <code className={`language-${language}`} children={content} />
+          </pre>
+        </ScrollArea>
+      }
       <div className="Interpreter__Code--inputs">
         <input type="text" value={filename} onChange={onFilenameChange} className="Interpreter__Code--filename" />
         <input type="text" value={language} onChange={onLanguageChange} className="Interpreter__Code--language" />
@@ -305,13 +309,17 @@ export function NodeCodeInterpreterComponent({ language, content, filename, onFi
  */
 export function NodeMarkdownInterpreter({ content }: { content: string }) {
   const parsed = useParsedContent(content, { content: "", meta: { language: "js" } })
+  const __html = useMarked(parsed.content)
   const hasMounted = useHasMounted()
 
   if (hasMounted && window.Prism) window.Prism.highlightAll()
 
   return (
     <div className="Interpreter Interpreter__Markdown">
-      <ReactMarkdown children={parsed.content} />
+      {!hasMounted
+        ? <Loader />
+        : <div dangerouslySetInnerHTML={{ __html }} />
+      }
     </div>
   )
 }
