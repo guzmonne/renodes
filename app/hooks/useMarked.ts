@@ -15,6 +15,7 @@ export const useMarked = (markdown: string) => {
     const tokens = marked.lexer(markdown)
     const html = marked.parser(tokens)
     setHtml(htmlSanitizer.sanitize(html))
+    // setHtml(html)
   }, [markdown])
 
   return html

@@ -118,7 +118,8 @@ main {
 }
 
 .Node:focus .Interpreter {
-  border-left: solid 2px var(--highlight);
+  border-left: solid 2px var(--purple);
+  background-color: rgba(252, 252, 252);
   z-index: 1;
 }
 
@@ -133,6 +134,9 @@ main {
 }
 
 .Node .Node__Control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--handle);
   min-width: 1rem;
   max-width: 1rem;

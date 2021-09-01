@@ -1,5 +1,6 @@
 export class HtmlSanitizer {
   tagWhitelist_ = {
+    "DEL": true, "INPUT": true,
     "A": true, "ABBR": true, "B": true, "BLOCKQUOTE": true, "BODY": true, "BR": true, "CENTER": true, "CODE": true, "DIV": true, "EM": true, "FONT": true,
     "H1": true, "H2": true, "H3": true, "H4": true, "H5": true, "H6": true, "HR": true, "I": true, "IMG": true, "LABEL": true, "LI": true, "OL": true, "P": true, "PRE": true,
     "SMALL": true, "SOURCE": true, "SPAN": true, "STRONG": true, "TABLE": true, "TBODY": true, "TR": true, "TD": true, "TH": true, "THEAD": true, "UL": true, "U": true, "VIDEO": true
@@ -7,7 +8,7 @@ export class HtmlSanitizer {
 
   contentTagWhiteList_ = { "FORM": true } //tags that will be converted to DIVs
 
-  attributeWhitelist_ = { "align": true, "color": true, "controls": true, "height": true, "href": true, "src": true, "style": true, "target": true, "title": true, "type": true, "width": true }
+  attributeWhitelist_ = { "disabled": true, "checked": true, "align": true, "color": true, "controls": true, "height": true, "href": true, "src": true, "style": true, "target": true, "title": true, "type": true, "width": true }
 
   cssWhitelist_ = { "color": true, "background-color": true, "font-size": true, "text-align": true, "text-decoration": true, "font-weight": true }
 
