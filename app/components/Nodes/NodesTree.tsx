@@ -60,6 +60,10 @@ export interface NodeProps {
    * isHome is a flag that is toggled only if the Node represents the Home pseudo-Node.
    */
   isHome?: boolean;
+  /**
+   * tabIndexOffset is an offset value that should be used to configure the tabindex values.
+   */
+  tabIndexOffset?: number;
 }
 /**
  * NodeBranchProps represent the props of the NodeBranch component.
@@ -341,6 +345,7 @@ export function Node({
   isHome = false,
   isRoot = false,
   index = -1,
+  tabIndexOffset = 0,
 }: NodeProps) {
   const {
     onAddChild,
@@ -531,7 +536,7 @@ export function Node({
         <div
           className={cn("Node", { [hoveredClassName]: hovered })}
           ref={ref}
-          tabIndex={isInEditMode ? undefined : index + 1}
+          tabIndex={isInEditMode ? undefined : index + tabIndexOffset}
           onKeyDown={handleOnKeyDown}
           onFocus={handleOnFocus}
         >
@@ -561,7 +566,7 @@ export function Node({
             onDelete={handleOnDelete}
             onChange={handleOnContentChange}
             onSave={handleOnSave}
-            tabIndex={index + 1}
+            tabIndex={index + tabIndexOffset}
           />
         </div>
       }
@@ -582,7 +587,7 @@ export function NodeBranch({ loading, collection, onAdd }: NodeBranchProps) {
     <div className="Nodes">
       {collection.length === 0
         ? <NodeAddChild onAdd={onAdd} />
-        : collection.map((id, index) => <Node key={id} index={index} model={state.get(id)} />)
+        : collection.map((id, index) => <Node key={id} tabIndexOffset={collection.length} index={index} model={state.get(id)} />)
       }
     </div>
   )
